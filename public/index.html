@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poly Movies - Stream Movies & TV Shows</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-container">
+                <div class="header-left">
+                    <div class="logo-container">
+                        <svg class="logo-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M5 3L19 12L5 21V3Z" fill="currentColor"/>
+                        </svg>
+                        <h1 class="logo-text">PolyMovies</h1>
+                    </div>
+                    <nav class="main-nav">
+                        <button id="homeBtn" class="nav-link active">Home</button>
+                        <button id="bollywoodBtn" class="nav-link">🇮🇳 Bollywood</button>
+                        <button id="tvShowsBtn" class="nav-link">TV Shows</button>
+                        <button id="moviesBtn" class="nav-link">Movies</button>
+                        <button id="exploreBtn" class="nav-link">Explore</button>
+                        <button id="newUpdatesBtn" class="nav-link">News & Updates</button>
+                        <button id="historyBtn" class="nav-link">History</button>
+                    </nav>
+                </div>
+                <div class="header-right">
+                    <div class="search-icon-container">
+                        <input type="text" id="searchInputHeader" class="search-input-header" placeholder="Search..." />
+                        <button id="searchToggle" class="search-icon-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <select id="providerSelect" class="provider-select-compact">
+                        <option value="">Provider</option>
+                    </select>
+                </div>
+            </div>
+            <div id="searchBar" class="search-bar" style="display: none;">
+                <div class="container">
+                    <input type="text" id="searchInput" placeholder="Search movies, shows..." />
+                    <button id="searchBtn">Search</button>
+                    <button id="searchClose" class="search-close">✕</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Loading Indicator -->
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading...</p>
+                </div>
+
+                <!-- Home View -->
+                <div id="homeView" class="view">
+                    <div id="catalogSections"></div>
+                </div>
+
+                <!-- Search Results View -->
+                <div id="searchView" class="view" style="display: none;">
+                    <h2 id="searchTitle">Search Results</h2>
+                    <div id="searchResults" class="posts-grid"></div>
+                    <div id="searchPagination" class="pagination"></div>
+                </div>
+
+                <!-- Details View -->
+                <div id="detailsView" class="view" style="display: none;">
+                    <button id="backBtn" class="back-btn">← Back</button>
+                    <div id="detailsContent"></div>
+                </div>
+
+                <!-- Player View -->
+                <div id="playerView" class="view" style="display: none;">
+                    <button id="playerBackBtn" class="back-btn">← Back to Details</button>
+                    
+                    <!-- Error Message (Player Only) -->
+                    <div id="errorMessage" class="error-message" style="display: none;"></div>
+                    
+                    <div id="playerContent">
+                        <video id="videoPlayer" class="video-player" controls></video>
+                        <div id="streamSelector" class="stream-selector"></div>
+                    </div>
+                </div>
+
+                <!-- Explore View -->
+                <div id="exploreView" class="view" style="display: none;">
+                    <button id="exploreBackBtn" class="back-btn">← Back</button>
+                    <div id="exploreContent"></div>
+                </div>
+
+                <!-- Movies View -->
+                <div id="moviesView" class="view" style="display: none;">
+                    <button id="moviesBackBtn" class="back-btn">← Back</button>
+                    <div id="moviesContent"></div>
+                </div>
+
+                <!-- TV Shows View -->
+                <div id="tvShowsView" class="view" style="display: none;">
+                    <button id="tvShowsBackBtn" class="back-btn">← Back</button>
+                    <div id="tvShowsContent"></div>
+                </div>
+
+                <!-- New & Updates View -->
+                <div id="newUpdatesView" class="view" style="display: none;">
+                    <button id="newUpdatesBackBtn" class="back-btn">← Back</button>
+                    <div id="newUpdatesContent"></div>
+                </div>
+
+                <!-- History View -->
+                <div id="historyView" class="view" style="display: none;">
+                    <button id="historyBackBtn" class="back-btn">← Back</button>
+                    <div id="historyContent"></div>
+                </div>
+
+                <!-- Bollywood View -->
+                <div id="bollywoodView" class="view" style="display: none;">
+                    <button id="bollywoodBackBtn" class="back-btn">← Back</button>
+                    <div id="bollywoodContent"></div>
+                </div>
+
+                <!-- Genre View -->
+                <div id="genreView" class="view" style="display: none;">
+                    <button id="genreBackBtn" class="back-btn">← Back</button>
+                    <div id="genreContent"></div>
+                </div>
+
+                <!-- Top Star View -->
+                <div id="topStarView" class="view" style="display: none;">
+                    <button id="topStarBackBtn" class="back-btn">← Back</button>
+                    <div id="topStarContent"></div>
+                </div>
+
+                <!-- Popular Star View -->
+                <div id="popularStarView" class="view" style="display: none;">
+                    <button id="popularStarBackBtn" class="back-btn">← Back</button>
+                    <div id="popularStarContent"></div>
+                </div>
+
+                <!-- Popular Stars All View -->
+                <div id="popularStarsAllView" class="view" style="display: none;">
+                    <button id="popularStarsAllBackBtn" class="back-btn">← Back</button>
+                    <div id="popularStarsAllContent"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="container">
+                <p>
+                    &copy; 2025 Poly Movies. Powered by community providers.<br>
+                    Made by <strong>Utkarsh Kumar</strong>
+                    &nbsp;|&nbsp;
+                    <a href="https://github.com/UTKARSHKUMAR712" target="_blank" rel="noopener noreferrer">
+                        GitHub
+                    </a>
+                    &nbsp;|&nbsp;
+                    <a href="https://www.linkedin.com/in/utkarsh-kumar-8344b1337" target="_blank" rel="noopener noreferrer">
+                        LinkedIn
+                    </a>
+                </p>
+            </div>
+        </footer>
+        
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="history.js"></script>
+    <script src="tmdb-content.js"></script>
+    <script src="new-updates.js"></script>
+    <script src="bollywood.js"></script>
+    <script src="genre-browser.js"></script>
+    <script src="popular-stars.js"></script>
+    <script src="app.js"></script>
+    <script src="explore.js"></script>
+    <script src="movies.js"></script>
+    <script src="tvshows.js"></script>
+</body>
+</html>
