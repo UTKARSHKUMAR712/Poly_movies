@@ -91,9 +91,6 @@ package.json       # Scripts, dependencies, electron-builder config
 
 ## Credits
 
-- Built with guidance and provider modules from [`Zenda-Cross/vega-providers`](https://github.com/Zenda-Cross/vega-providers.git)
-- Special thanks to [Zenda-Cross](https://github.com/Zenda-Cross) for the original project and continuing inspiration
+- Built with  provider modules from [`Zenda-Cross/vega-providers`](https://github.com/Zenda-Cross/vega-providers.git)
+- Special thanks to [Zenda-Cross](https://github.com/Zenda-Cross) for the provider
 
-## License
-
-Refer to the original project license or include your preferred license terms here.
