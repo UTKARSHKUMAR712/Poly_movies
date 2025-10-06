@@ -2,8 +2,8 @@
 
 PolyMovies Desktop is a hybrid Electron application that packages the Vega providers ecosystem together with a local Express API and Chromium front-end. It delivers a self-contained streaming content explorer for Windows without requiring a system-wide Node.js installation.
 ![Uploading Screenshot 2025-10-07 <img width="1869" height="1079" alt="Screenshot 2025-10-07 052031" src="https://github.com/user-attachments/assets/61731376-8c35-4199-98c7-fafeba8cabcf" />
-<img width="1919" height="1079" alt="Screenshot 2025-10-07 052018" src="https://github.com/user-attachments/assets/858b3faf-3f28-48ba-914d-62ce8c2f4905" />
-051951.png…]()
+
+<img width="1919" height="1079" alt="Screenshot 2025-10-07 052018" src="https://github.com/user-attachments/assets/df4aba8b-39f7-4471-86ec-30dca8331d5f" />
 
 <img width="1919" height="1079" alt="Screenshot 2025-10-07 052129" src="https://github.com/user-attachments/assets/9e78b5f5-9d0d-4739-a183-ed6bb7b854d4" />
 <img width="1861" height="997" alt="Screenshot 2025-10-07 052102" src="https://github.com/user-attachments/assets/7721c010-1a6b-4508-8980-468da1fc0162" />
