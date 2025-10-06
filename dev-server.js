@@ -15,12 +15,15 @@ const { gdFlixExtracter } = require("./dist/gdflixExtractor.js");
  * Local development server for testing providers
  */
 class DevServer {
-  constructor() {
+  constructor({ port = 3001, host = "0.0.0.0" } = {}) {
     this.app = express();
-    this.port = 3001;
+    this.port = port;
+    this.host = host;
     this.distDir = path.join(__dirname, "dist");
     this.currentDir = path.join(__dirname);
+    this.rootDir = this.currentDir;
     this.publicDir = path.join(__dirname, "public");
+    this.server = null;
 
     // Provider context for executing provider functions
     this.providerContext = {
@@ -551,7 +554,7 @@ class DevServer {
     return null;
   }
 
-  start() {
+  async start() {
     // Get local IP address
     const interfaces = os.networkInterfaces();
     let localIp = "localhost";
@@ -564,8 +567,22 @@ class DevServer {
       }
       if (localIp !== "localhost") break;
     }
-    this.app.listen(this.port, "0.0.0.0", () => {
-      console.log(`
+    return await new Promise((resolve, reject) => {
+      const handleError = (error) => {
+        if (error && error.code === "EADDRINUSE") {
+          const conflictError = new Error(
+            `Port ${this.port} is already in use. Please close other instances or choose a different port.`
+          );
+          conflictError.code = "EADDRINUSE";
+          reject(conflictError);
+        } else {
+          reject(error);
+        }
+      };
+
+      this.server = this.app.listen(this.port, this.host, () => {
+        this.server?.off("error", handleError);
+        console.log(`
 🚀 Vega Providers Dev Server Started!
 
 📡 Server URL: http://localhost:${this.port}
@@ -584,13 +601,45 @@ class DevServer {
       `);
 
       // Check if build exists
-      if (!fs.existsSync(this.distDir)) {
-        console.log('\n⚠️  No build found. Run "node build.js" first!\n');
-      }
+        if (!fs.existsSync(this.distDir)) {
+          console.log('\n⚠️  No build found. Run "node build.js" first!\n');
+        }
+        resolve(this.server);
+      });
+
+      this.server?.once("error", handleError);
     });
+  }
+
+  async stop() {
+    if (!this.server) {
+      return;
+    }
+
+    await new Promise((resolve, reject) => {
+      this.server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+    this.server = null;
   }
 }
 
-// Start the server
-const server = new DevServer();
-server.start();
+async function startDevServer(port = 3001, host = "0.0.0.0") {
+  const devServer = new DevServer({ port, host });
+  await devServer.start();
+  return devServer;
+}
+
+module.exports = {
+  DevServer,
+  startDevServer,
+};
+
+if (require.main === module) {
+  startDevServer();
+}

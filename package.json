@@ -5,7 +5,7 @@
   "license": "ISC",
   "author": "",
   "type": "commonjs",
-  "main": "index.js",
+  "main": "electron/main.js",
   "scripts": {
     "test": "node test-providers.js",
     "test:provider": "node test-provider.js",
@@ -22,15 +22,19 @@
     "dev:auto": "concurrently \"nodemon --watch providers --ext ts --exec \\\"npm run build:dev\\\"\" \"npm run dev\"",
     "auto": "node auto-dev.js",
     "start": "npm run build && npm run dev",
-    "vercel-build": "npm run build"
+    "vercel-build": "npm run build",
+    "electron:dev": "npm run build && electron .",
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:portable": "npm run build && electron-builder --win portable",
+    "electron:build:installer": "npm run build && electron-builder --win nsis"
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.35",
     "@types/node": "^24.0.1",
     "concurrently": "^8.2.2",
-    "cors": "^2.8.5",
     "cross-env": "^7.0.3",
-    "express": "^4.21.2",
+    "electron": "^33.4.11",
+    "electron-builder": "^24.13.3",
     "nodemon": "^3.1.10",
     "terser": "^5.43.1",
     "typescript": "^5.8.3"
@@ -38,8 +42,55 @@
   "dependencies": {
     "axios": "^1.10.0",
     "cheerio": "^1.1.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
     "react-native-aes-crypto": "^3.2.1",
     "rimraf": "^6.0.1",
     "zod": "^4.0.2"
+  },
+  "build": {
+    "appId": "com.vega.providers",
+    "productName": "PolyMovies",
+    "directories": {
+      "output": "release",
+      "buildResources": "electron/resources"
+    },
+    "files": [
+      "dist/**",
+      "public/**",
+      "manifest.json",
+      "providers/**",
+      "dev-server.js",
+      "electron/**",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js",
+      "name": "polymovies",
+      "productName": "PolyMovies"
+    },
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "icon": "icons/cropped_circle_image (1).ico",
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
