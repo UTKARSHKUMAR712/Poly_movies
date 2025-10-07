@@ -69,7 +69,7 @@
     "version": "1.2",
     "icon": "",
     "type": "global",
-    "disabled": false
+    "disabled": true
   },
   {
     "display_name": "Movies4U",
@@ -93,7 +93,7 @@
     "version": "1.0",
     "icon": "",
     "type": "global",
-    "disabled": false
+    "disabled": true
   },
   {
     "display_name": "Ringz",
@@ -101,7 +101,7 @@
     "version": "1.0",
     "icon": "",
     "type": "global",
-    "disabled": false
+    "disabled": true
   },
   {
     "display_name": "NetflixMirror",
@@ -133,7 +133,7 @@
     "version": "1.2",
     "icon": "",
     "type": "english",
-    "disabled": false
+    "disabled": true
   },
   {
     "display_name": "VadaPav",
@@ -157,7 +157,7 @@
     "version": "1.0",
     "icon": "",
     "type": "india",
-    "disabled": false
+    "disabled": true
   },
   {
     "display_name": "ShowBox",
@@ -165,7 +165,7 @@
     "version": "1.1",
     "icon": "",
     "type": "english",
-    "disabled": false
+    "disabled": true
   },
   {
     "display_name": "RidoMovies",
@@ -173,7 +173,7 @@
     "version": "1.0",
     "icon": "",
     "type": "english",
-    "disabled": false
+    "disabled": true
   },
   {
     "display_name": "FlixHQ",
@@ -181,7 +181,7 @@
     "version": "1.0",
     "icon": "",
     "type": "english",
-    "disabled": false
+    "disabled": true
   },
   {
     "display_name": "Primewire",
@@ -229,7 +229,7 @@
     "version": "1.4",
     "icon": "",
     "type": "india",
-    "disabled": false
+    "disabled": true
   },
   {
     "display_name": "RogMovies",
@@ -252,7 +252,7 @@
     "value": "guardahd",
     "version": "1.0",
     "icon": "",
-    "type": "italy",
+    "type": "global",
     "disabled": false
   },
   {
@@ -261,7 +261,7 @@
     "version": "1.0",
     "icon": "",
     "type": "global",
-    "disabled": false
+    "disabled": true
   },
   {
     "display_name": "Joya9tv",
@@ -269,6 +269,6 @@
     "version": "1.0",
     "icon": "",
     "type": "india",
-    "disabled": false
+    "disabled": true
   }
 ]
