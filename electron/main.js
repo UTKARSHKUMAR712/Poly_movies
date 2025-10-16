@@ -1,7 +1,9 @@
 const path = require("path");
+const fs = require("fs");
 const http = require("http");
+const { spawn } = require("child_process");
 const { setTimeout: delay } = require("node:timers/promises");
-const { app, BrowserWindow, Menu } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, shell } = require("electron");
 const { startDevServer } = require("../dev-server");
 
 const iconPath = path.join(__dirname, "..", "icons", "cropped_circle_image (1).ico");
@@ -15,6 +17,8 @@ const singleInstanceLock = app.requestSingleInstanceLock();
 if (!singleInstanceLock) {
   app.quit();
 }
+
+registerExternalPlayerHandler();
 
 app.on("second-instance", () => {
   if (mainWindow) {
@@ -132,6 +136,133 @@ function configureMenu() {
 
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
+}
+
+function registerExternalPlayerHandler() {
+  const candidateExecutables = [
+    "vlc",
+    "vlc.exe",
+    "mpc-hc64.exe",
+    "mpc-hc.exe",
+    "mpv",
+    "mpv.exe",
+  ];
+
+  let cachedPlayerPath = null;
+
+  function findPlayerExecutable() {
+    const platform = process.platform;
+
+    if (cachedPlayerPath && fs.existsSync(cachedPlayerPath)) {
+      return cachedPlayerPath;
+    }
+
+    const seen = new Set();
+    const checkCandidate = (candidatePath) => {
+      if (!candidatePath) return null;
+      const trimmed = candidatePath.trim();
+      if (!trimmed || seen.has(trimmed)) return null;
+      seen.add(trimmed);
+
+      try {
+        if (fs.existsSync(trimmed)) {
+          cachedPlayerPath = trimmed;
+          return cachedPlayerPath;
+        }
+      } catch (_) {
+        /* ignore file system errors */
+      }
+      return null;
+    };
+
+    const possiblePaths = [];
+
+    if (platform === "darwin") {
+      possiblePaths.push("/Applications/VLC.app/Contents/MacOS/VLC");
+      possiblePaths.push("/Applications/IINA.app/Contents/MacOS/IINA");
+    }
+
+    if (platform === "win32") {
+      const programFiles = process.env["ProgramFiles"];
+      const programFilesX86 = process.env["ProgramFiles(x86)"];
+      const localAppData = process.env["LocalAppData"];
+
+      const windowsKnown = [
+        programFiles && path.join(programFiles, "VideoLAN", "VLC", "vlc.exe"),
+        programFilesX86 && path.join(programFilesX86, "VideoLAN", "VLC", "vlc.exe"),
+        localAppData && path.join(localAppData, "Programs", "VideoLAN", "VLC", "vlc.exe"),
+        programFiles && path.join(programFiles, "MPC-HC", "mpc-hc64.exe"),
+        programFilesX86 && path.join(programFilesX86, "MPC-HC", "mpc-hc.exe"),
+      ];
+
+      windowsKnown.forEach((candidate) => {
+        if (candidate) possiblePaths.push(candidate);
+      });
+    }
+
+    const pathDirectories = (process.env.PATH || "").split(path.delimiter).filter(Boolean);
+    for (const candidate of candidateExecutables) {
+      for (const dir of pathDirectories) {
+        possiblePaths.push(path.join(dir, candidate));
+      }
+    }
+
+    for (const candidatePath of possiblePaths) {
+      const result = checkCandidate(candidatePath);
+      if (result) {
+        console.log("🎯 External player detected:", result);
+        return result;
+      }
+    }
+
+    for (const candidate of candidateExecutables) {
+      const result = checkCandidate(candidate);
+      if (result) {
+        console.log("🎯 External player detected via command:", result);
+        return result;
+      }
+    }
+
+    cachedPlayerPath = null;
+    return null;
+  }
+
+  ipcMain.handle("open-external-player", async (_event, payload) => {
+    const { url, title } = payload || {};
+    if (!url) {
+      return { ok: false, error: "Missing stream URL" };
+    }
+
+    const playerPath = findPlayerExecutable();
+
+    if (!playerPath) {
+      await shell.openExternal(url);
+      return { ok: true, fallback: "browser" };
+    }
+
+    const args = [];
+    if (title) {
+      args.push("--meta-title", title);
+    }
+    args.push(url);
+
+    try {
+      const child = spawn(playerPath, args, {
+        detached: true,
+        stdio: "ignore",
+      });
+      child.unref();
+      return { ok: true, player: playerPath };
+    } catch (error) {
+      console.error("Failed to launch external player:", error);
+      try {
+        await shell.openExternal(url);
+        return { ok: true, fallback: "browser" };
+      } catch (fallbackError) {
+        return { ok: false, error: fallbackError.message };
+      }
+    }
+  });
 }
 
 async function waitForServer(host, port, pathSuffix = "/health", retries = 30, delayMs = 1000) {

@@ -309,17 +309,56 @@ function renderPostCard(post, provider) {
     return card;
 }
 
-function renderPosts(posts, containerId, provider) {
+function renderPosts(posts, containerId, provider, options = {}) {
     const container = document.getElementById(containerId);
+    if (!container) {
+        console.warn('renderPosts: container not found', containerId);
+        return;
+    }
+    
     container.innerHTML = '';
     
-    if (posts.length === 0) {
+    if (!Array.isArray(posts) || posts.length === 0) {
         container.innerHTML = '<p style="color: #b3b3b3;">No results found.</p>';
         return;
     }
     
-    posts.forEach(post => {
-        container.appendChild(renderPostCard(post, provider));
+    const { groupByProvider = false, providerLabelMap = {} } = options;
+    
+    if (!groupByProvider) {
+        posts.forEach(post => {
+            container.appendChild(renderPostCard(post, provider));
+        });
+        return;
+    }
+    
+    const grouped = posts.reduce((acc, post) => {
+        const providerKey = post.provider || provider || 'unknown';
+        if (!acc[providerKey]) {
+            acc[providerKey] = [];
+        }
+        acc[providerKey].push(post);
+        return acc;
+    }, {});
+    
+    Object.entries(grouped).forEach(([providerKey, providerPosts]) => {
+        const section = document.createElement('div');
+        section.className = 'search-provider-section';
+        
+        const header = document.createElement('div');
+        header.className = 'search-provider-header';
+        const displayName = providerLabelMap[providerKey] || providerKey;
+        header.innerHTML = `<h3>${displayName}</h3><span class="result-count">${providerPosts.length} result${providerPosts.length === 1 ? '' : 's'}</span>`;
+        section.appendChild(header);
+        
+        const grid = document.createElement('div');
+        grid.className = 'posts-grid';
+        providerPosts.forEach(post => {
+            grid.appendChild(renderPostCard(post, providerKey));
+        });
+        section.appendChild(grid);
+        
+        container.appendChild(section);
     });
 }
 
@@ -604,19 +643,25 @@ function renderStreamSelector(streams, provider) {
             ${stream.quality ? `<span class="quality">${stream.quality}p</span>` : ''}
             <span class="quality">${stream.type}</span>
             ${indicator}
-            <div style="margin-top: 8px; display: flex; gap: 8px;">
-                <button class="play-btn" style="padding: 5px 12px; background: #e50914; border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 12px;">
-                    ▶️ Play
+            <div class="stream-option-buttons">
+                <button class="stream-option-button stream-play-btn">
+                    <span class="icon">▶️</span>
+                    <span>Play</span>
+                </button>
+                <button class="stream-option-button stream-external-btn">
+                    <span class="icon">📺</span>
+                    <span>External</span>
                 </button>
                 ${isMKV || stream.requiresExtraction ? `
-                    <button class="download-btn" style="padding: 5px 12px; background: #333; border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 12px;">
-                        ⬇️ Download
+                    <button class="stream-option-button stream-download-btn">
+                        <span class="icon">⬇️</span>
+                        <span>Download</span>
                     </button>
                 ` : ''}
             </div>
         `;
         
-        const playBtn = option.querySelector('.play-btn');
+        const playBtn = option.querySelector('.stream-play-btn');
         playBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             document.querySelectorAll('.stream-option').forEach(el => el.classList.remove('active'));
@@ -624,7 +669,13 @@ function renderStreamSelector(streams, provider) {
             playStream(stream);
         });
         
-        const downloadBtn = option.querySelector('.download-btn');
+        const externalBtn = option.querySelector('.stream-external-btn');
+        externalBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await openExternalPlayer(stream);
+        });
+        
+        const downloadBtn = option.querySelector('.stream-download-btn');
         if (downloadBtn) {
             downloadBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -898,6 +949,122 @@ async function playStream(stream) {
         console.error('Error stack:', error.stack);
         // Don't show error to user - they can try another stream
         console.log('ℹ️ Stream error silently handled');
+    }
+}
+
+async function openExternalPlayer(stream) {
+    console.log('🖥️ openExternalPlayer called with:', {
+        server: stream.server,
+        type: stream.type,
+        quality: stream.quality,
+        requiresExtraction: stream.requiresExtraction,
+        linkPreview: stream.link.substring(0, 100)
+    });
+
+    showLoading(true, 'Preparing external player...');
+    try {
+        let streamUrl = stream.link;
+
+        if (stream.requiresExtraction) {
+            console.log('🔄 External player extraction required');
+            try {
+                const extractUrl = `${API_BASE}/api/proxy/stream?url=${encodeURIComponent(stream.link)}`;
+                console.log('🔄 Calling extraction endpoint for external playback:', extractUrl);
+                const response = await fetch(extractUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to extract stream link for external playback');
+                }
+                const data = await response.json();
+                streamUrl = data.streamUrl;
+                console.log('✅ Extraction complete for external playback');
+            } catch (extractError) {
+                console.error('❌ External extraction failure:', extractError);
+                showError('Could not prepare stream for external playback. Try downloading instead.');
+                return;
+            }
+        }
+
+        if (stream.headers && Object.keys(stream.headers).length > 0) {
+            console.log('🔐 Stream requires headers. Using proxy for external playback');
+            const headersParam = encodeURIComponent(JSON.stringify(stream.headers));
+            streamUrl = `${API_BASE}/api/proxy/video?url=${encodeURIComponent(streamUrl)}&headers=${headersParam}`;
+        }
+
+        const isM3U8 = stream.type === 'm3u8' || streamUrl.includes('.m3u8');
+        const isMKV = streamUrl.toLowerCase().includes('.mkv');
+
+        const bridge = window.appBridge;
+        const metaTitle = state.currentMeta?.meta?.title || state.currentMeta?.meta?.name || stream.title || stream.server;
+
+        if (bridge?.openExternalPlayer) {
+            console.log('🛤️ Attempting to launch external player via Electron bridge');
+            try {
+                const result = await bridge.openExternalPlayer({
+                    url: streamUrl,
+                    title: metaTitle,
+                });
+                console.log('🔁 External player IPC result:', result);
+
+                if (result?.ok) {
+                    if (result.player) {
+                        const playerName = result.player.split(/[\\\/]/).pop() || result.player;
+                        showToast(`Opening stream in ${playerName}.`, 'success', 3000);
+                    } else if (result?.fallback === 'browser') {
+                        showToast('No external player detected. Opened stream in default browser.', 'info', 4000);
+                    } else {
+                        showToast('External player launched.', 'success', 3000);
+                    }
+                    return;
+                }
+
+                console.warn('⚠️ External player handler returned failure, falling back to manual method:', result);
+            } catch (ipcError) {
+                console.error('❌ External player IPC error:', ipcError);
+                showToast('External player launch failed. Falling back to manual method.', 'error', 3000);
+            }
+        }
+
+        let clipboardCopied = false;
+        if (navigator.clipboard && window.isSecureContext) {
+            try {
+                await navigator.clipboard.writeText(streamUrl);
+                clipboardCopied = true;
+                console.log('📋 Stream link copied to clipboard');
+            } catch (clipboardError) {
+                console.warn('⚠️ Failed to copy link to clipboard:', clipboardError);
+            }
+        }
+
+        let opened = false;
+        try {
+            const newWindow = window.open(streamUrl, '_blank', 'noopener');
+            if (newWindow) {
+                opened = true;
+                console.log('🪟 External stream opened in new tab');
+            }
+        } catch (popupError) {
+            console.warn('⚠️ Popup blocked while opening external link:', popupError);
+        }
+
+        let message = 'External stream link ready.';
+        if (clipboardCopied) {
+            message += ' Link copied to clipboard.';
+        }
+        if (!opened) {
+            message += ' Paste it into your external player.';
+        }
+        showToast(message, 'info', 4000);
+
+        if (isM3U8) {
+            showToast('Tip: In VLC, use Media → Open Network Stream and paste the copied link.', 'info', 4000);
+        } else if (isMKV) {
+            showToast('MKV files may download in-browser. Use the copied link in VLC or Media Player.', 'info', 4000);
+        }
+    } catch (error) {
+        console.error('❌ Failed to prepare external player link:', error);
+        showError('Failed to prepare external player link: ' + error.message);
+    } finally {
+        showLoading(false);
     }
 }
 
