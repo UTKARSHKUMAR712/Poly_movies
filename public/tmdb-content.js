@@ -168,85 +168,30 @@ const TMDBContentModule = {
             return;
         }
         
-        // Show loading overlay
-        this.showSearchLoadingOverlay(title);
-        
-        // Also show main loading
-        if (window.showLoading) {
-            showLoading(true, `Searching providers for "${title}"...`);
-        }
-
         try {
-            // Get providers from state
-            const providers = window.state?.providers || [];
-            const apiBase = window.API_BASE || window.location.origin;
-            
-            console.log('🔍 State providers:', providers.length);
-            console.log('🌐 API Base:', apiBase);
-            
-            if (providers.length === 0) {
-                console.error('❌ No providers available in state');
-                alert('No providers loaded. Please refresh the page.');
-                if (window.showLoading) showLoading(false);
-                return;
+            if (typeof window.performSearch !== 'function') {
+                throw new Error('Search function unavailable');
             }
-            
-            console.log(`🔍 Searching for "${title}" in ${providers.length} providers...`);
-            
-            // Search in parallel across all providers
-            const searchPromises = providers.map(async (provider) => {
-                try {
-                    const providerValue = provider.value || provider;
-                    const providerName = provider.display_name || provider.value || provider;
-                    
-                    const searchUrl = `${apiBase}/api/${providerValue}/search?query=${encodeURIComponent(title)}`;
-                    console.log(`  → Searching ${providerValue}:`, searchUrl);
-                    
-                    const response = await fetch(searchUrl);
-                    if (!response.ok) {
-                        console.log(`  ✗ ${providerValue}: ${response.status}`);
-                        return null;
-                    }
-                    
-                    const data = await response.json();
-                    const posts = Array.isArray(data) ? data : (data.posts || []);
-                    
-                    if (posts.length > 0) {
-                        console.log(`  ✓ ${providerValue}: Found ${posts.length} results`);
-                        return {
-                            provider: providerValue,
-                            displayName: providerName,
-                            posts: posts.slice(0, 5) // Top 5 results per provider
-                        };
-                    } else {
-                        console.log(`  ✗ ${providerValue}: No results`);
-                    }
-                    return null;
-                } catch (error) {
-                    console.warn(`Failed to search in ${providerValue}:`, error);
-                    return null;
+
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = title;
+            }
+
+            const originalShowLoading = window.showLoading;
+            try {
+                if (typeof originalShowLoading === 'function') {
+                    window.showLoading = () => {};
                 }
-            });
-            
-            const results = await Promise.all(searchPromises);
-            const validResults = results.filter(r => r !== null);
-            
-            console.log(`✅ Found in ${validResults.length} providers`);
-            
-            // Close loading overlay
-            this.closeSearchLoadingOverlay();
-            
-            // Show results modal
-            this.showSearchResultsModal(title, validResults, item);
-            
+                await window.performSearch();
+            } finally {
+                if (typeof originalShowLoading === 'function') {
+                    window.showLoading = originalShowLoading;
+                }
+            }
         } catch (error) {
             console.error('Search error:', error);
-            this.closeSearchLoadingOverlay();
             alert(`Failed to search for "${title}"`);
-        } finally {
-            if (window.showLoading) {
-                showLoading(false);
-            }
         }
     },
     
@@ -398,33 +343,9 @@ const TMDBContentModule = {
         return html;
     },
     
-    // Show loading overlay during provider search
+    // Show loading overlay during provider search (disabled)
     showSearchLoadingOverlay(title) {
-        // Remove existing overlay if any
         this.closeSearchLoadingOverlay();
-        
-        const overlay = document.createElement('div');
-        overlay.className = 'tmdb-search-loading-overlay';
-        overlay.innerHTML = `
-            <div class="tmdb-search-loading-content">
-                <div class="tmdb-search-spinner"></div>
-                <h3>Searching Providers</h3>
-                <p>Looking for "${title}" in all providers...</p>
-                <div class="tmdb-search-progress">
-                    <div class="tmdb-search-progress-bar"></div>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(overlay);
-        
-        // Animate progress bar
-        setTimeout(() => {
-            const progressBar = overlay.querySelector('.tmdb-search-progress-bar');
-            if (progressBar) {
-                progressBar.style.width = '100%';
-            }
-        }, 100);
     },
     
     closeSearchLoadingOverlay() {
