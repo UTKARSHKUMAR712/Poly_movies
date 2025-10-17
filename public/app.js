@@ -31,6 +31,62 @@ function showLoading(show = true, message = 'Loading...') {
     }
 }
 
+function createSearchProviderSection(provider) {
+    const section = document.createElement('div');
+    section.className = 'search-provider-section horizontal';
+    section.id = `search-provider-${provider.value}`;
+    section.innerHTML = `
+        <div class="search-provider-header">
+            <h3>${provider.display_name}</h3>
+            <span class="result-count loading">Loading...</span>
+        </div>
+        <div class="search-provider-carousel">
+            <div class="provider-loading">Fetching results...</div>
+        </div>
+    `;
+    return section;
+}
+
+function updateSearchProviderSection(providerValue, posts) {
+    const section = document.getElementById(`search-provider-${providerValue}`);
+    if (!section) return;
+    
+    const countEl = section.querySelector('.result-count');
+    const carousel = section.querySelector('.search-provider-carousel');
+    if (!carousel) return;
+    
+    countEl?.classList.remove('loading');
+    carousel.innerHTML = '';
+    
+    const safePosts = Array.isArray(posts) ? posts : [];
+    if (safePosts.length === 0) {
+        if (countEl) countEl.textContent = 'No results';
+        carousel.innerHTML = '<div class="provider-empty">No titles found for this provider.</div>';
+        return;
+    }
+    
+    if (countEl) {
+        countEl.textContent = `${safePosts.length} result${safePosts.length === 1 ? '' : 's'}`;
+    }
+    
+    safePosts.forEach(post => {
+        carousel.appendChild(renderPostCard({ ...post, provider: providerValue }, providerValue));
+    });
+}
+
+function showSearchProviderError(providerValue, message) {
+    const section = document.getElementById(`search-provider-${providerValue}`);
+    if (!section) return;
+    
+    const countEl = section.querySelector('.result-count');
+    const carousel = section.querySelector('.search-provider-carousel');
+    countEl?.classList.remove('loading');
+    if (countEl) countEl.textContent = 'Error';
+    if (carousel) {
+        carousel.innerHTML = `<div class="provider-error">${message || 'Failed to fetch results.'}</div>`;
+    }
+}
+
 function showToast(message, type = 'info', duration = 1000) {
     // Create toast container if not exists
     let toastContainer = document.getElementById('toastContainer');
@@ -1218,40 +1274,46 @@ async function performSearch() {
     try {
         // Search across ALL providers instead of just the selected one
         const allProviders = state.providers;
-        const searchPromises = allProviders.map(provider => 
-            searchPosts(provider.value, query, 1).catch(err => {
-                console.warn(`Search failed for provider ${provider.value}:`, err);
-                return { posts: [], provider: provider.value };
-            })
-        );
-        
-        // Wait for all searches to complete
-        const searchResults = await Promise.all(searchPromises);
-        
-        // Combine all results
-        let combinedResults = [];
-        searchResults.forEach(result => {
-            if (result && result.posts && Array.isArray(result.posts)) {
-                // Add provider information to each post
-                const postsWithProvider = result.posts.map(post => ({
-                    ...post,
-                    provider: result.provider
-                }));
-                combinedResults = combinedResults.concat(postsWithProvider);
-            }
-        });
-        
-        // Shuffle results to mix content from different providers
-        shuffleArray(combinedResults);
+        const resultsContainer = document.getElementById('searchResults');
+        const paginationEl = document.getElementById('searchPagination');
+        if (resultsContainer) resultsContainer.innerHTML = '';
+        if (paginationEl) paginationEl.innerHTML = '';
         
         document.getElementById('searchTitle').textContent = `Search Results for "${query}"`;
-        renderPosts(combinedResults, 'searchResults', 'all'); // Pass 'all' to indicate mixed providers
-        // Hide pagination for search results since we're showing a mixed set
-        document.getElementById('searchPagination').innerHTML = '';
+        showView('search');
+        
         state.searchQuery = query;
         state.currentPage = 1;
         state.currentFilter = '';
-        showView('search');
+
+        if (resultsContainer) {
+            resultsContainer.className = 'search-provider-lanes';
+            resultsContainer.classList.remove('search-provider-slot-container');
+        }
+
+        const providerPromises = allProviders.map(provider => {
+            if (!resultsContainer) return Promise.resolve();
+            const section = createSearchProviderSection(provider);
+            resultsContainer.appendChild(section);
+
+            return searchPosts(provider.value, query, 1)
+                .then(result => {
+                    const posts = Array.isArray(result)
+                        ? result
+                        : Array.isArray(result?.posts)
+                            ? result.posts
+                            : [];
+                    updateSearchProviderSection(provider.value, posts, provider.display_name);
+                })
+                .catch(err => {
+                    console.warn(`Search failed for provider ${provider.value}:`, err);
+                    showSearchProviderError(provider.value, 'Failed to fetch results.');
+                });
+        });
+        
+        await Promise.allSettled(providerPromises);
+        // Hide pagination for search results since we're showing a mixed set
+        if (paginationEl) paginationEl.innerHTML = '';
     } catch (error) {
         showError('Search failed: ' + error.message);
     } finally {
