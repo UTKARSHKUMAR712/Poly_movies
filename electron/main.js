@@ -142,6 +142,10 @@ function registerExternalPlayerHandler() {
   const candidateExecutables = [
     "vlc",
     "vlc.exe",
+    "PotPlayerMini64.exe",
+    "PotPlayerMini.exe", 
+    "PotPlayer64.exe",
+    "PotPlayer.exe",
     "mpc-hc64.exe",
     "mpc-hc.exe",
     "mpv",
@@ -188,9 +192,18 @@ function registerExternalPlayerHandler() {
       const localAppData = process.env["LocalAppData"];
 
       const windowsKnown = [
+        // VLC Player paths
         programFiles && path.join(programFiles, "VideoLAN", "VLC", "vlc.exe"),
         programFilesX86 && path.join(programFilesX86, "VideoLAN", "VLC", "vlc.exe"),
         localAppData && path.join(localAppData, "Programs", "VideoLAN", "VLC", "vlc.exe"),
+        
+        // PotPlayer paths
+        programFiles && path.join(programFiles, "DAUM", "PotPlayer", "PotPlayerMini64.exe"),
+        programFilesX86 && path.join(programFilesX86, "DAUM", "PotPlayer", "PotPlayerMini.exe"),
+        programFiles && path.join(programFiles, "DAUM", "PotPlayer", "PotPlayer64.exe"),
+        programFilesX86 && path.join(programFilesX86, "DAUM", "PotPlayer", "PotPlayer.exe"),
+        
+        // MPC-HC paths
         programFiles && path.join(programFiles, "MPC-HC", "mpc-hc64.exe"),
         programFilesX86 && path.join(programFilesX86, "MPC-HC", "mpc-hc.exe"),
       ];
@@ -228,25 +241,34 @@ function registerExternalPlayerHandler() {
   }
 
   ipcMain.handle("open-external-player", async (_event, payload) => {
-    const { url, title } = payload || {};
+    const { url, title, player: preferredPlayer } = payload || {};
     if (!url) {
       return { ok: false, error: "Missing stream URL" };
     }
 
-    const playerPath = findPlayerExecutable();
+    let playerPath = null;
+    
+    // Try to find specific player if requested
+    if (preferredPlayer) {
+      playerPath = findSpecificPlayer(preferredPlayer);
+    }
+    
+    // Fallback to any available player
+    if (!playerPath) {
+      playerPath = findPlayerExecutable();
+    }
 
     if (!playerPath) {
       await shell.openExternal(url);
       return { ok: true, fallback: "browser" };
     }
 
-    const args = [];
-    if (title) {
-      args.push("--meta-title", title);
-    }
-    args.push(url);
+    const args = buildPlayerArgs(playerPath, title, url);
 
     try {
+      console.log(`🎬 Launching external player: ${playerPath}`);
+      console.log(`🎬 Args: ${args.join(' ')}`);
+      
       const child = spawn(playerPath, args, {
         detached: true,
         stdio: "ignore",
@@ -263,6 +285,89 @@ function registerExternalPlayerHandler() {
       }
     }
   });
+  
+  // Find specific player by type
+  function findSpecificPlayer(playerType) {
+    const platform = process.platform;
+    const programFiles = process.env["ProgramFiles"];
+    const programFilesX86 = process.env["ProgramFiles(x86)"];
+    
+    const playerPaths = {
+      vlc: [
+        programFiles && path.join(programFiles, "VideoLAN", "VLC", "vlc.exe"),
+        programFilesX86 && path.join(programFilesX86, "VideoLAN", "VLC", "vlc.exe"),
+        "vlc.exe",
+        "vlc"
+      ],
+      potplayer: [
+        programFiles && path.join(programFiles, "DAUM", "PotPlayer", "PotPlayerMini64.exe"),
+        programFilesX86 && path.join(programFilesX86, "DAUM", "PotPlayer", "PotPlayerMini.exe"),
+        programFiles && path.join(programFiles, "DAUM", "PotPlayer", "PotPlayer64.exe"),
+        programFilesX86 && path.join(programFilesX86, "DAUM", "PotPlayer", "PotPlayer.exe"),
+        "PotPlayerMini64.exe",
+        "PotPlayerMini.exe",
+        "PotPlayer64.exe",
+        "PotPlayer.exe"
+      ],
+      mpv: [
+        programFiles && path.join(programFiles, "mpv", "mpv.exe"),
+        programFilesX86 && path.join(programFilesX86, "mpv", "mpv.exe"),
+        "mpv.exe",
+        "mpv"
+      ]
+    };
+    
+    const candidates = playerPaths[playerType] || [];
+    
+    for (const candidate of candidates) {
+      if (!candidate) continue;
+      try {
+        if (fs.existsSync(candidate)) {
+          console.log(`🎯 Found ${playerType} at: ${candidate}`);
+          return candidate;
+        }
+      } catch (error) {
+        // Continue searching
+      }
+    }
+    
+    return null;
+  }
+  
+  // Build appropriate arguments for different players
+  function buildPlayerArgs(playerPath, title, url) {
+    const args = [];
+    const playerName = path.basename(playerPath).toLowerCase();
+    
+    if (playerName.includes('vlc')) {
+      // VLC arguments
+      if (title) {
+        args.push('--meta-title', title);
+      }
+      args.push('--intf', 'dummy'); // Prevent multiple VLC instances
+      args.push(url);
+    } else if (playerName.includes('pot')) {
+      // PotPlayer arguments
+      args.push(url);
+      if (title) {
+        args.push('/title', title);
+      }
+    } else if (playerName.includes('mpv')) {
+      // MPV arguments
+      if (title) {
+        args.push(`--force-media-title=${title}`);
+      }
+      args.push(url);
+    } else {
+      // Generic arguments
+      if (title) {
+        args.push('--title', title);
+      }
+      args.push(url);
+    }
+    
+    return args;
+  }
 }
 
 async function waitForServer(host, port, pathSuffix = "/health", retries = 30, delayMs = 1000) {

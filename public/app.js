@@ -704,10 +704,31 @@ function renderStreamSelector(streams, provider) {
                     <span class="icon">▶️</span>
                     <span>Play</span>
                 </button>
-                <button class="stream-option-button stream-external-btn">
-                    <span class="icon">📺</span>
-                    <span>External</span>
-                </button>
+                <div class="external-player-dropdown">
+                    <button class="stream-option-button stream-external-btn">
+                        <span class="icon">📺</span>
+                        <span>External</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="external-player-menu">
+                        <button class="external-player-option" data-player="vlc">
+                            <span class="player-icon">🎬</span>
+                            <span>VLC Player</span>
+                        </button>
+                        <button class="external-player-option" data-player="potplayer">
+                            <span class="player-icon">🎯</span>
+                            <span>PotPlayer</span>
+                        </button>
+                        <button class="external-player-option" data-player="mpv">
+                            <span class="player-icon">⚡</span>
+                            <span>MPV Player</span>
+                        </button>
+                        <button class="external-player-option" data-player="auto">
+                            <span class="player-icon">🔄</span>
+                            <span>Auto Detect</span>
+                        </button>
+                    </div>
+                </div>
                 ${isMKV || stream.requiresExtraction ? `
                     <button class="stream-option-button stream-download-btn">
                         <span class="icon">⬇️</span>
@@ -725,10 +746,43 @@ function renderStreamSelector(streams, provider) {
             playStream(stream);
         });
         
+        // Enhanced external player handling
         const externalBtn = option.querySelector('.stream-external-btn');
-        externalBtn.addEventListener('click', async (e) => {
+        const externalMenu = option.querySelector('.external-player-menu');
+        const dropdown = option.querySelector('.external-player-dropdown');
+        
+        // Toggle dropdown menu
+        externalBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            await openExternalPlayer(stream);
+            
+            // Close other dropdowns
+            document.querySelectorAll('.external-player-menu.show').forEach(menu => {
+                if (menu !== externalMenu) {
+                    menu.classList.remove('show');
+                }
+            });
+            
+            externalMenu.classList.toggle('show');
+        });
+        
+        // Handle player selection
+        option.querySelectorAll('.external-player-option').forEach(playerBtn => {
+            playerBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const playerType = playerBtn.dataset.player;
+                
+                externalMenu.classList.remove('show');
+                
+                console.log(`🎬 Selected external player: ${playerType}`);
+                await openExternalPlayer(stream, playerType === 'auto' ? null : playerType);
+            });
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target)) {
+                externalMenu.classList.remove('show');
+            }
         });
         
         const downloadBtn = option.querySelector('.stream-download-btn');
@@ -1008,13 +1062,14 @@ async function playStream(stream) {
     }
 }
 
-async function openExternalPlayer(stream) {
+async function openExternalPlayer(stream, preferredPlayer = null) {
     console.log('🖥️ openExternalPlayer called with:', {
         server: stream.server,
         type: stream.type,
         quality: stream.quality,
         requiresExtraction: stream.requiresExtraction,
-        linkPreview: stream.link.substring(0, 100)
+        linkPreview: stream.link.substring(0, 100),
+        preferredPlayer
     });
 
     showLoading(true, 'Preparing external player...');
@@ -1058,6 +1113,7 @@ async function openExternalPlayer(stream) {
                 const result = await bridge.openExternalPlayer({
                     url: streamUrl,
                     title: metaTitle,
+                    player: preferredPlayer
                 });
                 console.log('🔁 External player IPC result:', result);
 
@@ -1111,10 +1167,13 @@ async function openExternalPlayer(stream) {
         }
         showToast(message, 'info', 4000);
 
-        if (isM3U8) {
+        // Show player-specific tips
+        if (preferredPlayer === 'potplayer') {
+            showToast('Tip: In PotPlayer, press Ctrl+U or go to Open → Open URL and paste the link.', 'info', 4000);
+        } else if (isM3U8) {
             showToast('Tip: In VLC, use Media → Open Network Stream and paste the copied link.', 'info', 4000);
         } else if (isMKV) {
-            showToast('MKV files may download in-browser. Use the copied link in VLC or Media Player.', 'info', 4000);
+            showToast('MKV files may download in-browser. Use the copied link in VLC or PotPlayer.', 'info', 4000);
         }
     } catch (error) {
         console.error('❌ Failed to prepare external player link:', error);
