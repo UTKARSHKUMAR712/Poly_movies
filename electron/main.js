@@ -140,16 +140,12 @@ function configureMenu() {
 
 function registerExternalPlayerHandler() {
   const candidateExecutables = [
-    "vlc",
-    "vlc.exe",
-    "PotPlayerMini64.exe",
-    "PotPlayerMini.exe", 
-    "PotPlayer64.exe",
-    "PotPlayer.exe",
-    "mpc-hc64.exe",
-    "mpc-hc.exe",
-    "mpv",
-    "mpv.exe",
+    "vlc",           // VLC Player (Unix/Linux)
+    "vlc.exe",       // VLC Player (Windows)
+    "mpc-hc64.exe",  // MPC-HC 64-bit
+    "mpc-hc.exe",    // MPC-HC 32-bit
+    "mpv",           // MPV Player (Unix/Linux)
+    "mpv.exe",       // MPV Player (Windows)
   ];
 
   let cachedPlayerPath = null;
@@ -196,13 +192,7 @@ function registerExternalPlayerHandler() {
         programFiles && path.join(programFiles, "VideoLAN", "VLC", "vlc.exe"),
         programFilesX86 && path.join(programFilesX86, "VideoLAN", "VLC", "vlc.exe"),
         localAppData && path.join(localAppData, "Programs", "VideoLAN", "VLC", "vlc.exe"),
-        
-        // PotPlayer paths
-        programFiles && path.join(programFiles, "DAUM", "PotPlayer", "PotPlayerMini64.exe"),
-        programFilesX86 && path.join(programFilesX86, "DAUM", "PotPlayer", "PotPlayerMini.exe"),
-        programFiles && path.join(programFiles, "DAUM", "PotPlayer", "PotPlayer64.exe"),
-        programFilesX86 && path.join(programFilesX86, "DAUM", "PotPlayer", "PotPlayer.exe"),
-        
+
         // MPC-HC paths
         programFiles && path.join(programFiles, "MPC-HC", "mpc-hc64.exe"),
         programFilesX86 && path.join(programFilesX86, "MPC-HC", "mpc-hc.exe"),
@@ -247,12 +237,12 @@ function registerExternalPlayerHandler() {
     }
 
     let playerPath = null;
-    
+
     // Try to find specific player if requested
     if (preferredPlayer) {
       playerPath = findSpecificPlayer(preferredPlayer);
     }
-    
+
     // Fallback to any available player
     if (!playerPath) {
       playerPath = findPlayerExecutable();
@@ -268,7 +258,7 @@ function registerExternalPlayerHandler() {
     try {
       console.log(`🎬 Launching external player: ${playerPath}`);
       console.log(`🎬 Args: ${args.join(' ')}`);
-      
+
       const child = spawn(playerPath, args, {
         detached: true,
         stdio: "ignore",
@@ -285,13 +275,13 @@ function registerExternalPlayerHandler() {
       }
     }
   });
-  
+
   // Find specific player by type
   function findSpecificPlayer(playerType) {
     const platform = process.platform;
     const programFiles = process.env["ProgramFiles"];
     const programFilesX86 = process.env["ProgramFiles(x86)"];
-    
+
     const playerPaths = {
       vlc: [
         programFiles && path.join(programFiles, "VideoLAN", "VLC", "vlc.exe"),
@@ -316,9 +306,9 @@ function registerExternalPlayerHandler() {
         "mpv"
       ]
     };
-    
+
     const candidates = playerPaths[playerType] || [];
-    
+
     for (const candidate of candidates) {
       if (!candidate) continue;
       try {
@@ -330,21 +320,20 @@ function registerExternalPlayerHandler() {
         // Continue searching
       }
     }
-    
+
     return null;
   }
-  
+
   // Build appropriate arguments for different players
   function buildPlayerArgs(playerPath, title, url) {
     const args = [];
     const playerName = path.basename(playerPath).toLowerCase();
-    
+
     if (playerName.includes('vlc')) {
-      // VLC arguments
+      // VLC arguments for standalone player
       if (title) {
         args.push('--meta-title', title);
       }
-      args.push('--intf', 'dummy'); // Prevent multiple VLC instances
       args.push(url);
     } else if (playerName.includes('pot')) {
       // PotPlayer arguments
@@ -365,7 +354,7 @@ function registerExternalPlayerHandler() {
       }
       args.push(url);
     }
-    
+
     return args;
   }
 }
