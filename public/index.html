@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poly Movies - Stream Movies & TV Shows</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div id="app">
         <!-- Header -->
@@ -14,7 +16,7 @@
                 <div class="header-left">
                     <div class="logo-container">
                         <svg class="logo-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M5 3L19 12L5 21V3Z" fill="currentColor"/>
+                            <path d="M5 3L19 12L5 21V3Z" fill="currentColor" />
                         </svg>
                         <h1 class="logo-text">PolyMovies</h1>
                     </div>
@@ -32,7 +34,8 @@
                     <div class="search-icon-container">
                         <input type="text" id="searchInputHeader" class="search-input-header" placeholder="Search..." />
                         <button id="searchToggle" class="search-icon-btn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
                                 <circle cx="11" cy="11" r="8"></circle>
                                 <path d="m21 21-4.35-4.35"></path>
                             </svg>
@@ -82,10 +85,10 @@
                 <!-- Player View -->
                 <div id="playerView" class="view" style="display: none;">
                     <button id="playerBackBtn" class="back-btn">← Back to Details</button>
-                    
+
                     <!-- Error Message (Player Only) -->
                     <div id="errorMessage" class="error-message" style="display: none;"></div>
-                    
+
                     <div id="playerContent">
                         <video id="videoPlayer" class="video-player" controls></video>
                         <div id="streamSelector" class="stream-selector"></div>
@@ -164,24 +167,26 @@
                         GitHub
                     </a>
                     &nbsp;|&nbsp;
-                    <a href="https://www.linkedin.com/in/utkarsh-kumar-8344b1337" target="_blank" rel="noopener noreferrer">
+                    <a href="https://www.linkedin.com/in/utkarsh-kumar-8344b1337" target="_blank"
+                        rel="noopener noreferrer">
                         LinkedIn
                     </a>
                 </p>
             </div>
         </footer>
-        
 
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <script src="history.js"></script>
-    <script src="tmdb-content.js"></script>
-    <script src="new-updates.js"></script>
-    <script src="bollywood.js"></script>
-    <script src="genre-browser.js"></script>
-    <script src="popular-stars.js"></script>
-    <script src="app.js"></script>
-    <script src="explore.js"></script>
-    <script src="movies.js"></script>
-    <script src="tvshows.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+        <script src="history.js"></script>
+        <script src="tmdb-content.js"></script>
+        <script src="new-updates.js"></script>
+        <script src="bollywood.js"></script>
+        <script src="genre-browser.js"></script>
+        <script src="popular-stars.js"></script>
+        <script src="app.js"></script>
+        <script src="explore.js"></script>
+        <script src="movies.js"></script>
+        <script src="tvshows.js"></script>
 </body>
+
 </html>

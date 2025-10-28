@@ -662,8 +662,8 @@ function renderStreamSelector(streams, provider) {
     container.innerHTML = `
         <h3>Available Streams:</h3>
         <p style="color: #b3b3b3; font-size: 14px; margin-bottom: 10px;">
-            💡 If a stream doesn't play, try another one below or use the download button.
-        </p>
+For the best streaming experience, use an external player like VLC Player. If a stream doesn't play, try other available links or use the External Player button instead. 
+For streams with multiple audio tracks, use an external player for now, as support for multiple audio streams is being developed and will be integrated into our player soon        </p>
         <div class="stream-options"></div>
     `;
     
@@ -889,15 +889,7 @@ async function playStream(stream) {
         console.log('📊 Stream analysis:', {isMKV, isMP4, isM3U8, streamUrl: streamUrl.substring(0, 100)});
         
         if (isMKV) {
-            console.log('⚠️ MKV format detected - prompting user');
-            // MKV files often don't play in browsers - offer download immediately
-            const tryPlay = confirm('MKV format detected. This format usually doesn\'t play in browsers.\n\nClick OK to try playing anyway, or Cancel to download the file.');
-            if (!tryPlay) {
-                console.log('📥 User chose to download MKV');
-                window.open(streamUrl, '_blank');
-                return;
-            }
-            console.log('🎬 User chose to try playing MKV');
+            console.log('🎬 MKV format detected, attempting to play');
         }
         
         // Clear previous content
