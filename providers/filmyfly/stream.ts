@@ -32,6 +32,7 @@ export const getStream = async function ({
         link &&
         !title.includes("Watch") &&
         !title.includes("Login") &&
+        !title.includes("GoFile") &&
         !alreadyAdded
       ) {
         streams.push({

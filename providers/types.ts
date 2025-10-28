@@ -137,6 +137,10 @@ export type ProviderContext = {
   cheerio: typeof cheerio;
   extractors: {
     hubcloudExtracter: (link: string, signal: AbortSignal) => Promise<Stream[]>;
+    gofileExtracter: (id: string) => Promise<{
+      link: string;
+      token: string;
+    }>;
     superVideoExtractor: (data: any) => Promise<string>;
     gdFlixExtracter: (link: string, signal: AbortSignal) => Promise<Stream[]>;
   };

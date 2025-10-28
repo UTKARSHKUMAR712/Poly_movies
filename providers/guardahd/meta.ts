@@ -13,9 +13,9 @@ export const getMeta = async function ({
     const res = await axios.get(link);
     const data = res.data;
     const meta = {
-      title: "",
-      synopsis: "",
-      image: "",
+      title: data?.meta?.name || "",
+      synopsis: data?.meta?.description || "",
+      image: data?.meta?.background || "",
       imdbId: data?.meta?.imdb_id || "",
       type: data?.meta?.type || "movie",
     };
@@ -32,15 +32,9 @@ export const getMeta = async function ({
         season.get(video?.season).push({
           title: "Episode " + video?.episode,
           type: "series",
-          link: JSON.stringify({
-            title: data?.meta?.name as string,
-            imdbId: data?.meta?.imdb_id,
-            season: video?.id?.split(":")[1],
-            episode: video?.id?.split(":")[2],
-            type: data?.meta?.type,
-            tmdbId: data?.meta?.moviedb_id?.toString() || "",
-            year: data?.meta?.year,
-          }),
+          link: `${data?.meta?.imdb_id}-${video?.id?.split(":")[1]}-${
+            video?.id?.split(":")[2]
+          }`,
         });
       });
       const keys = Array.from(season.keys());
@@ -53,22 +47,13 @@ export const getMeta = async function ({
         });
       });
     } else {
-      console.log("all meta Mv🔥🔥", meta);
       links.push({
         title: data?.meta?.name as string,
         directLinks: [
           {
             title: "Movie",
             type: "movie",
-            link: JSON.stringify({
-              title: data?.meta?.name as string,
-              imdbId: data?.meta?.imdb_id,
-              season: "",
-              episode: "",
-              type: data?.meta?.type,
-              tmdbId: data?.meta?.moviedb_id?.toString() || "",
-              year: data?.meta?.year,
-            }),
+            link: `${data?.meta?.imdb_id}-`,
           },
         ],
       });
