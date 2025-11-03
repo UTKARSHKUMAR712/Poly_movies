@@ -1,6 +1,8 @@
-// Watch History Module - Tracks user's viewing history using localStorage
+// Enhanced Watch History Module - Tracks user's viewing history with episode tracking, quality preferences, and Dolby Atmos detection
 const HistoryModule = {
     STORAGE_KEY: 'vega_watch_history',
+    EPISODE_STORAGE_KEY: 'vega_episode_history',
+    QUALITY_STORAGE_KEY: 'vega_quality_preferences',
     MAX_HISTORY_ITEMS: 50,
 
     // Get all history items
@@ -14,12 +16,76 @@ const HistoryModule = {
         }
     },
 
-    // Add or update a history item
+    // Get episode history for a specific series
+    getEpisodeHistory(seriesId) {
+        try {
+            const episodeHistory = localStorage.getItem(this.EPISODE_STORAGE_KEY);
+            const allEpisodes = episodeHistory ? JSON.parse(episodeHistory) : {};
+            return allEpisodes[seriesId] || {};
+        } catch (error) {
+            console.error('Failed to get episode history:', error);
+            return {};
+        }
+    },
+
+    // Get all episode history
+    getAllEpisodeHistory() {
+        try {
+            const episodeHistory = localStorage.getItem(this.EPISODE_STORAGE_KEY);
+            return episodeHistory ? JSON.parse(episodeHistory) : {};
+        } catch (error) {
+            console.error('Failed to get all episode history:', error);
+            return {};
+        }
+    },
+
+    // Get quality preference for a provider
+    getQualityPreference(provider) {
+        try {
+            const qualityPrefs = localStorage.getItem(this.QUALITY_STORAGE_KEY);
+            const prefs = qualityPrefs ? JSON.parse(qualityPrefs) : {};
+            return prefs[provider] || null;
+        } catch (error) {
+            console.error('Failed to get quality preference:', error);
+            return null;
+        }
+    },
+
+    // Set quality preference for a provider
+    setQualityPreference(provider, quality) {
+        try {
+            const qualityPrefs = localStorage.getItem(this.QUALITY_STORAGE_KEY);
+            const prefs = qualityPrefs ? JSON.parse(qualityPrefs) : {};
+            prefs[provider] = quality;
+            localStorage.setItem(this.QUALITY_STORAGE_KEY, JSON.stringify(prefs));
+            console.log(`✅ Quality preference set for ${provider}: ${quality}`);
+            return true;
+        } catch (error) {
+            console.error('Failed to set quality preference:', error);
+            return false;
+        }
+    },
+
+    // Detect Dolby Atmos from stream info
+    detectDolbyAtmos(stream) {
+        if (!stream) return false;
+        
+        const searchText = `${stream.server || ''} ${stream.title || ''} ${stream.quality || ''}`.toLowerCase();
+        const dolbyIndicators = [
+            'dolby atmos', 'atmos', 'dolby', 'dts-x', 'dts:x', 
+            'truehd atmos', 'dd+ atmos', 'eac3 atmos', '7.1 atmos',
+            'object-based audio', 'immersive audio'
+        ];
+        
+        return dolbyIndicators.some(indicator => searchText.includes(indicator));
+    },
+
+    // Add or update a history item with enhanced tracking
     addToHistory(item) {
         try {
             const history = this.getHistory();
             
-            // Create history entry
+            // Create enhanced history entry
             const historyItem = {
                 id: item.link || item.id,
                 title: item.title,
@@ -27,9 +93,17 @@ const HistoryModule = {
                 provider: item.provider,
                 link: item.link,
                 timestamp: Date.now(),
-                progress: item.progress || 0, // Video progress in seconds
-                duration: item.duration || 0, // Total duration in seconds
-                lastWatched: new Date().toISOString()
+                progress: item.progress || 0,
+                duration: item.duration || 0,
+                lastWatched: new Date().toISOString(),
+                // Enhanced fields
+                type: item.type || 'movie', // 'movie' or 'tv'
+                episodeTitle: item.episodeTitle || null,
+                episodeNumber: item.episodeNumber || null,
+                seasonNumber: item.seasonNumber || null,
+                quality: item.quality || null,
+                hasDolbyAtmos: item.hasDolbyAtmos || false,
+                streamServer: item.streamServer || null
             };
             
             // Remove existing entry if present
@@ -51,8 +125,80 @@ const HistoryModule = {
         }
     },
 
-    // Update progress for an item
-    updateProgress(itemId, progress, duration) {
+    // Track episode viewing for series
+    trackEpisodeViewing(seriesId, episodeId, episodeData) {
+        try {
+            const allEpisodeHistory = this.getAllEpisodeHistory();
+            
+            if (!allEpisodeHistory[seriesId]) {
+                allEpisodeHistory[seriesId] = {};
+            }
+            
+            allEpisodeHistory[seriesId][episodeId] = {
+                ...episodeData,
+                watchedAt: new Date().toISOString(),
+                progress: episodeData.progress || 0,
+                duration: episodeData.duration || 0,
+                completed: episodeData.completed || false
+            };
+            
+            localStorage.setItem(this.EPISODE_STORAGE_KEY, JSON.stringify(allEpisodeHistory));
+            console.log(`✅ Episode tracked: ${episodeData.title}`);
+            return true;
+        } catch (error) {
+            console.error('Failed to track episode:', error);
+            return false;
+        }
+    },
+
+    // Check if episode is watched
+    isEpisodeWatched(seriesId, episodeId) {
+        const episodeHistory = this.getEpisodeHistory(seriesId);
+        const episode = episodeHistory[episodeId];
+        if (!episode) return false;
+        
+        // Simply check if episode was clicked/started
+        return episode.completed || episode.watchedAt;
+    },
+
+    // Mark episode as watched when clicked
+    markEpisodeWatched(seriesId, episodeId, episodeData) {
+        try {
+            const allEpisodeHistory = this.getAllEpisodeHistory();
+            
+            if (!allEpisodeHistory[seriesId]) {
+                allEpisodeHistory[seriesId] = {};
+            }
+            
+            allEpisodeHistory[seriesId][episodeId] = {
+                ...episodeData,
+                watchedAt: new Date().toISOString(),
+                completed: true
+            };
+            
+            localStorage.setItem(this.EPISODE_STORAGE_KEY, JSON.stringify(allEpisodeHistory));
+            console.log(`✅ Episode marked as watched: ${episodeData.title}`);
+            return true;
+        } catch (error) {
+            console.error('Failed to mark episode as watched:', error);
+            return false;
+        }
+    },
+
+    // Get last watched episode for a series
+    getLastWatchedEpisode(seriesId) {
+        const episodeHistory = this.getEpisodeHistory(seriesId);
+        const episodes = Object.values(episodeHistory);
+        
+        if (episodes.length === 0) return null;
+        
+        // Sort by watch time and return the most recent
+        episodes.sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt));
+        return episodes[0];
+    },
+
+    // Update progress for an item with enhanced tracking
+    updateProgress(itemId, progress, duration, additionalData = {}) {
         try {
             const history = this.getHistory();
             const item = history.find(h => h.id === itemId);
@@ -63,7 +209,28 @@ const HistoryModule = {
                 item.timestamp = Date.now();
                 item.lastWatched = new Date().toISOString();
                 
+                // Update enhanced fields if provided
+                if (additionalData.episodeNumber) item.episodeNumber = additionalData.episodeNumber;
+                if (additionalData.seasonNumber) item.seasonNumber = additionalData.seasonNumber;
+                if (additionalData.episodeTitle) item.episodeTitle = additionalData.episodeTitle;
+                if (additionalData.quality) item.quality = additionalData.quality;
+                if (additionalData.hasDolbyAtmos !== undefined) item.hasDolbyAtmos = additionalData.hasDolbyAtmos;
+                if (additionalData.streamServer) item.streamServer = additionalData.streamServer;
+                
                 localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history));
+                
+                // Also track episode if it's a TV show
+                if (item.type === 'tv' && additionalData.episodeId) {
+                    this.trackEpisodeViewing(itemId, additionalData.episodeId, {
+                        title: additionalData.episodeTitle || `Episode ${additionalData.episodeNumber}`,
+                        episodeNumber: additionalData.episodeNumber,
+                        seasonNumber: additionalData.seasonNumber,
+                        progress: progress,
+                        duration: duration,
+                        completed: (progress / duration) > 0.8
+                    });
+                }
+                
                 return true;
             }
             return false;
@@ -107,7 +274,7 @@ const HistoryModule = {
         });
     },
 
-    // Render history section
+    // Render enhanced history section with episode info
     renderHistorySection() {
         const history = this.getContinueWatching();
         
@@ -136,16 +303,37 @@ const HistoryModule = {
                 ? Math.round((item.progress / item.duration) * 100) 
                 : 0;
             
+            // Build episode info string
+            let episodeInfo = '';
+            if (item.type === 'tv' && item.episodeNumber) {
+                episodeInfo = `S${item.seasonNumber || 1}E${item.episodeNumber}`;
+                if (item.episodeTitle) {
+                    episodeInfo += `: ${item.episodeTitle}`;
+                }
+            }
+            
+            // Build quality and audio info
+            let qualityInfo = '';
+            if (item.quality) {
+                qualityInfo += `${item.quality}`;
+            }
+            if (item.hasDolbyAtmos) {
+                qualityInfo += qualityInfo ? ' • 🔊 Dolby Atmos' : '🔊 Dolby Atmos';
+            }
+            
             const card = document.createElement('div');
-            card.className = 'netflix-card history-card';
+            card.className = 'netflix-card history-card enhanced-history-card';
             card.innerHTML = `
                 <img src="${item.image}" alt="${item.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22300%22%3E%3Crect width=%22200%22 height=%22300%22 fill=%22%23333%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23666%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E'" />
                 <div class="history-progress-bar">
                     <div class="history-progress-fill" style="width: ${progressPercent}%"></div>
                 </div>
+                ${item.hasDolbyAtmos ? '<div class="dolby-atmos-badge">🔊 ATMOS</div>' : ''}
                 <div class="netflix-card-overlay">
                     <h4>${item.title}</h4>
+                    ${episodeInfo ? `<p class="episode-info">${episodeInfo}</p>` : ''}
                     <p class="history-provider">${item.provider}</p>
+                    ${qualityInfo ? `<p class="quality-info">${qualityInfo}</p>` : ''}
                     <button class="history-remove" onclick="event.stopPropagation(); HistoryModule.removeAndRefresh('${item.id}')">✕</button>
                 </div>
             `;
@@ -244,6 +432,82 @@ const HistoryModule = {
                 loadHomePage();
             }
         }
+    },
+
+    // Render episode markers for series details page
+    renderEpisodeMarkers(seriesId, episodes) {
+        if (!episodes || !Array.isArray(episodes)) return episodes;
+        
+        const episodeHistory = this.getEpisodeHistory(seriesId);
+        
+        return episodes.map(episode => {
+            const episodeId = episode.link || episode.id || `${episode.title}-${episode.episodeNumber || ''}`;
+            const isWatched = this.isEpisodeWatched(seriesId, episodeId);
+            
+            return {
+                ...episode,
+                isWatched: isWatched,
+                watchedClass: isWatched ? 'episode-watched' : '',
+                watchedIcon: isWatched ? '✓' : ''
+            };
+        });
+    },
+
+    // Get recommended quality for a provider based on user preference
+    getRecommendedQuality(provider, availableQualities) {
+        const preference = this.getQualityPreference(provider);
+        if (!preference || !availableQualities) return null;
+        
+        // Try to find exact match first
+        const exactMatch = availableQualities.find(q => 
+            q.quality && q.quality.toLowerCase().includes(preference.toLowerCase())
+        );
+        if (exactMatch) return exactMatch;
+        
+        // Try to find closest match
+        const qualityNumbers = {
+            '4k': 2160, '2160p': 2160, '2160': 2160,
+            '1080p': 1080, '1080': 1080,
+            '720p': 720, '720': 720,
+            '480p': 480, '480': 480,
+            '360p': 360, '360': 360,
+            '240p': 240, '240': 240
+        };
+        
+        const preferredNumber = qualityNumbers[preference.toLowerCase()] || 1080;
+        
+        // Find closest quality
+        let closest = availableQualities[0];
+        let closestDiff = Infinity;
+        
+        availableQualities.forEach(q => {
+            if (!q.quality) return;
+            const qNumber = qualityNumbers[q.quality.toLowerCase()] || 720;
+            const diff = Math.abs(qNumber - preferredNumber);
+            if (diff < closestDiff) {
+                closest = q;
+                closestDiff = diff;
+            }
+        });
+        
+        return closest;
+    },
+
+    // Enhanced player info for current playback
+    getCurrentPlaybackInfo() {
+        const history = this.getHistory();
+        if (history.length === 0) return null;
+        
+        const current = history[0]; // Most recent item
+        return {
+            title: current.title,
+            episodeInfo: current.type === 'tv' && current.episodeNumber 
+                ? `S${current.seasonNumber || 1}E${current.episodeNumber}${current.episodeTitle ? ': ' + current.episodeTitle : ''}`
+                : null,
+            quality: current.quality,
+            hasDolbyAtmos: current.hasDolbyAtmos,
+            provider: current.provider
+        };
     }
 };
 

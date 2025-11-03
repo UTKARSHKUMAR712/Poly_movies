@@ -183,6 +183,7 @@ function showView(viewName) {
         details: 'detailsView',
         player: 'playerView',
         explore: 'exploreView',
+        liveTV: 'liveTVView',
         movies: 'moviesView',
         tvshows: 'tvShowsView',
         newUpdates: 'newUpdatesView',
@@ -627,17 +628,96 @@ async function renderEpisodes(linkItem, provider, type) {
             return;
         }
         
+        // Get series ID for episode tracking
+        const seriesId = state.currentMeta?.link || state.currentMeta?.meta?.title || 'unknown';
+        
+        // Add episode markers using history module
+        if (window.HistoryModule && type === 'tv') {
+            episodes = window.HistoryModule.renderEpisodeMarkers(seriesId, episodes);
+        }
+        
         container.innerHTML = '';
-        episodes.forEach(episode => {
+        
+        // Show last watched episode info if available
+        if (window.HistoryModule && type === 'tv') {
+            const lastEpisode = window.HistoryModule.getLastWatchedEpisode(seriesId);
+            if (lastEpisode) {
+                const continueCard = document.createElement('div');
+                continueCard.className = 'episode-card continue-watching-episode';
+                continueCard.innerHTML = `
+                    <div class="continue-episode-header">
+                        <h4>🔄 Continue Watching</h4>
+                        <span class="continue-episode-info">S${lastEpisode.seasonNumber || 1}E${lastEpisode.episodeNumber} - ${lastEpisode.title}</span>
+                    </div>
+                    ${linkItem.quality ? `<span class="quality">${linkItem.quality}</span>` : ''}
+                `;
+                continueCard.addEventListener('click', () => {
+                    // Find and click the corresponding episode
+                    const targetEpisode = episodes.find(ep => 
+                        ep.episodeNumber == lastEpisode.episodeNumber || 
+                        ep.title === lastEpisode.title
+                    );
+                    if (targetEpisode) {
+                        loadPlayer(provider, targetEpisode.link, targetEpisode.type || type, {
+                            episodeNumber: lastEpisode.episodeNumber,
+                            seasonNumber: lastEpisode.seasonNumber,
+                            episodeTitle: lastEpisode.title
+                        });
+                    }
+                });
+                container.appendChild(continueCard);
+            }
+        }
+        
+        episodes.forEach((episode, index) => {
             const card = document.createElement('div');
-            card.className = 'episode-card';
+            card.className = `episode-card ${episode.watchedClass || ''}`;
+            
+            // Detect Dolby Atmos
+            const hasDolbyAtmos = window.HistoryModule ? 
+                window.HistoryModule.detectDolbyAtmos({
+                    server: episode.server || linkItem.server,
+                    title: episode.title,
+                    quality: linkItem.quality
+                }) : false;
+            
             card.innerHTML = `
-                <h4>${episode.title}</h4>
-                ${linkItem.quality ? `<span class="quality">${linkItem.quality}</span>` : ''}
+                <div class="episode-header">
+                    <h4>${episode.title}</h4>
+                    ${episode.watchedIcon ? `<span class="watched-icon">${episode.watchedIcon}</span>` : ''}
+                </div>
+                <div class="episode-info">
+                    ${linkItem.quality ? `<span class="quality">${linkItem.quality}</span>` : ''}
+                    ${hasDolbyAtmos ? `<span class="dolby-badge">🔊 Dolby Atmos</span>` : ''}
+                </div>
             `;
             
             card.addEventListener('click', () => {
-                loadPlayer(provider, episode.link, episode.type || type);
+                // Extract episode number from title if not provided
+                let episodeNumber = episode.episodeNumber || index + 1;
+                const episodeMatch = episode.title.match(/episode\s*(\d+)/i) || episode.title.match(/ep\s*(\d+)/i);
+                if (episodeMatch) {
+                    episodeNumber = parseInt(episodeMatch[1]);
+                }
+                
+                // Mark episode as watched when clicked
+                if (window.HistoryModule && type === 'tv') {
+                    const episodeId = episode.link || episode.id || `${episode.title}-${episodeNumber}`;
+                    window.HistoryModule.markEpisodeWatched(seriesId, episodeId, {
+                        title: episode.title,
+                        episodeNumber: episodeNumber,
+                        seasonNumber: 1,
+                        quality: linkItem.quality
+                    });
+                }
+
+                loadPlayer(provider, episode.link, episode.type || type, {
+                    episodeNumber: episodeNumber,
+                    seasonNumber: 1, // Default to season 1, can be enhanced later
+                    episodeTitle: episode.title,
+                    quality: linkItem.quality,
+                    hasDolbyAtmos: hasDolbyAtmos
+                });
             });
             
             container.appendChild(card);
@@ -648,8 +728,8 @@ async function renderEpisodes(linkItem, provider, type) {
     }
 }
 
-function renderStreamSelector(streams, provider) {
-    console.log('🎬 renderStreamSelector called', {streams, provider, streamCount: streams.length});
+function renderStreamSelector(streams, provider, preferredStream = null) {
+    console.log('🎬 renderStreamSelector called', {streams, provider, streamCount: streams.length, preferredStream});
     const container = document.getElementById('streamSelector');
     
     if (streams.length === 0) {
@@ -662,8 +742,9 @@ function renderStreamSelector(streams, provider) {
     container.innerHTML = `
         <h3>Available Streams:</h3>
         <p style="color: #b3b3b3; font-size: 14px; margin-bottom: 10px;">
-For the best streaming experience, use an external player like VLC Player. If a stream doesn't play, try other available links or use the External Player button instead. 
-For streams with multiple audio tracks, use an external player for now, as support for multiple audio streams is being developed and will be integrated into our player soon        </p>
+            💡 If a stream doesn't play, try another one below or use the download button.
+            ${preferredStream ? `<br>⭐ <strong>Recommended:</strong> ${preferredStream.quality || 'Default'} quality based on your preferences.` : ''}
+        </p>
         <div class="stream-options"></div>
     `;
     
@@ -677,12 +758,20 @@ For streams with multiple audio tracks, use an external player for now, as suppo
             requiresExtraction: stream.requiresExtraction
         });
         
+        // Check if this is the preferred stream
+        const isPreferred = preferredStream && stream === preferredStream;
+        const isActive = isPreferred || (index === 0 && !preferredStream);
+        
         const option = document.createElement('div');
-        option.className = `stream-option ${index === 0 ? 'active' : ''}`;
+        option.className = `stream-option ${isActive ? 'active' : ''} ${isPreferred ? 'preferred' : ''}`;
         
         // Check if MKV FIRST before using the variable
         const isMKV = stream.link.toLowerCase().includes('.mkv');
         console.log(`  - Is MKV: ${isMKV}`);
+        
+        // Detect Dolby Atmos
+        const hasDolbyAtmos = window.HistoryModule ? 
+            window.HistoryModule.detectDolbyAtmos(stream) : false;
         
         // Add indicators for special streams
         let indicator = '';
@@ -692,6 +781,15 @@ For streams with multiple audio tracks, use an external player for now, as suppo
         } else if (isMKV) {
             indicator = '<span style="font-size: 11px; color: #4CAF50;">✓ Direct link</span>';
             console.log('  - Direct MKV link detected');
+        }
+        
+        if (isPreferred) {
+            indicator += '<span style="font-size: 11px; color: #FFD700; margin-left: 5px;">⭐ Preferred</span>';
+        }
+        
+        if (hasDolbyAtmos) {
+            indicator += '<span style="font-size: 11px; color: #9C27B0; margin-left: 5px;">🔊 Dolby Atmos</span>';
+            console.log('  - Dolby Atmos detected');
         }
         
         option.innerHTML = `
@@ -925,13 +1023,33 @@ async function playStream(stream) {
                     });
                 });
                 
-                // Track video progress for HLS
+                // Enhanced video progress tracking for HLS
                 video.addEventListener('timeupdate', () => {
                     if (state.currentMeta && window.HistoryModule) {
                         const progress = video.currentTime;
                         const duration = video.duration;
                         if (duration > 0 && progress > 5) { // Only track after 5 seconds
-                            window.HistoryModule.updateProgress(state.currentMeta.link, progress, duration);
+                            // Prepare enhanced tracking data
+                            const trackingData = {
+                                quality: stream.quality,
+                                hasDolbyAtmos: window.HistoryModule.detectDolbyAtmos(stream),
+                                streamServer: stream.server
+                            };
+                            
+                            // Add episode data if available
+                            if (state.currentEpisodeData) {
+                                trackingData.episodeNumber = state.currentEpisodeData.episodeNumber;
+                                trackingData.seasonNumber = state.currentEpisodeData.seasonNumber;
+                                trackingData.episodeTitle = state.currentEpisodeData.episodeTitle;
+                                trackingData.episodeId = `${state.currentEpisodeData.seasonNumber || 1}-${state.currentEpisodeData.episodeNumber}`;
+                            }
+                            
+                            window.HistoryModule.updateProgress(state.currentMeta.link, progress, duration, trackingData);
+                            
+                            // Save quality preference
+                            if (stream.quality && state.selectedProvider) {
+                                window.HistoryModule.setQualityPreference(state.selectedProvider, stream.quality);
+                            }
                         }
                     }
                 });
@@ -978,13 +1096,33 @@ async function playStream(stream) {
             console.log('🔗 Setting video source:', streamUrl.substring(0, 100));
             video.src = streamUrl;
             
-            // Track video progress
+            // Enhanced video progress tracking for direct video
             video.addEventListener('timeupdate', () => {
                 if (state.currentMeta && window.HistoryModule) {
                     const progress = video.currentTime;
                     const duration = video.duration;
                     if (duration > 0 && progress > 5) { // Only track after 5 seconds
-                        window.HistoryModule.updateProgress(state.currentMeta.link, progress, duration);
+                        // Prepare enhanced tracking data
+                        const trackingData = {
+                            quality: stream.quality,
+                            hasDolbyAtmos: window.HistoryModule.detectDolbyAtmos(stream),
+                            streamServer: stream.server
+                        };
+                        
+                        // Add episode data if available
+                        if (state.currentEpisodeData) {
+                            trackingData.episodeNumber = state.currentEpisodeData.episodeNumber;
+                            trackingData.seasonNumber = state.currentEpisodeData.seasonNumber;
+                            trackingData.episodeTitle = state.currentEpisodeData.episodeTitle;
+                            trackingData.episodeId = `${state.currentEpisodeData.seasonNumber || 1}-${state.currentEpisodeData.episodeNumber}`;
+                        }
+                        
+                        window.HistoryModule.updateProgress(state.currentMeta.link, progress, duration, trackingData);
+                        
+                        // Save quality preference
+                        if (stream.quality && state.selectedProvider) {
+                            window.HistoryModule.setQualityPreference(state.selectedProvider, stream.quality);
+                        }
                     }
                 }
             });
@@ -1446,9 +1584,13 @@ async function loadDetails(provider, link) {
     }
 }
 
-async function loadPlayer(provider, link, type) {
-    console.log('🎬 loadPlayer called:', {provider, link, type});
+async function loadPlayer(provider, link, type, episodeData = null) {
+    console.log('🎬 loadPlayer called:', {provider, link, type, episodeData});
     showLoading(true, 'Loading streams...');
+    
+    // Store episode data in state for later use
+    state.currentEpisodeData = episodeData;
+    
     try {
         console.log('⏳ Fetching streams...');
         const streams = await fetchStream(provider, link, type);
@@ -1461,14 +1603,27 @@ async function loadPlayer(provider, link, type) {
             return;
         }
         
+        // Get quality preference for this provider
+        let preferredStream = streams[0]; // Default to first stream
+        if (window.HistoryModule) {
+            const recommended = window.HistoryModule.getRecommendedQuality(provider, streams);
+            if (recommended) {
+                preferredStream = recommended;
+                console.log('🎯 Using preferred quality:', recommended.quality);
+            }
+        }
+        
         console.log('🎨 Rendering stream selector...');
-        renderStreamSelector(streams, provider);
+        renderStreamSelector(streams, provider, preferredStream);
         console.log('🖥️ Switching to player view');
         showView('player');
         
-        // Auto-play first stream
-        console.log('▶️ Auto-playing first stream:', streams[0]);
-        await playStream(streams[0]);
+        // Update player header with episode info
+        updatePlayerHeader();
+        
+        // Auto-play preferred stream
+        console.log('▶️ Auto-playing preferred stream:', preferredStream);
+        await playStream(preferredStream);
         showToast('Stream loaded successfully!', 'success', 1000);
     } catch (error) {
         console.error('❌ loadPlayer error:', error);
@@ -1479,7 +1634,7 @@ async function loadPlayer(provider, link, type) {
             state.retryCount++;
             showToast(`Retrying... (${state.retryCount}/${state.maxRetries})`, 'info', 2000);
             await new Promise(resolve => setTimeout(resolve, 1000));
-            return loadPlayer(provider, link, type);
+            return loadPlayer(provider, link, type, episodeData);
         }
         
         state.retryCount = 0;
@@ -1487,6 +1642,55 @@ async function loadPlayer(provider, link, type) {
     } finally {
         showLoading(false);
     }
+}
+
+// Update player header with current content info
+function updatePlayerHeader() {
+    const playerHeader = document.querySelector('.player-header') || createPlayerHeader();
+    
+    if (!state.currentMeta || !playerHeader) return;
+    
+    const title = state.currentMeta.meta?.title || 'Unknown Title';
+    let subtitle = '';
+    
+    // Add episode information if available
+    if (state.currentEpisodeData) {
+        const ep = state.currentEpisodeData;
+        subtitle = `S${ep.seasonNumber || 1}E${ep.episodeNumber}`;
+        if (ep.episodeTitle) {
+            subtitle += `: ${ep.episodeTitle}`;
+        }
+        if (ep.quality) {
+            subtitle += ` • ${ep.quality}`;
+        }
+        if (ep.hasDolbyAtmos) {
+            subtitle += ` • 🔊 Dolby Atmos`;
+        }
+    }
+    
+    playerHeader.innerHTML = `
+        <div class="player-title-info">
+            <h2 class="player-title">${title}</h2>
+            ${subtitle ? `<p class="player-subtitle">${subtitle}</p>` : ''}
+        </div>
+    `;
+}
+
+// Create player header if it doesn't exist
+function createPlayerHeader() {
+    const playerView = document.getElementById('playerView');
+    if (!playerView) return null;
+    
+    let header = playerView.querySelector('.player-header');
+    if (header) return header;
+    
+    header = document.createElement('div');
+    header.className = 'player-header';
+    
+    // Insert at the beginning of player view
+    playerView.insertBefore(header, playerView.firstChild);
+    
+    return header;
 }
 
 // Initialize App
@@ -1567,6 +1771,13 @@ async function init() {
             loadExplorePage();
         });
     }
+
+    const liveTVBtn = document.getElementById('liveTVBtn');
+    if (liveTVBtn) {
+        liveTVBtn.addEventListener('click', () => {
+            loadLiveTVPage();
+        });
+    }
     
     const homeBtn = document.getElementById('homeBtn');
     if (homeBtn) {
@@ -1581,6 +1792,16 @@ async function init() {
     const exploreBackBtn = document.getElementById('exploreBackBtn');
     if (exploreBackBtn) {
         exploreBackBtn.addEventListener('click', () => {
+            if (state.selectedProvider) {
+                loadHomePage();
+                updateNavLinks('home');
+            }
+        });
+    }
+
+    const liveTVBackBtn = document.getElementById('liveTVBackBtn');
+    if (liveTVBackBtn) {
+        liveTVBackBtn.addEventListener('click', () => {
             if (state.selectedProvider) {
                 loadHomePage();
                 updateNavLinks('home');
@@ -1772,6 +1993,7 @@ function updateNavLinks(active) {
     const navMap = {
         home: 'homeBtn',
         explore: 'exploreBtn',
+        liveTV: 'liveTVBtn',
         movies: 'moviesBtn',
         tvshows: 'tvShowsBtn',
         newUpdates: 'newUpdatesBtn',
