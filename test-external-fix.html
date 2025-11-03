@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>External Player Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #141414;
+            color: white;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #222;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-button {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #c40812;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #4CAF50; }
+        .error { background: #f44336; }
+        .info { background: #2196F3; }
+    </style>
+</head>
+<body>
+    <h1>🔧 External Player Fix Test</h1>
+    
+    <div class="test-section">
+        <h2>📱 Device Detection</h2>
+        <div id="deviceInfo"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🧪 Function Tests</h2>
+        <button class="test-button" onclick="testFunctionExists()">Test Functions Exist</button>
+        <button class="test-button" onclick="testModalCreation()">Test Modal Creation</button>
+        <button class="test-button" onclick="testCopyFunction()">Test Copy Function</button>
+        <div id="testResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎬 External Player Test</h2>
+        <p>Test the actual external player functionality:</p>
+        <button class="test-button" onclick="testExternalPlayer()">Test External Player</button>
+        <div id="playerResults"></div>
+    </div>
+
+    <script>
+        // Test stream URL
+        const testUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+        const testTitle = 'Big Buck Bunny Test';
+
+        // Device detection
+        function detectDevice() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+            const isAndroid = /android/i.test(userAgent);
+            const isIOS = /iphone|ipad|ipod/i.test(userAgent);
+            
+            document.getElementById('deviceInfo').innerHTML = `
+                <div class="status info">
+                    <strong>Device Info:</strong><br>
+                    Mobile: ${isMobile}<br>
+                    Android: ${isAndroid}<br>
+                    iOS: ${isIOS}<br>
+                    User Agent: ${navigator.userAgent}
+                </div>
+            `;
+        }
+
+        // Test if functions exist
+        function testFunctionExists() {
+            const results = document.getElementById('testResults');
+            let html = '';
+            
+            const functions = [
+                'showEnhancedExternalPlayerModal',
+                'showExternalPlayerModal',
+                'openExternalPlayerWeb',
+                'copyStreamUrl',
+                'tryOpenMobilePlayer',
+                'tryOpenDesktopPlayer'
+            ];
+            
+            functions.forEach(funcName => {
+                const exists = typeof window[funcName] === 'function';
+                html += `<div class="status ${exists ? 'success' : 'error'}">
+                    ${funcName}: ${exists ? '✅ Exists' : '❌ Missing'}
+                </div>`;
+            });
+            
+            results.innerHTML = html;
+        }
+
+        // Test modal creation
+        function testModalCreation() {
+            const results = document.getElementById('testResults');
+            try {
+                if (typeof window.showEnhancedExternalPlayerModal === 'function') {
+                    // Test with safe parameters
+                    window.showEnhancedExternalPlayerModal(
+                        testUrl, 
+                        testTitle, 
+                        null, 
+                        false, // isMobile
+                        false, // isAndroid
+                        false, // isIOS
+                        true,  // clipboardCopied
+                        false  // playerOpened
+                    );
+                    results.innerHTML += '<div class="status success">✅ Modal creation test passed</div>';
+                } else {
+                    results.innerHTML += '<div class="status error">❌ showEnhancedExternalPlayerModal not found</div>';
+                }
+            } catch (error) {
+                results.innerHTML += `<div class="status error">❌ Modal creation failed: ${error.message}</div>`;
+            }
+        }
+
+        // Test copy function
+        function testCopyFunction() {
+            const results = document.getElementById('testResults');
+            try {
+                if (typeof window.copyStreamUrl === 'function') {
+                    // Create a dummy button for testing
+                    const dummyButton = document.createElement('button');
+                    dummyButton.textContent = 'Test Copy';
+                    window.copyStreamUrl(dummyButton, testUrl);
+                    results.innerHTML += '<div class="status success">✅ Copy function test passed</div>';
+                } else {
+                    results.innerHTML += '<div class="status error">❌ copyStreamUrl not found</div>';
+                }
+            } catch (error) {
+                results.innerHTML += `<div class="status error">❌ Copy function failed: ${error.message}</div>`;
+            }
+        }
+
+        // Test external player
+        function testExternalPlayer() {
+            const results = document.getElementById('playerResults');
+            try {
+                if (typeof window.openExternalPlayerWeb === 'function') {
+                    // Create a mock stream object
+                    const mockStream = {
+                        link: testUrl,
+                        server: 'Test Server',
+                        type: 'mp4',
+                        quality: '1080p',
+                        requiresExtraction: false
+                    };
+                    
+                    // Test the external player function
+                    window.openExternalPlayerWeb(testUrl, 'vlc', testTitle, false, false);
+                    results.innerHTML = '<div class="status success">✅ External player function called successfully</div>';
+                } else {
+                    results.innerHTML = '<div class="status error">❌ openExternalPlayerWeb not found</div>';
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="status error">❌ External player test failed: ${error.message}</div>`;
+            }
+        }
+
+        // Initialize tests
+        window.addEventListener('load', () => {
+            detectDevice();
+            
+            // Load the main app.js functions if available
+            if (window.location.origin.includes('localhost:3001')) {
+                const script = document.createElement('script');
+                script.src = '/app.js';
+                script.onload = () => {
+                    console.log('App.js loaded successfully');
+                    testFunctionExists();
+                };
+                script.onerror = () => {
+                    document.getElementById('testResults').innerHTML = 
+                        '<div class="status error">❌ Could not load app.js from server</div>';
+                };
+                document.head.appendChild(script);
+            } else {
+                document.getElementById('testResults').innerHTML = 
+                    '<div class="status info">ℹ️ Open this from http://localhost:3001/test-external-fix.html to test with app.js</div>';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -115,7 +115,7 @@ const LiveTVModule = {
         container.innerHTML = `
             <div class="livetv-header">
                 <h1>📺 Live TV</h1>
-                <p class="livetv-subtitle">Watch live channels from around the world</p>
+                <p class="livetv-subtitle">Watch live channels from around the world(It is in beta)</p>
                 <div class="livetv-controls">
                     <div class="search-container">
                         <input type="text" id="channelSearch" placeholder="🔍 Search channels..." 
@@ -505,9 +505,9 @@ const LiveTVModule = {
                             <span class="player-icon">🎬</span>
                             <span>MPV Player</span>
                         </button>
-                        <button class="player-option" onclick="LiveTVModule.openInExternalPlayer('mpc', '${streamUrl}', '${channelName}')">
-                            <span class="player-icon">🎞️</span>
-                            <span>MPC-HC</span>
+                        <button class="player-option" onclick="LiveTVModule.openInExternalPlayer('auto', '${streamUrl}', '${channelName}')">
+                            <span class="player-icon">🔄</span>
+                            <span>Auto Detect</span>
                         </button>
                     </div>
                 </div>
@@ -519,19 +519,55 @@ const LiveTVModule = {
     // Open in external player
     async openInExternalPlayer(playerType, streamUrl, channelName) {
         try {
-            const result = await window.appBridge.openExternalPlayer({
-                url: streamUrl,
-                title: channelName,
-                player: playerType
-            });
-            
-            if (result.ok) {
-                if (window.showToast) {
-                    window.showToast(`📺 Opening ${channelName} in ${playerType.toUpperCase()}`, 'success', 2000);
+            // Check if running in Electron (desktop app)
+            const bridge = window.appBridge;
+            if (bridge?.openExternalPlayer) {
+                const result = await bridge.openExternalPlayer({
+                    url: streamUrl,
+                    title: channelName,
+                    player: playerType === 'auto' ? null : playerType
+                });
+                
+                if (result.ok) {
+                    if (window.showToast) {
+                        const playerName = result.player ? result.player.split(/[\\\/]/).pop() : playerType.toUpperCase();
+                        window.showToast(`📺 Opening ${channelName} in ${playerName}`, 'success', 2000);
+                    }
+                    document.querySelector('.modal-overlay')?.remove();
+                    return;
+                } else {
+                    throw new Error(result.error || 'Failed to open external player');
                 }
-                document.querySelector('.modal-overlay')?.remove();
             } else {
-                throw new Error(result.error || 'Failed to open external player');
+                // Running in web browser - use web-based external player methods
+                console.log('🌐 Running in web browser, using web-based external player methods for Live TV');
+                document.querySelector('.modal-overlay')?.remove();
+                
+                // Use the same web-based external player function from app.js
+                if (window.openExternalPlayerWeb) {
+                    await window.openExternalPlayerWeb(streamUrl, playerType === 'auto' ? null : playerType, channelName, true, false);
+                } else {
+                    // Fallback to showing the modal directly
+                    if (window.showEnhancedExternalPlayerModal) {
+                        const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
+                        const isAndroid = /android/i.test(navigator.userAgent.toLowerCase());
+                        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
+                        window.showEnhancedExternalPlayerModal(streamUrl, channelName, null, isMobile, isAndroid, isIOS, false, false);
+                    } else {
+                        // Simple fallback
+                        if (navigator.clipboard && window.isSecureContext) {
+                            await navigator.clipboard.writeText(streamUrl);
+                            if (window.showToast) {
+                                window.showToast('📋 Stream URL copied to clipboard. Paste it in your external player.', 'info', 4000);
+                            }
+                        } else {
+                            if (window.showToast) {
+                                window.showToast('Copy this URL to your external player: ' + streamUrl, 'info', 6000);
+                            }
+                        }
+                    }
+                }
+                return;
             }
         } catch (error) {
             console.error('❌ Failed to open external player:', error);

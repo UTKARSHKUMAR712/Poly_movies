@@ -45,8 +45,30 @@
                     <select id="providerSelect" class="provider-select-compact">
                         <option value="">Provider</option>
                     </select>
+                    <button class="mobile-nav-toggle" id="mobileNavToggle">☰</button>
                 </div>
             </div>
+            
+            <!-- Mobile Navigation Menu -->
+            <div class="mobile-nav-menu" id="mobileNavMenu">
+                <div class="mobile-nav-links">
+                    <button id="mobileHomeBtn" class="nav-link active">Home</button>
+                    <button id="mobileBollywoodBtn" class="nav-link">🇮🇳 Bollywood</button>
+                    <button id="mobileTvShowsBtn" class="nav-link">TV Shows</button>
+                    <button id="mobileMoviesBtn" class="nav-link">Movies</button>
+                    <button id="mobileExploreBtn" class="nav-link">Explore</button>
+                    <button id="mobileLiveTVBtn" class="nav-link">📺 Live TV</button>
+                    <button id="mobileNewUpdatesBtn" class="nav-link">News & Updates</button>
+                    <button id="mobileHistoryBtn" class="nav-link">History</button>
+                </div>
+                <div class="mobile-search-container">
+                    <input type="text" id="mobileSearchInput" class="search-input-header" placeholder="Search movies, shows..." />
+                    <select id="mobileProviderSelect" class="provider-select-compact mobile-provider-select">
+                        <option value="">Select Provider...</option>
+                    </select>
+                </div>
+            </div>
+            
             <div id="searchBar" class="search-bar" style="display: none;">
                 <div class="container">
                     <input type="text" id="searchInput" placeholder="Search movies, shows..." />

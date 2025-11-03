@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete External Player Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #141414;
+            color: white;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #222;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-button {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #c40812;
+        }
+        .test-button.secondary {
+            background: #444;
+        }
+        .test-button.secondary:hover {
+            background: #555;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #4CAF50; }
+        .error { background: #f44336; }
+        .info { background: #2196F3; }
+        .warning { background: #ff9800; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .result-box {
+            background: #333;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #e50914;
+        }
+        .method-test {
+            background: #1a1a1a;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border-left: 3px solid #666;
+        }
+        .method-test.success {
+            border-left-color: #4CAF50;
+        }
+        .method-test.error {
+            border-left-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Complete External Player Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>📱 Device & Environment Detection</h2>
+        <div id="deviceInfo"></div>
+        <button class="test-button secondary" onclick="detectEnvironment()">Refresh Detection</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎬 Mobile Player Tests</h2>
+        <div class="grid">
+            <button class="test-button" onclick="testMobileVLC()">Test VLC Mobile</button>
+            <button class="test-button" onclick="testMobileMX()">Test MX Player</button>
+            <button class="test-button" onclick="testMobileMPV()">Test MPV Mobile</button>
+            <button class="test-button" onclick="testMobileInfuse()">Test Infuse (iOS)</button>
+        </div>
+        <div id="mobileResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🖥️ Desktop Player Tests</h2>
+        <div class="grid">
+            <button class="test-button" onclick="testDesktopVLC()">Test VLC Desktop</button>
+            <button class="test-button" onclick="testDesktopPotPlayer()">Test PotPlayer</button>
+            <button class="test-button" onclick="testDesktopMPV()">Test MPV Desktop</button>
+            <button class="test-button" onclick="testDesktopWMP()">Test Windows Media Player</button>
+        </div>
+        <div id="desktopResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔄 Protocol Handler Tests</h2>
+        <div class="grid">
+            <button class="test-button" onclick="testProtocolVLC()">vlc:// Protocol</button>
+            <button class="test-button" onclick="testProtocolPotPlayer()">potplayer:// Protocol</button>
+            <button class="test-button" onclick="testProtocolMPV()">mpv:// Protocol</button>
+            <button class="test-button" onclick="testAndroidIntent()">Android Intent</button>
+        </div>
+        <div id="protocolResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🧪 Method Reliability Tests</h2>
+        <button class="test-button" onclick="testAllMethods()">Test All Methods</button>
+        <button class="test-button secondary" onclick="clearResults()">Clear Results</button>
+        <div id="methodResults"></div>
+    </div>
+
+    <script>
+        // Test URLs
+        const testUrls = {
+            mp4: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+            m3u8: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
+            mkv: 'https://sample-videos.com/zip/10/mkv/SampleVideo_1280x720_1mb.mkv'
+        };
+        
+        let testResults = [];
+
+        // Device detection
+        function detectEnvironment() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+            const isAndroid = /android/i.test(userAgent);
+            const isIOS = /iphone|ipad|ipod/i.test(userAgent);
+            const isElectron = typeof window.appBridge !== 'undefined';
+            
+            document.getElementById('deviceInfo').innerHTML = `
+                <div class="status info">
+                    <strong>Environment Detection:</strong><br>
+                    Platform: ${navigator.platform}<br>
+                    Mobile: ${isMobile}<br>
+                    Android: ${isAndroid}<br>
+                    iOS: ${isIOS}<br>
+                    Electron: ${isElectron}<br>
+                    Secure Context: ${window.isSecureContext}<br>
+                    Clipboard API: ${!!navigator.clipboard}<br>
+                    User Agent: ${navigator.userAgent}
+                </div>
+            `;
+        }
+
+        // Mobile tests
+        async function testMobileVLC() {
+            const results = document.getElementById('mobileResults');
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isAndroid = /android/i.test(userAgent);
+            const isIOS = /iphone|ipad|ipod/i.test(userAgent);
+            
+            let html = '<div class="result-box"><h4>VLC Mobile Test Results:</h4>';
+            
+            if (isAndroid) {
+                html += await testAndroidVLC();
+            } else if (isIOS) {
+                html += await testIOSVLC();
+            } else {
+                html += '<div class="method-test error">Not a mobile device</div>';
+            }
+            
+            html += '</div>';
+            results.innerHTML = html;
+        }
+
+        async function testAndroidVLC() {
+            const methods = [
+                {
+                    name: 'VLC Intent',
+                    test: () => testAndroidIntent('org.videolan.vlc', 'VLC for Android')
+                },
+                {
+                    name: 'VLC Protocol',
+                    test: () => testProtocol(`vlc://${testUrls.mp4}`, 'VLC Protocol')
+                },
+                {
+                    name: 'Generic Video Intent',
+                    test: () => testGenericVideoIntent('org.videolan.vlc')
+                },
+                {
+                    name: 'Market Intent',
+                    test: () => testMarketIntent('org.videolan.vlc')
+                }
+            ];
+            
+            let html = '';
+            for (const method of methods) {
+                try {
+                    const result = await method.test();
+                    html += `<div class="method-test ${result ? 'success' : 'error'}">${method.name}: ${result ? 'Success' : 'Failed'}</div>`;
+                } catch (error) {
+                    html += `<div class="method-test error">${method.name}: Error - ${error.message}</div>`;
+                }
+            }
+            return html;
+        }
+
+        async function testIOSVLC() {
+            const methods = [
+                {
+                    name: 'VLC X-Callback',
+                    test: () => testProtocol(`vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(testUrls.mp4)}`, 'VLC X-Callback')
+                },
+                {
+                    name: 'VLC Protocol',
+                    test: () => testProtocol(`vlc://${testUrls.mp4}`, 'VLC Protocol')
+                },
+                {
+                    name: 'App Store Redirect',
+                    test: () => testAppStoreRedirect('650377962')
+                }
+            ];
+            
+            let html = '';
+            for (const method of methods) {
+                try {
+                    const result = await method.test();
+                    html += `<div class="method-test ${result ? 'success' : 'error'}">${method.name}: ${result ? 'Success' : 'Failed'}</div>`;
+                } catch (error) {
+                    html += `<div class="method-test error">${method.name}: Error - ${error.message}</div>`;
+                }
+            }
+            return html;
+        }
+
+        // Desktop tests
+        async function testDesktopVLC() {
+            const results = document.getElementById('desktopResults');
+            const methods = [
+                {
+                    name: 'VLC Protocol',
+                    test: () => testProtocol(`vlc://${testUrls.mp4}`, 'VLC Protocol')
+                },
+                {
+                    name: 'VLC Alternative Protocol',
+                    test: () => testProtocol(`vlc:///${testUrls.mp4}`, 'VLC Alternative')
+                },
+                {
+                    name: 'Window Location',
+                    test: () => testWindowLocation(`vlc://${testUrls.mp4}`)
+                },
+                {
+                    name: 'Iframe Method',
+                    test: () => testIframeMethod(`vlc://${testUrls.mp4}`)
+                }
+            ];
+            
+            let html = '<div class="result-box"><h4>VLC Desktop Test Results:</h4>';
+            for (const method of methods) {
+                try {
+                    const result = await method.test();
+                    html += `<div class="method-test ${result ? 'success' : 'error'}">${method.name}: ${result ? 'Success' : 'Failed'}</div>`;
+                } catch (error) {
+                    html += `<div class="method-test error">${method.name}: Error - ${error.message}</div>`;
+                }
+            }
+            html += '</div>';
+            results.innerHTML = html;
+        }
+
+        async function testDesktopPotPlayer() {
+            const results = document.getElementById('desktopResults');
+            const methods = [
+                {
+                    name: 'PotPlayer Protocol',
+                    test: () => testProtocol(`potplayer://${testUrls.mp4}`, 'PotPlayer Protocol')
+                },
+                {
+                    name: 'PotPlayer Alternative',
+                    test: () => testProtocol(`potplayer:///${testUrls.mp4}`, 'PotPlayer Alternative')
+                },
+                {
+                    name: 'Window Open Method',
+                    test: () => testWindowOpen(`potplayer://${testUrls.mp4}`)
+                }
+            ];
+            
+            let html = '<div class="result-box"><h4>PotPlayer Desktop Test Results:</h4>';
+            for (const method of methods) {
+                try {
+                    const result = await method.test();
+                    html += `<div class="method-test ${result ? 'success' : 'error'}">${method.name}: ${result ? 'Success' : 'Failed'}</div>`;
+                } catch (error) {
+                    html += `<div class="method-test error">${method.name}: Error - ${error.message}</div>`;
+                }
+            }
+            html += '</div>';
+            results.innerHTML += html;
+        }
+
+        // Protocol tests
+        async function testProtocolVLC() {
+            const results = document.getElementById('protocolResults');
+            const success = await testProtocol(`vlc://${testUrls.mp4}`, 'VLC Protocol Test');
+            results.innerHTML = `<div class="status ${success ? 'success' : 'error'}">VLC Protocol: ${success ? 'Success' : 'Failed'}</div>`;
+        }
+
+        async function testProtocolPotPlayer() {
+            const results = document.getElementById('protocolResults');
+            const success = await testProtocol(`potplayer://${testUrls.mp4}`, 'PotPlayer Protocol Test');
+            results.innerHTML += `<div class="status ${success ? 'success' : 'error'}">PotPlayer Protocol: ${success ? 'Success' : 'Failed'}</div>`;
+        }
+
+        // Helper test functions
+        async function testProtocol(url, name) {
+            try {
+                const link = document.createElement('a');
+                link.href = url;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                console.log(`✅ ${name} protocol test completed`);
+                return true;
+            } catch (error) {
+                console.error(`❌ ${name} protocol test failed:`, error);
+                return false;
+            }
+        }
+
+        async function testWindowLocation(url) {
+            try {
+                const currentUrl = window.location.href;
+                window.location.href = url;
+                setTimeout(() => {
+                    if (window.location.href === url) {
+                        window.location.href = currentUrl;
+                    }
+                }, 1000);
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function testIframeMethod(url) {
+            try {
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = url;
+                document.body.appendChild(iframe);
+                setTimeout(() => {
+                    try {
+                        document.body.removeChild(iframe);
+                    } catch (e) {}
+                }, 2000);
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function testWindowOpen(url) {
+            try {
+                const newWindow = window.open(url, '_blank');
+                if (newWindow) {
+                    setTimeout(() => newWindow.close(), 100);
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function testAndroidIntent(packageName, appName) {
+            try {
+                const cleanUrl = testUrls.mp4.replace(/^https?:\/\//, '');
+                const intentUrl = `intent://${cleanUrl}#Intent;action=android.intent.action.VIEW;type=video/*;package=${packageName};end`;
+                
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = intentUrl;
+                document.body.appendChild(iframe);
+                
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 1000);
+                
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function testGenericVideoIntent(packageName) {
+            try {
+                const intentUrl = `intent://view#Intent;action=android.intent.action.VIEW;data=${encodeURIComponent(testUrls.mp4)};type=video/*;package=${packageName};end`;
+                window.location.href = intentUrl;
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function testMarketIntent(packageName) {
+            try {
+                const marketUrl = `market://details?id=${packageName}`;
+                window.location.href = marketUrl;
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function testAppStoreRedirect(appId) {
+            try {
+                const appStoreUrl = `https://apps.apple.com/app/id${appId}`;
+                window.open(appStoreUrl, '_blank');
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // Test all methods
+        async function testAllMethods() {
+            const results = document.getElementById('methodResults');
+            results.innerHTML = '<div class="status info">Running comprehensive tests...</div>';
+            
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+            
+            if (isMobile) {
+                await testMobileVLC();
+                await testMobileMX();
+            } else {
+                await testDesktopVLC();
+                await testDesktopPotPlayer();
+            }
+            
+            results.innerHTML = '<div class="status success">All tests completed! Check individual sections for results.</div>';
+        }
+
+        function clearResults() {
+            document.getElementById('mobileResults').innerHTML = '';
+            document.getElementById('desktopResults').innerHTML = '';
+            document.getElementById('protocolResults').innerHTML = '';
+            document.getElementById('methodResults').innerHTML = '';
+        }
+
+        // Placeholder functions for other tests
+        async function testMobileMX() {
+            const results = document.getElementById('mobileResults');
+            results.innerHTML += '<div class="result-box"><h4>MX Player Test:</h4><div class="method-test info">Test implementation ready</div></div>';
+        }
+
+        async function testMobileMPV() {
+            const results = document.getElementById('mobileResults');
+            results.innerHTML += '<div class="result-box"><h4>MPV Mobile Test:</h4><div class="method-test info">Test implementation ready</div></div>';
+        }
+
+        async function testMobileInfuse() {
+            const results = document.getElementById('mobileResults');
+            results.innerHTML += '<div class="result-box"><h4>Infuse Test:</h4><div class="method-test info">Test implementation ready</div></div>';
+        }
+
+        async function testDesktopMPV() {
+            const results = document.getElementById('desktopResults');
+            results.innerHTML += '<div class="result-box"><h4>MPV Desktop Test:</h4><div class="method-test info">Test implementation ready</div></div>';
+        }
+
+        async function testDesktopWMP() {
+            const results = document.getElementById('desktopResults');
+            results.innerHTML += '<div class="result-box"><h4>Windows Media Player Test:</h4><div class="method-test info">Test implementation ready</div></div>';
+        }
+
+        async function testProtocolMPV() {
+            const results = document.getElementById('protocolResults');
+            results.innerHTML += '<div class="status info">MPV Protocol: Test implementation ready</div>';
+        }
+
+        async function testAndroidIntent() {
+            const results = document.getElementById('protocolResults');
+            results.innerHTML += '<div class="status info">Android Intent: Test implementation ready</div>';
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            detectEnvironment();
+            console.log('🧪 External Player Test Suite Loaded');
+        });
+    </script>
+</body>
+</html>

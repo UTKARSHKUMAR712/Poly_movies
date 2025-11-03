@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>External Player Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #141414;
+            color: white;
+            padding: 20px;
+        }
+
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .test-button {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+
+        .test-button:hover {
+            background: #c40812;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <h1>External Player Test</h1>
+        <p>Test the external player functionality on different devices:</p>
+
+        <h3>Desktop Tests:</h3>
+        <button class="test-button" onclick="testDesktopVLC()">Test VLC (Desktop)</button>
+        <button class="test-button" onclick="testDesktopPotPlayer()">Test PotPlayer (Desktop)</button>
+        <button class="test-button" onclick="testDesktopMPV()">Test MPV (Desktop)</button>
+        <button class="test-button" onclick="testDesktopAuto()">Test Auto Detect (Desktop)</button>
+
+        <h3>Mobile Tests:</h3>
+        <button class="test-button" onclick="testMobileVLC()">Test VLC (Mobile)</button>
+        <button class="test-button" onclick="testMobileMPV()">Test MPV (Mobile)</button>
+
+        <h3>Manual Test:</h3>
+        <button class="test-button" onclick="testManual()">Test Manual Copy/Paste</button>
+
+        <div id="output" style="margin-top: 20px; padding: 20px; background: #333; border-radius: 6px; display: none;">
+            <h4>Test Output:</h4>
+            <pre id="outputText"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Test stream URL (Big Buck Bunny sample)
+        const testStreamUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+        const testTitle = 'Big Buck Bunny - Test Video';
+
+        function showOutput(message) {
+            const output = document.getElementById('output');
+            const outputText = document.getElementById('outputText');
+            outputText.textContent = message;
+            output.style.display = 'block';
+        }
+
+        // Simulate the external player functions from app.js
+        async function simulateExternalPlayer(playerType, isMobile = false) {
+            showOutput(`Testing ${playerType} player (${isMobile ? 'Mobile' : 'Desktop'})...`);
+
+            try {
+                // Simulate the web-based external player logic
+                const userAgent = navigator.userAgent.toLowerCase();
+                const actuallyMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+                const isAndroid = /android/i.test(userAgent);
+                const isIOS = /iphone|ipad|ipod/i.test(userAgent);
+
+                if (actuallyMobile || isMobile) {
+                    await handleMobileTest(playerType, isAndroid, isIOS);
+                } else {
+                    await handleDesktopTest(playerType);
+                }
+            } catch (error) {
+                showOutput(`Error: ${error.message}`);
+            }
+        }
+
+        async function handleMobileTest(playerType, isAndroid, isIOS) {
+            let playerUrl = '';
+            let playerName = '';
+
+            if (playerType === 'vlc') {
+                if (isAndroid) {
+                    playerUrl = `vlc://${testStreamUrl}`;
+                    playerName = 'VLC for Android';
+                } else if (isIOS) {
+                    playerUrl = `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(testStreamUrl)}`;
+                    playerName = 'VLC for iOS';
+                }
+            } else if (playerType === 'mpv' && isAndroid) {
+                playerUrl = `intent://${testStreamUrl}#Intent;package=is.xyz.mpv;end`;
+                playerName = 'MPV for Android';
+            }
+
+            if (playerUrl) {
+                showOutput(`Attempting to open ${playerName}...\nURL: ${playerUrl}\n\nIf the app doesn't open, you may need to install it first.`);
+
+                // Try to open the URL
+                try {
+                    window.location.href = playerUrl;
+                } catch (error) {
+                    showOutput(`Failed to open ${playerName}: ${error.message}`);
+                }
+            } else {
+                showOutput(`${playerType} is not supported on this mobile platform.`);
+            }
+        }
+
+        async function handleDesktopTest(playerType) {
+            let protocolUrl = '';
+            let playerName = '';
+
+            if (playerType === 'vlc') {
+                protocolUrl = `vlc://${testStreamUrl}`;
+                playerName = 'VLC Media Player';
+            } else if (playerType === 'potplayer') {
+                protocolUrl = `potplayer://${testStreamUrl}`;
+                playerName = 'PotPlayer';
+            } else if (playerType === 'mpv') {
+                protocolUrl = `mpv://${testStreamUrl}`;
+                playerName = 'MPV Player';
+            }
+
+            if (protocolUrl) {
+                showOutput(`Attempting to open ${playerName}...\nProtocol URL: ${protocolUrl}\n\nIf the player doesn't open, you may need to:\n1. Install the player\n2. Register protocol handlers\n3. Copy the URL manually: ${testStreamUrl}`);
+
+                try {
+                    // Copy to clipboard
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(testStreamUrl);
+                        showOutput(`${playerName} protocol attempted.\nStream URL copied to clipboard: ${testStreamUrl}\n\nManual instructions:\n- VLC: Media → Open Network Stream\n- PotPlayer: Right-click → Open → Open URL (Ctrl+U)\n- MPV: Drag & drop URL or command line`);
+                    }
+
+                    // Try protocol handler
+                    const link = document.createElement('a');
+                    link.href = protocolUrl;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } catch (error) {
+                    showOutput(`Error: ${error.message}\nFallback: Copy this URL to your player: ${testStreamUrl}`);
+                }
+            }
+        }
+
+        // Test functions
+        function testDesktopVLC() {
+            simulateExternalPlayer('vlc', false);
+        }
+
+        function testDesktopPotPlayer() {
+            simulateExternalPlayer('potplayer', false);
+        }
+
+        function testDesktopMPV() {
+            simulateExternalPlayer('mpv', false);
+        }
+
+        function testDesktopAuto() {
+            // Try VLC first as it's most common
+            simulateExternalPlayer('vlc', false);
+        }
+
+        function testMobileVLC() {
+            simulateExternalPlayer('vlc', true);
+        }
+
+        function testMobileMPV() {
+            simulateExternalPlayer('mpv', true);
+        }
+
+        async function testManual() {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(testStreamUrl);
+                    showOutput(`✅ Stream URL copied to clipboard!\n\nURL: ${testStreamUrl}\n\nManual steps:\n1. Open your preferred video player\n2. Use "Open URL" or "Open Network Stream" option\n3. Paste the copied URL\n4. Enjoy the video!`);
+                } else {
+                    showOutput(`Manual copy required:\n\nURL: ${testStreamUrl}\n\nSteps:\n1. Select and copy the URL above\n2. Open your preferred video player\n3. Use "Open URL" or "Open Network Stream" option\n4. Paste the URL\n5. Enjoy the video!`);
+                }
+            } catch (error) {
+                showOutput(`Error copying to clipboard: ${error.message}\n\nPlease manually copy this URL: ${testStreamUrl}`);
+            }
+        }
+
+        // Show device info
+        window.addEventListener('load', () => {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+            const isAndroid = /android/i.test(userAgent);
+            const isIOS = /iphone|ipad|ipod/i.test(userAgent);
+
+            showOutput(`Device Detection:\n- Mobile: ${isMobile}\n- Android: ${isAndroid}\n- iOS: ${isIOS}\n- User Agent: ${navigator.userAgent}\n\nReady to test external players!`);
+        });
+    </script>
+</body>
+
+</html>

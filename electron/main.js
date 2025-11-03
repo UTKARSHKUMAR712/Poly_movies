@@ -236,79 +236,207 @@ function registerExternalPlayerHandler() {
       return { ok: false, error: "Missing stream URL" };
     }
 
-    let playerPath = null;
+    console.log(`🎬 External player request: ${preferredPlayer || 'auto'} for ${url.substring(0, 50)}...`);
 
-    // Try to find specific player if requested
-    if (preferredPlayer) {
-      playerPath = findSpecificPlayer(preferredPlayer);
-    }
+    // Try multiple methods with retries
+    const methods = [
+      () => trySpecificPlayer(preferredPlayer, url, title),
+      () => tryAnyAvailablePlayer(url, title),
+      () => tryAllKnownPlayers(url, title),
+      () => trySystemDefault(url, title),
+      () => tryBrowserFallback(url)
+    ];
 
-    // Fallback to any available player
-    if (!playerPath) {
-      playerPath = findPlayerExecutable();
-    }
-
-    if (!playerPath) {
-      await shell.openExternal(url);
-      return { ok: true, fallback: "browser" };
-    }
-
-    const args = buildPlayerArgs(playerPath, title, url);
-
-    try {
-      console.log(`🎬 Launching external player: ${playerPath}`);
-      console.log(`🎬 Args: ${args.join(' ')}`);
-
-      const child = spawn(playerPath, args, {
-        detached: true,
-        stdio: "ignore",
-      });
-      child.unref();
-      return { ok: true, player: playerPath };
-    } catch (error) {
-      console.error("Failed to launch external player:", error);
+    for (let i = 0; i < methods.length; i++) {
       try {
-        await shell.openExternal(url);
-        return { ok: true, fallback: "browser" };
-      } catch (fallbackError) {
-        return { ok: false, error: fallbackError.message };
+        const result = await methods[i]();
+        if (result && result.ok) {
+          console.log(`✅ External player method ${i + 1} succeeded:`, result);
+          return result;
+        }
+      } catch (error) {
+        console.warn(`⚠️ External player method ${i + 1} failed:`, error.message);
       }
     }
+
+    return { ok: false, error: "All external player methods failed" };
   });
 
-  // Find specific player by type
+  // Try specific player
+  async function trySpecificPlayer(playerType, url, title) {
+    if (!playerType) return null;
+    
+    const playerPath = findSpecificPlayer(playerType);
+    if (!playerPath) return null;
+
+    return await launchPlayer(playerPath, url, title);
+  }
+
+  // Try any available player
+  async function tryAnyAvailablePlayer(url, title) {
+    const playerPath = findPlayerExecutable();
+    if (!playerPath) return null;
+
+    return await launchPlayer(playerPath, url, title);
+  }
+
+  // Try all known players
+  async function tryAllKnownPlayers(url, title) {
+    const playerTypes = ['vlc', 'potplayer', 'mpv'];
+    
+    for (const playerType of playerTypes) {
+      try {
+        const result = await trySpecificPlayer(playerType, url, title);
+        if (result && result.ok) {
+          return result;
+        }
+      } catch (error) {
+        console.warn(`Failed to try ${playerType}:`, error.message);
+      }
+    }
+    
+    return null;
+  }
+
+  // Try system default
+  async function trySystemDefault(url, title) {
+    try {
+      await shell.openExternal(url);
+      return { ok: true, fallback: "system_default" };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Browser fallback
+  async function tryBrowserFallback(url) {
+    try {
+      await shell.openExternal(url);
+      return { ok: true, fallback: "browser" };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Launch player with retries
+  async function launchPlayer(playerPath, url, title, retries = 3) {
+    const args = buildPlayerArgs(playerPath, title, url);
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`🎬 Attempt ${attempt}: Launching ${playerPath}`);
+        console.log(`🎬 Args: ${args.join(' ')}`);
+
+        const child = spawn(playerPath, args, {
+          detached: true,
+          stdio: "ignore",
+        });
+        
+        child.unref();
+        
+        // Wait a bit to see if the process starts successfully
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        return { ok: true, player: playerPath };
+      } catch (error) {
+        console.error(`❌ Attempt ${attempt} failed:`, error.message);
+        
+        if (attempt === retries) {
+          throw error;
+        }
+        
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    throw new Error(`Failed to launch player after ${retries} attempts`);
+  }
+
+  // Enhanced player detection with more comprehensive paths
   function findSpecificPlayer(playerType) {
     const platform = process.platform;
     const programFiles = process.env["ProgramFiles"];
     const programFilesX86 = process.env["ProgramFiles(x86)"];
+    const localAppData = process.env["LocalAppData"];
+    const appData = process.env["APPDATA"];
+    const userProfile = process.env["USERPROFILE"];
 
     const playerPaths = {
       vlc: [
+        // Standard installation paths
         programFiles && path.join(programFiles, "VideoLAN", "VLC", "vlc.exe"),
         programFilesX86 && path.join(programFilesX86, "VideoLAN", "VLC", "vlc.exe"),
+        localAppData && path.join(localAppData, "Programs", "VideoLAN", "VLC", "vlc.exe"),
+        // Portable versions
+        path.join(process.cwd(), "VLC", "vlc.exe"),
+        path.join(userProfile, "Desktop", "VLC", "vlc.exe"),
+        // PATH executables
         "vlc.exe",
-        "vlc"
+        "vlc",
+        // Alternative paths
+        "C:\\Program Files\\VideoLAN\\VLC\\vlc.exe",
+        "C:\\Program Files (x86)\\VideoLAN\\VLC\\vlc.exe"
       ],
       potplayer: [
+        // Standard installation paths
         programFiles && path.join(programFiles, "DAUM", "PotPlayer", "PotPlayerMini64.exe"),
-        programFilesX86 && path.join(programFilesX86, "DAUM", "PotPlayer", "PotPlayerMini.exe"),
         programFiles && path.join(programFiles, "DAUM", "PotPlayer", "PotPlayer64.exe"),
+        programFilesX86 && path.join(programFilesX86, "DAUM", "PotPlayer", "PotPlayerMini.exe"),
         programFilesX86 && path.join(programFilesX86, "DAUM", "PotPlayer", "PotPlayer.exe"),
+        // Alternative DAUM paths
+        programFiles && path.join(programFiles, "Daum", "PotPlayer", "PotPlayerMini64.exe"),
+        programFilesX86 && path.join(programFilesX86, "Daum", "PotPlayer", "PotPlayerMini.exe"),
+        // Portable versions
+        path.join(process.cwd(), "PotPlayer", "PotPlayerMini64.exe"),
+        path.join(userProfile, "Desktop", "PotPlayer", "PotPlayerMini64.exe"),
+        // PATH executables
         "PotPlayerMini64.exe",
         "PotPlayerMini.exe",
         "PotPlayer64.exe",
-        "PotPlayer.exe"
+        "PotPlayer.exe",
+        // Direct paths
+        "C:\\Program Files\\DAUM\\PotPlayer\\PotPlayerMini64.exe",
+        "C:\\Program Files (x86)\\DAUM\\PotPlayer\\PotPlayerMini.exe"
       ],
       mpv: [
+        // Standard installation paths
         programFiles && path.join(programFiles, "mpv", "mpv.exe"),
         programFilesX86 && path.join(programFilesX86, "mpv", "mpv.exe"),
+        localAppData && path.join(localAppData, "Programs", "mpv", "mpv.exe"),
+        // Scoop installation
+        userProfile && path.join(userProfile, "scoop", "apps", "mpv", "current", "mpv.exe"),
+        // Chocolatey installation
+        "C:\\ProgramData\\chocolatey\\bin\\mpv.exe",
+        // Portable versions
+        path.join(process.cwd(), "mpv", "mpv.exe"),
+        path.join(userProfile, "Desktop", "mpv", "mpv.exe"),
+        // PATH executables
         "mpv.exe",
         "mpv"
+      ],
+      mpc: [
+        // MPC-HC paths
+        programFiles && path.join(programFiles, "MPC-HC", "mpc-hc64.exe"),
+        programFilesX86 && path.join(programFilesX86, "MPC-HC", "mpc-hc.exe"),
+        programFiles && path.join(programFiles, "K-Lite Codec Pack", "MPC-HC64", "mpc-hc64.exe"),
+        programFilesX86 && path.join(programFilesX86, "K-Lite Codec Pack", "MPC-HC", "mpc-hc.exe"),
+        "mpc-hc64.exe",
+        "mpc-hc.exe"
+      ],
+      wmplayer: [
+        // Windows Media Player
+        "C:\\Program Files\\Windows Media Player\\wmplayer.exe",
+        "C:\\Program Files (x86)\\Windows Media Player\\wmplayer.exe",
+        programFiles && path.join(programFiles, "Windows Media Player", "wmplayer.exe"),
+        programFilesX86 && path.join(programFilesX86, "Windows Media Player", "wmplayer.exe"),
+        "wmplayer.exe"
       ]
     };
 
     const candidates = playerPaths[playerType] || [];
 
+    // Try each candidate path
     for (const candidate of candidates) {
       if (!candidate) continue;
       try {
@@ -318,6 +446,39 @@ function registerExternalPlayerHandler() {
         }
       } catch (error) {
         // Continue searching
+      }
+    }
+
+    // Try PATH search as fallback
+    return searchInPath(playerType);
+  }
+
+  // Search for player in PATH
+  function searchInPath(playerType) {
+    const pathEnv = process.env.PATH || '';
+    const pathDirs = pathEnv.split(path.delimiter);
+    
+    const executables = {
+      vlc: ['vlc.exe', 'vlc'],
+      potplayer: ['PotPlayerMini64.exe', 'PotPlayerMini.exe', 'PotPlayer64.exe', 'PotPlayer.exe'],
+      mpv: ['mpv.exe', 'mpv'],
+      mpc: ['mpc-hc64.exe', 'mpc-hc.exe'],
+      wmplayer: ['wmplayer.exe']
+    };
+
+    const playerExecutables = executables[playerType] || [];
+
+    for (const dir of pathDirs) {
+      for (const exe of playerExecutables) {
+        const fullPath = path.join(dir, exe);
+        try {
+          if (fs.existsSync(fullPath)) {
+            console.log(`🎯 Found ${playerType} in PATH: ${fullPath}`);
+            return fullPath;
+          }
+        } catch (error) {
+          // Continue searching
+        }
       }
     }
 
