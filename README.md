@@ -8,7 +8,7 @@ PolyMovies Desktop is a hybrid Electron application that packages the Vega provi
 <img width="1919" height="1079" alt="Screenshot 2025-10-07 052129" src="https://github.com/user-attachments/assets/9e78b5f5-9d0d-4739-a183-ed6bb7b854d4" />
 <img width="1861" height="997" alt="Screenshot 2025-10-07 052102" src="https://github.com/user-attachments/assets/7721c010-1a6b-4508-8980-468da1fc0162" />
 
-## Features
+## Features.
 
 - **Electron Shell** — `electron/main.js` boots the Express server from `dev-server.js`, waits for `/health`, maximizes the window with a standard title bar, hides the menu bar when entering fullscreen, and restores it afterward.
 - **Provider Engine** — `providers/` supplies source integrations compiled by `build-simple.js` into `dist/`. The `manifest.json` and provider modules expose catalogs, posts, metadata, episodes, and stream functions.
