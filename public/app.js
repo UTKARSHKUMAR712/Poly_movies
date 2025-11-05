@@ -1,3 +1,103 @@
+// IPC Listeners for Electron menu actions
+if (typeof require !== 'undefined') {
+    try {
+        const { ipcRenderer } = require("electron");
+        
+        ipcRenderer.on("show-download-dialog", () => {
+            // Open download UI
+            showDownloadDialog();
+        });
+        
+        ipcRenderer.on("show-about-dialog", () => {
+            // Show about info popup
+            showAboutDialog();
+        });
+    } catch (error) {
+        console.log('Running in browser mode, IPC not available');
+    }
+}
+
+// Download dialog function
+function showDownloadDialog() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-download"></i> Download Stream</h3>
+                <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Enter stream URL to download:</p>
+                <input type="url" id="downloadUrl" placeholder="https://example.com/stream.m3u8" style="width: 100%; padding: 10px; margin: 10px 0;">
+                <div class="modal-actions">
+                    <button onclick="startDownload()" style="background: #e50914; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                    <button onclick="this.closest('.modal-overlay').remove()" style="background: #666; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// About dialog function
+function showAboutDialog() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-info-circle"></i> About PolyMovies</h3>
+                <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; padding: 20px;">
+                    <h2>PolyMovies</h2>
+                    <p>Version 1.0.0</p>
+                    <p>Stream movies, TV shows, and live TV channels</p>
+                    <br>
+                    <p><strong>Features:</strong></p>
+                    <ul style="text-align: left; max-width: 300px; margin: 0 auto;">
+                        <li>📺 Live TV streaming</li>
+                        <li>🎬 Movies & TV shows</li>
+                        <li>🇮🇳 Bollywood content</li>
+                        <li>🔍 Search & explore</li>
+                        <li>📱 Responsive design</li>
+                    </ul>
+                    <br>
+                    <p>Made with ❤️ by Utkarsh Kumar</p>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Download function
+function startDownload() {
+    const url = document.getElementById('downloadUrl').value;
+    if (!url) {
+        alert('Please enter a valid URL');
+        return;
+    }
+    
+    // Create download link
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'stream.m3u8';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Close modal
+    document.querySelector('.modal-overlay').remove();
+    showToast('Download started', 'success');
+}
+
 // Main App State.
 const state = {
     providers: [],

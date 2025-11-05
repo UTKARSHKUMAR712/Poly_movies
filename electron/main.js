@@ -78,6 +78,7 @@ async function createWindow() {
     title: "PolyMovies",
     icon: iconPath,
     webPreferences: {
+      webSecurity: false,
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
     },
@@ -124,14 +125,71 @@ app.whenReady().then(createWindow).catch((error) => {
 function configureMenu() {
   const template = [
     {
+      label: "File",
+      submenu: [
+        {
+          label: "Download Stream",
+          click() {
+            if (mainWindow) mainWindow.webContents.send("show-download-dialog");
+          }
+        },
+        { type: "separator" },
+        { role: "quit" } // Standard Quit option
+      ]
+    },
+    {
       label: "View",
       submenu: [
         {
-          role: "reload",
-          label: "Refresh",
+          label: "Downloads",
+          click() {
+            if (mainWindow) mainWindow.webContents.send("show-download-dialog");
+          }
         },
-      ],
+        {
+          role: "reload",
+          label: "Refresh"
+        },
+        {
+          role: "togglefullscreen",
+          label: "Full Screen"
+        },
+        {
+          role: "toggledevtools",
+          label: "Developer Tools"
+        },
+        { type: "separator" },
+        {
+          role: "resetzoom",
+          label: "Reset Zoom"
+        },
+        {
+          role: "zoomIn",
+          label: "Zoom In"
+        },
+        {
+          role: "zoomOut",
+          label: "Zoom Out"
+        }
+      ]
     },
+    {
+      label: "Help",
+      submenu: [
+        {
+          label: "About",
+          click() {
+            if (mainWindow) mainWindow.webContents.send("show-about-dialog");
+          }
+        },
+        {
+          label: "Report Issue",
+          click() {
+            require("electron").shell.openExternal("https://github.com/your-username/poly-tv/issues");
+          }
+        }
+      ]
+    }
   ];
 
   const menu = Menu.buildFromTemplate(template);
@@ -265,7 +323,7 @@ function registerExternalPlayerHandler() {
   // Try specific player
   async function trySpecificPlayer(playerType, url, title) {
     if (!playerType) return null;
-    
+
     const playerPath = findSpecificPlayer(playerType);
     if (!playerPath) return null;
 
@@ -283,7 +341,7 @@ function registerExternalPlayerHandler() {
   // Try all known players
   async function tryAllKnownPlayers(url, title) {
     const playerTypes = ['vlc', 'potplayer', 'mpv'];
-    
+
     for (const playerType of playerTypes) {
       try {
         const result = await trySpecificPlayer(playerType, url, title);
@@ -294,7 +352,7 @@ function registerExternalPlayerHandler() {
         console.warn(`Failed to try ${playerType}:`, error.message);
       }
     }
-    
+
     return null;
   }
 
@@ -331,25 +389,25 @@ function registerExternalPlayerHandler() {
           detached: true,
           stdio: "ignore",
         });
-        
+
         child.unref();
-        
+
         // Wait a bit to see if the process starts successfully
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         return { ok: true, player: playerPath };
       } catch (error) {
         console.error(`❌ Attempt ${attempt} failed:`, error.message);
-        
+
         if (attempt === retries) {
           throw error;
         }
-        
+
         // Wait before retry
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
-    
+
     throw new Error(`Failed to launch player after ${retries} attempts`);
   }
 
@@ -457,7 +515,7 @@ function registerExternalPlayerHandler() {
   function searchInPath(playerType) {
     const pathEnv = process.env.PATH || '';
     const pathDirs = pathEnv.split(path.delimiter);
-    
+
     const executables = {
       vlc: ['vlc.exe', 'vlc'],
       potplayer: ['PotPlayerMini64.exe', 'PotPlayerMini.exe', 'PotPlayer64.exe', 'PotPlayer.exe'],

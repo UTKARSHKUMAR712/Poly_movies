@@ -1,0 +1,82 @@
+[
+  {
+    "tvg_id": "281277",
+    "tvg_name": "[IN] ZEE TV UHD",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/zeetvhd.png",
+    "group_title": "[IN] INDIA",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281277"
+  },
+  {
+    "tvg_id": "281278",
+    "tvg_name": "[IN] ZEE CINEMA UHD",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/zeecinemahd.png",
+    "group_title": "[IN] INDIA",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281278"
+  },
+  {
+    "tvg_id": "281279",
+    "tvg_name": "[IN] ZING",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/in.zing.png",
+    "group_title": "[IN] INDIA",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281279"
+  },
+  {
+    "tvg_id": "281280",
+    "tvg_name": "[IN] COLORS UHD",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/colorshd.png",
+    "group_title": "[IN] INDIA",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281280"
+  },
+  {
+    "tvg_id": "281281",
+    "tvg_name": "[IN] STAR GOLD UHD",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/stargoldhd.png",
+    "group_title": "[IN] INDIA",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281281"
+  },
+  {
+    "tvg_id": "281282",
+    "tvg_name": "[IN] STAR GOLD SELECT UHD",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/stargoldselect.png",
+    "group_title": "[IN] INDIA",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281282"
+  },
+  {
+    "tvg_id": "281283",
+    "tvg_name": "[IN] STAR PLUS UHD",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/starplushd.png",
+    "group_title": "[IN] INDIA",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281283"
+  },
+  {
+    "tvg_id": "281284",
+    "tvg_name": "[IN] STAR BHARAT UHD",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/starbharathd.jpg",
+    "group_title": "[IN] INDIA",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281284"
+  },
+  {
+    "tvg_id": "281285",
+    "tvg_name": "[IN] STAR UTSAV",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/starutsav.png",
+    "group_title": "[IN] INDIA",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281285"
+  },
+  {
+    "tvg_id": "281286",
+    "tvg_name": "[IN] STAR UTSAV MOVIES",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/starutsav.png",
+    "group_title": "[IN] INDIA",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281286"
+  }
+]

@@ -2669,16 +2669,16 @@ select:focus {
 }
 
 .genre-cards-wrapper {
-    display: flex;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, 1fr);  /* Two horizontal rows */
     gap: 10px;
     overflow-x: auto;
-    scroll-behavior: smooth;
     padding: 0 20px 20px;
     scrollbar-width: none;
-    /* Firefox */
     -ms-overflow-style: none;
-    /* IE/Edge */
 }
+
 
 .genre-cards-wrapper::-webkit-scrollbar {
     display: none;
@@ -5487,4 +5487,1139 @@ nal Mobile Responsive Improvements */
     .posts-grid {
         padding: 0 4px;
     }
+}
+/* 
+===== LIVE TV MODULE STYLES ===== */
+.livetv-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: #0a0a0a;
+    color: #ffffff;
+}
+
+/* Header */
+.livetv-header {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+    border-bottom: 1px solid #333;
+}
+
+.livetv-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.search-container {
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 12px 16px;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 25px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.search-container input:focus {
+    border-color: #007acc;
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.livetv-actions button {
+    padding: 10px 20px;
+    background: #007acc;
+    border: none;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.livetv-actions button:hover {
+    background: #005a9e;
+    transform: translateY(-1px);
+}
+
+/* Horizontal Categories Slider */
+.categories-horizontal-slider {
+    position: relative;
+    padding: 15px 0;
+    background: #1a1a1a;
+    border-bottom: 1px solid #333;
+}
+
+.categories-scroll-wrapper {
+    overflow: hidden;
+    margin: 0 50px;
+}
+
+.categories-scroll {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0 20px;
+}
+
+.categories-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.category-chip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: #2a2a2a;
+    border: 2px solid #444;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    white-space: nowrap;
+}
+
+.category-chip:hover {
+    background: #3a3a3a;
+    border-color: #007acc;
+    transform: translateY(-2px);
+}
+
+.category-chip.active {
+    background: linear-gradient(135deg, #007acc, #005a9e);
+    border-color: #007acc;
+    box-shadow: 0 4px 15px rgba(0, 122, 204, 0.3);
+}
+
+.category-chip.category-pinned {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    border-color: #ff6b35;
+}
+
+.category-chip.category-pinned.active {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+}
+
+.category-icon {
+    font-size: 20px;
+    min-width: 24px;
+    text-align: center;
+}
+
+.category-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.category-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.category-count {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+.category-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid #555;
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.3s ease;
+}
+
+.category-nav-btn:hover {
+    background: #007acc;
+    border-color: #007acc;
+}
+
+.category-nav-btn.prev {
+    left: 10px;
+}
+
+.category-nav-btn.next {
+    right: 10px;
+}
+
+/* Main Layout */
+.livetv-main-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Channels Panel */
+.channels-panel {
+    width: 400px;
+    background: #1a1a1a;
+    border-right: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+}
+
+.channels-header {
+    padding: 20px;
+    background: #2a2a2a;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.channels-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.channel-count {
+    background: #007acc;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Virtual Scroll Container */
+.virtual-scroll-container {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+}
+
+.virtual-scroll-content {
+    position: relative;
+}
+
+.channels-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+/* Channel Cards */
+.channel-card {
+    background: #2a2a2a;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: 80px;
+}
+
+.channel-card:hover {
+    background: #3a3a3a;
+    transform: translateX(5px);
+}
+
+.channel-card.active {
+    background: linear-gradient(90deg, #007acc, #005a9e);
+    border-left: 4px solid #00a8ff;
+}
+
+.channel-card-inner {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    height: 100%;
+}
+
+.channel-number {
+    font-size: 12px;
+    font-weight: 600;
+    color: #888;
+    min-width: 30px;
+    text-align: center;
+}
+
+.channel-logo-container {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.channel-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+}
+
+.channel-logo.loaded {
+    opacity: 1;
+}
+
+.channel-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.channel-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.channel-category {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.channel-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.play-btn {
+    width: 36px;
+    height: 36px;
+    background: #007acc;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.play-btn:hover {
+    background: #005a9e;
+    transform: scale(1.1);
+}
+
+/* Player Panel */
+.player-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #000;
+}
+
+.video-container {
+    flex: 1;
+    position: relative;
+    background: #000;
+}
+
+.current-channel-info {
+    padding: 20px;
+    background: #1a1a1a;
+    border-top: 1px solid #333;
+    min-height: 100px;
+}
+
+.placeholder-content {
+    text-align: center;
+    color: #888;
+}
+
+.placeholder-content .live-indicator {
+    display: inline-block;
+    background: #ff4757;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.placeholder-content h3 {
+    margin: 0 0 10px 0;
+    color: #fff;
+    font-size: 18px;
+}
+
+.placeholder-content p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Live Channel Info */
+.live-indicator {
+    display: inline-block;
+    background: #ff4757;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .livetv-main-layout {
+        flex-direction: column;
+    }
+    
+    .channels-panel {
+        width: 100%;
+        height: 300px;
+    }
+    
+    .categories-scroll-wrapper {
+        margin: 0 20px;
+    }
+    
+    .category-nav-btn {
+        display: none;
+    }
+}
+
+/* Scrollbar Styling */
+.virtual-scroll-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}/* Playin
+g Channel Info */
+.playing-channel-info {
+    text-align: left;
+}
+
+.playing-channel-name {
+    margin: 10px 0 5px 0;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.playing-channel-category {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.channel-actions-info {
+    display: flex;
+    gap: 10px;
+}
+
+.copy-url-btn {
+    padding: 8px 16px;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 20px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+.copy-url-btn:hover {
+    background: #007acc;
+    border-color: #007acc;
+}/* =
+==== LIVE TV MODULE STYLES ===== */
+.livetv-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+    color: #ffffff;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+/* Header */
+.livetv-header {
+    padding: 15px 20px 5px 20px;
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+    backdrop-filter: blur(10px);
+}
+
+.livetv-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.search-container {
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 25px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.search-container input:focus {
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.search-container input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.livetv-actions button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    border: none;
+    border-radius: 25px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+}
+
+.livetv-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+}
+
+/* Horizontal Categories Slider */
+.categories-horizontal-slider {
+    position: relative;
+    padding: 10px 0;
+    background: rgba(26, 26, 26, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.categories-scroll-wrapper {
+    overflow: hidden;
+    margin: 0 50px;
+}
+
+.categories-scroll {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0 20px;
+}
+
+.categories-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.category-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    backdrop-filter: blur(10px);
+}
+
+.category-chip:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #00d4ff;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+}
+
+.category-chip.active {
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    border-color: #00d4ff;
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+}
+
+.category-chip.category-pinned {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    border-color: #ff6b35;
+}
+
+.category-chip.category-pinned.active {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.5);
+}
+
+.category-icon {
+    font-size: 24px;
+    min-width: 28px;
+    text-align: center;
+}
+
+.category-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.category-name {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+}
+
+.category-count {
+    font-size: 10px;
+    opacity: 0.8;
+    font-weight: 600;
+}
+
+.category-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    font-size: 14px;
+}
+
+.category-nav-btn:hover {
+    background: #00d4ff;
+    border-color: #00d4ff;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.category-nav-btn.prev {
+    left: 10px;
+}
+
+.category-nav-btn.next {
+    right: 10px;
+}
+
+/* Main Layout */
+.livetv-main-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Channels Panel */
+.channels-panel {
+    width: 420px;
+    background: rgba(26, 26, 26, 0.95);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(10px);
+}
+
+.channels-header {
+    padding: 25px;
+    background: rgba(42, 42, 42, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.channels-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.channel-count {
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    color: white;
+    padding: 6px 15px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+}
+
+/* Virtual Scroll Container */
+.virtual-scroll-container {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+}
+
+.virtual-scroll-content {
+    position: relative;
+}
+
+.channels-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Channel Cards */
+.channel-card {
+    background: rgba(42, 42, 42, 0.8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 84px;
+    backdrop-filter: blur(5px);
+}
+
+.channel-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(8px);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
+}
+
+.channel-card.active {
+    background: linear-gradient(90deg, rgba(0, 212, 255, 0.3), rgba(0, 153, 204, 0.3));
+    border-left: 4px solid #00d4ff;
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4);
+}
+
+.channel-card-inner {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 20px;
+    height: 100%;
+}
+
+.channel-logo-container {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.channel-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+}
+
+.channel-logo.loaded {
+    opacity: 1;
+}
+
+.channel-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.channel-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+.channel-category {
+    font-size: 11px;
+    color: #00d4ff;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+}
+
+.channel-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.play-btn {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+    font-size: 14px;
+}
+
+.play-btn:hover {
+    transform: scale(1.15);
+    box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
+}
+
+/* Player Panel */
+.player-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #000;
+    position: relative;
+}
+
+.video-container {
+    flex: 1;
+    position: relative;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.current-channel-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 25px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    backdrop-filter: blur(10px);
+}
+
+.placeholder-content {
+    text-align: center;
+    color: #888;
+    padding: 60px 20px;
+}
+
+.placeholder-content .live-indicator {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff4757, #ff3742);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    animation: pulse 2s infinite;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+}
+
+.placeholder-content h3 {
+    margin: 0 0 15px 0;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.placeholder-content p {
+    margin: 0;
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+/* Playing Channel Info */
+.playing-channel-info {
+    text-align: left;
+}
+
+.playing-channel-name {
+    margin: 15px 0 8px 0;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.playing-channel-category {
+    color: #00d4ff;
+    font-size: 14px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.channel-actions-info {
+    display: flex;
+    gap: 15px;
+}
+
+.copy-url-btn {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 25px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.copy-url-btn:hover {
+    background: #00d4ff;
+    border-color: #00d4ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+}
+
+/* Live Channel Info */
+.live-indicator {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff4757, #ff3742);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    animation: pulse 2s infinite;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+}
+
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .channels-panel {
+        width: 350px;
+    }
+    
+    .categories-scroll-wrapper {
+        margin: 0 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .livetv-main-layout {
+        flex-direction: column;
+    }
+    
+    .channels-panel {
+        width: 100%;
+        height: 40vh;
+    }
+    
+    .categories-scroll-wrapper {
+        margin: 0 20px;
+    }
+    
+    .category-nav-btn {
+        display: none;
+    }
+    
+    .current-channel-info {
+        position: relative;
+        background: rgba(26, 26, 26, 0.95);
+    }
+}
+
+/* Scrollbar Styling */
+.virtual-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    border-radius: 4px;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #0099cc, #007aa3);
+}
+
+/* Loading States */
+.channel-logo-container.loading {
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+}/* 
+Exit Button */
+.livetv-actions .exit-btn {
+    background: linear-gradient(135deg, #ff4757, #ff3742);
+    margin-left: 10px;
+}
+
+.livetv-actions .exit-btn:hover {
+    background: linear-gradient(135deg, #ff3742, #ff2f3a);
+    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+}/* 
+Improved Channel Logo Styles */
+.channels-panel .channel-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+    filter: brightness(1.2) contrast(1.1) saturate(1.1);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.channels-panel .channel-logo.loaded {
+    opacity: 1;
+}
+
+.channels-panel .channel-logo-container.loading {
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%);
+    background-size: 200px 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* Remove any existing channel number styles */
+.channel-number {
+    display: none !important;
+}
+* Live TV Layout Fixes */
+.livetv-container .categories-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0 5px;
+}
+
+.livetv-container .categories-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* Better icon display */
+.play-btn i {
+    font-size: 12px;
+    margin-left: 2px;
+}
+
+.category-nav-btn i {
+    font-size: 12px;
+}
+
+/* Ensure full width usage */
+.livetv-container .categories-scroll-wrapper {
+    overflow: hidden;
+    margin: 0 45px;
+}
+
+.livetv-container .category-nav-btn.prev {
+    left: 5px;
+}
+
+.livetv-container .category-nav-btn.next {
+    right: 5px;
+}/* Unic
+ode Symbol Styling */
+.play-btn {
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.category-nav-btn {
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    line-height: 1;
+}
+
+/* Remove icon-specific styles */
+.play-btn i,
+.category-nav-btn i {
+    display: none;
 }

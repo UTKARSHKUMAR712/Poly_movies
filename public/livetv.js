@@ -1,323 +1,587 @@
-// Live TV Module - Handles M3U playlist parsing and live TV streaming
+// Optimized Live TV Module - Handles 13,000+ channels with virtual scrolling
 const LiveTVModule = {
     channels: [],
     categories: {},
     currentChannel: null,
+    filteredChannels: [],
+    isLoading: false,
+    hls: null, // HLS.js instance
+
+    // Virtual scrolling properties
+    virtualScrolling: {
+        itemHeight: 85, // Height of each channel card (84px + 1px border)
+        containerHeight: 0,
+        scrollTop: 0,
+        visibleStart: 0,
+        visibleEnd: 0,
+        bufferSize: 5, // Reduced buffer for better performance
+        totalItems: 0
+    },
 
     // Initialize Live TV module
     async init() {
-        console.log('📺 Initializing Live TV Module');
+        console.log('📺 Initializing Optimized Live TV Module');
         try {
-            // Try to load from storage first
-            if (!this.loadChannelsFromStorage()) {
-                // If no stored channels, load from playlist
+            this.showLoading(true, 'Loading TV channels...');
+
+            // Load channels from storage first for faster startup
+            const hasStoredChannels = this.loadChannelsFromStorage();
+
+            if (hasStoredChannels) {
+                console.log('📺 Loaded channels from storage');
+                this.categorizeChannels();
+            } else {
+                // Load from playlist
                 await this.loadPlaylist();
+                this.categorizeChannels();
             }
-            this.categorizeChannels();
-            
-            // Apply saved settings
-            const settings = this.getSettings();
-            this.applySettings(settings);
-            
-            console.log('✅ Live TV Module initialized successfully');
+
+            console.log(`✅ Live TV Module initialized with ${this.channels.length} channels`);
+            this.showToast(`📺 Live TV ready with ${this.channels.length} channels`, 'success');
+
         } catch (error) {
             console.error('❌ Failed to initialize Live TV:', error);
+            this.showToast('❌ Failed to load TV channels. Please check your connection.', 'error');
+
+            // Initialize with empty state
+            this.channels = [];
+            this.categories = {};
+        } finally {
+            this.showLoading(false);
         }
     },
 
-    // Load M3U playlist
+    // Load JSON playlist
     async loadPlaylist() {
         try {
-            const response = await fetch('/Tv/combined_playlist.m3u');
-            const playlistText = await response.text();
-            this.channels = this.parseM3U(playlistText);
-            console.log(`📺 Loaded ${this.channels.length} channels`);
+            console.log('📺 Loading JSON playlist...');
+
+            const response = await fetch('/Tv/playlist-fixed.json');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const channelsData = await response.json();
+            if (!Array.isArray(channelsData)) {
+                throw new Error('Invalid JSON playlist format');
+            }
+
+            console.log(`📺 Playlist loaded, processing ${channelsData.length} channels...`);
+
+            this.channels = this.processChannelsData(channelsData);
+
+            if (this.channels.length === 0) {
+                throw new Error('No valid channels found in playlist');
+            }
+
+            console.log(`📺 Successfully loaded ${this.channels.length} channels`);
+            this.saveChannelsToStorage();
+
         } catch (error) {
             console.error('❌ Failed to load playlist:', error);
             throw error;
         }
     },
 
-    // Parse M3U playlist format
-    parseM3U(playlistText) {
-        const lines = playlistText.split('\n');
+    // Process JSON channels data
+    processChannelsData(channelsData) {
         const channels = [];
-        let currentChannel = null;
 
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
+        for (let i = 0; i < channelsData.length; i++) {
+            const data = channelsData[i];
 
-            if (line.startsWith('#EXTINF:')) {
-                // Parse channel info
-                currentChannel = this.parseExtinf(line);
-            } else if (line && !line.startsWith('#') && currentChannel) {
-                // This is the stream URL
-                currentChannel.url = line;
-                currentChannel.id = `channel_${channels.length + 1}`;
-                channels.push(currentChannel);
-                currentChannel = null;
+            // Skip invalid entries
+            if (!data.url || !data.tvg_name) {
+                continue;
+            }
+
+            const channel = {
+                id: `channel_${channels.length + 1}`,
+                name: data.tvg_name.trim(),
+                logo: data.tvg_logo || '',
+                group: data.group_title || 'General',
+                url: data.url.trim(),
+                tvg_id: data.tvg_id || ''
+            };
+
+            // Auto-categorize if group is empty or generic
+            if (!channel.group || channel.group === 'General') {
+                channel.group = this.categorizeByName(channel.name);
+            }
+
+            channels.push(channel);
+
+            // Debug log for first few channels
+            if (channels.length <= 5) {
+                console.log(`📺 Processed channel ${channels.length}:`, {
+                    name: channel.name,
+                    url: channel.url,
+                    group: channel.group
+                });
             }
         }
 
         return channels;
     },
 
-    // Parse EXTINF line to extract channel information
-    parseExtinf(line) {
-        const channel = {
-            name: '',
-            logo: '',
-            group: 'General',
-            url: ''
-        };
 
-        // Extract channel name (after the last comma)
-        const nameMatch = line.match(/,(.+)$/);
-        if (nameMatch) {
-            channel.name = nameMatch[1].trim();
+
+    // Auto-categorize by name
+    categorizeByName(channelName) {
+        const name = channelName.toLowerCase();
+
+        if (name.includes('[in]') || name.includes('india')) {
+            return '[IN] INDIA';
+        }
+        if (name.includes('sports') || name.includes('cricket') || name.includes('football')) {
+            return 'Sports';
+        }
+        if (name.includes('news')) {
+            return 'News';
+        }
+        if (name.includes('movies') || name.includes('cinema')) {
+            return 'Movies';
+        }
+        if (name.includes('music')) {
+            return 'Music';
+        }
+        if (name.includes('kids') || name.includes('cartoon')) {
+            return 'Kids';
         }
 
-        // Extract logo
-        const logoMatch = line.match(/tvg-logo="([^"]+)"/);
-        if (logoMatch) {
-            channel.logo = logoMatch[1];
-        }
-
-        // Extract group
-        const groupMatch = line.match(/group-title="([^"]+)"/);
-        if (groupMatch) {
-            channel.group = groupMatch[1];
-        }
-
-        return channel;
+        return 'General';
     },
 
-    // Categorize channels by group
+    // Categorize channels
     categorizeChannels() {
         this.categories = {};
 
-        this.channels.forEach(channel => {
+        for (const channel of this.channels) {
             const category = channel.group || 'General';
             if (!this.categories[category]) {
                 this.categories[category] = [];
             }
             this.categories[category].push(channel);
-        });
+        }
 
-        console.log('📂 Categories:', Object.keys(this.categories));
+        console.log(`📂 Created ${Object.keys(this.categories).length} categories`);
     },
 
-    // Render Live TV page
+    // Render Live TV page with new layout
     renderLiveTVPage() {
+        console.log('🎨 Rendering Live TV page...');
+
         const container = document.getElementById('liveTVContent');
-        if (!container) return;
+        if (!container) {
+            console.error('❌ liveTVContent container not found');
+            return;
+        }
+
+        const channelCount = this.channels.length;
 
         container.innerHTML = `
-            <div class="livetv-header">
-                <h1>📺 Live TV</h1>
-                <p class="livetv-subtitle">Watch live channels from around the world(It is in beta)</p>
-                <div class="livetv-controls">
-                    <div class="search-container">
-                        <input type="text" id="channelSearch" placeholder="🔍 Search channels..." 
-                               oninput="LiveTVModule.searchChannels(this.value)">
-                    </div>
-                    <div class="livetv-actions">
-                        <button onclick="LiveTVModule.addCustomM3U8()" title="Add Custom Channel">➕ Add Channel</button>
-                        <button onclick="LiveTVModule.importM3U8()" title="Import M3U8">📥 Import</button>
-                        <button onclick="LiveTVModule.exportFavorites()" title="Export Favorites">📤 Export</button>
-                        <button onclick="LiveTVModule.showSettings()" title="Settings">⚙️ Settings</button>
-                    </div>
-                </div>
-            </div>
-            <div class="livetv-layout">
-                <div class="livetv-sidebar">
-                    <div class="sidebar-header">
-                        <h3>Categories</h3>
-                        <button onclick="LiveTVModule.showFavorites()" class="favorites-btn">⭐ Favorites</button>
-                    </div>
-                    <div class="category-list" id="categoryList">
-                        <!-- Categories will be populated here -->
-                    </div>
-                </div>
-                <div class="livetv-main">
-                    <div class="livetv-player-container" id="liveTVPlayer" style="display: none;">
-                        <video id="liveTVVideo" controls autoplay>
-                            <p>Your browser doesn't support HTML5 video.</p>
-                        </video>
-                        <div class="livetv-info">
-                            <h3 id="currentChannelName">Select a channel</h3>
-                            <p id="currentChannelCategory"></p>
+            <div class="livetv-container">
+                <!-- Top Header with Search -->
+                <div class="livetv-header">
+                    <div class="livetv-controls">
+                        <div class="search-container">
+                            <input type="text" id="channelSearch" placeholder="🔍 Search channels..." 
+                                   oninput="LiveTVModule.searchChannels(this.value)">
                         </div>
-                        <div class="player-controls">
-                            <button onclick="LiveTVModule.stopPlayback()" title="Stop">⏹️</button>
-                            <button onclick="LiveTVModule.toggleFullscreen()" title="Fullscreen">⛶</button>
-                            <button onclick="LiveTVModule.togglePictureInPicture()" title="Picture in Picture">📺</button>
-                            <button onclick="LiveTVModule.showVideoSettings()" title="Video Settings">⚙️</button>
+                        <div class="livetv-actions">
+                            <button onclick="LiveTVModule.refreshChannels()" title="Refresh">
+                                🔄 Refresh
+                            </button>
+                            <button onclick="LiveTVModule.exitFullscreen()" title="Exit Live TV" class="exit-btn">
+                                ✕ Exit
+                            </button>
                         </div>
                     </div>
-                    <div class="channels-grid" id="channelsGrid">
-                        <!-- Channels will be populated here -->
+                </div>
+
+                <!-- Horizontal Categories Slider -->
+                <div class="categories-horizontal-slider">
+                    <button class="category-nav-btn prev" id="categoryPrevBtn" onclick="LiveTVModule.scrollCategories('prev')">
+                        ◀
+                    </button>
+                    <div class="categories-scroll-wrapper">
+                        <div class="categories-scroll" id="categoriesScroll">
+                            <!-- Categories will be populated here -->
+                        </div>
+                    </div>
+                    <button class="category-nav-btn next" id="categoryNextBtn" onclick="LiveTVModule.scrollCategories('next')">
+                        ▶
+                    </button>
+                </div>
+
+                <!-- Main Layout -->
+                <div class="livetv-main-layout">
+                    <!-- Left Side - Channels List -->
+                    <div class="channels-panel">
+                        <div class="channels-header">
+                            <h3>📺 TV Channels</h3>
+                            <span class="channel-count" id="channelCount">${channelCount.toLocaleString()}</span>
+                        </div>
+                        
+                        <!-- Virtual Scroll Container -->
+                        <div class="virtual-scroll-container" id="virtualScrollContainer">
+                            <div class="virtual-scroll-content" id="virtualScrollContent">
+                                <div class="channels-grid" id="channelsList">
+                                    <!-- Channels will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side - Video Player -->
+                    <div class="player-panel">
+                        <div class="video-container">
+                            <video id="liveTVVideo" 
+                                   controls 
+                                   preload="metadata"
+                                   style="width: 100%; height: 100%; background: #000;">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        
+                        <!-- Channel Info Overlay -->
+                        <div class="current-channel-info" id="currentChannelInfo">
+                            <div class="placeholder-content">
+                                <div class="live-indicator">LIVE TV</div>
+                                <h3>Select a channel to start watching</h3>
+                                <p>Choose from ${channelCount.toLocaleString()} available channels</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         `;
 
         this.renderCategories();
+        this.setupVirtualScrolling();
         this.renderAllChannels();
     },
 
-    // Render category list
+    // Render horizontal categories
     renderCategories() {
-        const categoryList = document.getElementById('categoryList');
-        if (!categoryList) return;
+        const categoriesScroll = document.getElementById('categoriesScroll');
+        if (!categoriesScroll) return;
 
-        // Add "All Channels" option
+        categoriesScroll.innerHTML = '';
+
+        // All Channels option
         const allOption = document.createElement('div');
-        allOption.className = 'category-item active';
+        allOption.className = 'category-chip active';
         allOption.innerHTML = `
-            <span class="category-icon">📺</span>
-            <span class="category-name">All Channels</span>
-            <span class="category-count">${this.channels.length}</span>
+            <div class="category-icon">📺</div>
+            <div class="category-info">
+                <div class="category-name">ALL</div>
+                <div class="category-count">${this.channels.length.toLocaleString()}</div>
+            </div>
         `;
-        allOption.addEventListener('click', () => {
-            this.selectCategory('all', allOption);
-        });
-        categoryList.appendChild(allOption);
+        allOption.onclick = () => this.selectCategory('all', allOption);
+        categoriesScroll.appendChild(allOption);
 
-        // Add categories
-        Object.keys(this.categories).sort().forEach(category => {
-            const categoryItem = document.createElement('div');
-            categoryItem.className = 'category-item';
+        // Sort categories - pin [IN] INDIA at the top
+        const sortedCategories = Object.keys(this.categories).sort((a, b) => {
+            if (a === '[IN] INDIA') return -1;
+            if (b === '[IN] INDIA') return 1;
+            return this.categories[b].length - this.categories[a].length;
+        });
+
+        // Category chips with enhanced styling
+        sortedCategories.forEach(category => {
+            const categoryChip = document.createElement('div');
+            categoryChip.className = 'category-chip';
+
+            // Special styling for IN section
+            if (category === '[IN] INDIA') {
+                categoryChip.classList.add('category-pinned');
+            }
 
             const icon = this.getCategoryIcon(category);
-            const count = this.categories[category].length;
+            const displayName = category.replace('[IN] ', '');
 
-            categoryItem.innerHTML = `
-                <span class="category-icon">${icon}</span>
-                <span class="category-name">${category}</span>
-                <span class="category-count">${count}</span>
+            categoryChip.innerHTML = `
+                <div class="category-icon">${icon}</div>
+                <div class="category-info">
+                    <div class="category-name">${displayName}</div>
+                    <div class="category-count">${this.categories[category].length.toLocaleString()}</div>
+                </div>
             `;
-
-            categoryItem.addEventListener('click', () => {
-                this.selectCategory(category, categoryItem);
-            });
-
-            categoryList.appendChild(categoryItem);
+            categoryChip.onclick = () => this.selectCategory(category, categoryChip);
+            categoriesScroll.appendChild(categoryChip);
         });
+
+        // Setup category scrolling
+        this.setupCategoryScrolling();
     },
 
-    // Get icon for category
+    // Get category icon
     getCategoryIcon(category) {
         const icons = {
-            'Bangla': '🇧🇩',
-            'Sports': '⚽',
-            'Cricket': '🏏',
-            'Football': '⚽',
+            '[IN] INDIA': '🇮🇳',
+            'Sports': '🏆',
             'News': '📰',
-            'English News': '🌍',
-            'Indian Bangla News': '📺',
-            'NEWS INTERNASIONAL': '🌐',
             'Movies': '🎬',
-            'Hindi Movies': '🎭',
-            'Bangla Movies': '🎪',
-            'English Movies': '🎞️',
-            'Kolkata Bangla Movies': '🎨',
             'Music': '🎵',
-            'Hindi Music': '🎶',
-            'Bangla Music': '🎼',
             'Kids': '👶',
-            'KIDS': '🧸',
-            'Islamic': '☪️',
-            'Relagion Channel': '🕌',
-            'ISLAMIC CHANNELS': '📿',
-            'Information': '📚',
-            'Infotainment Channels': '🔬',
-            'Documentary': '🎥',
-            'Entertainment': '🎪',
-            'Live Sports': '🏆',
-            'Bangladeshi': '🇧🇩',
-            'Live Tv': '📡',
-            'General': '📺'
+            'General': '📺',
+            'Entertainment': '🎭',
+            'Documentary': '📖',
+            'Religious': '🙏'
         };
-
         return icons[category] || '📺';
     },
 
-    // Select category and filter channels
+    // Setup category scrolling
+    setupCategoryScrolling() {
+        const scrollContainer = document.getElementById('categoriesScroll');
+        const prevBtn = document.getElementById('categoryPrevBtn');
+        const nextBtn = document.getElementById('categoryNextBtn');
+
+        if (!scrollContainer || !prevBtn || !nextBtn) return;
+
+        // Check scroll buttons visibility
+        const updateScrollButtons = () => {
+            const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
+            prevBtn.style.display = scrollLeft > 0 ? 'flex' : 'none';
+            nextBtn.style.display = scrollLeft < scrollWidth - clientWidth ? 'flex' : 'none';
+        };
+
+        scrollContainer.addEventListener('scroll', updateScrollButtons);
+        updateScrollButtons();
+    },
+
+    // Scroll categories
+    scrollCategories(direction) {
+        const scrollContainer = document.getElementById('categoriesScroll');
+        if (!scrollContainer) return;
+
+        const scrollAmount = 200;
+        const currentScroll = scrollContainer.scrollLeft;
+
+        if (direction === 'prev') {
+            scrollContainer.scrollTo({
+                left: currentScroll - scrollAmount,
+                behavior: 'smooth'
+            });
+        } else {
+            scrollContainer.scrollTo({
+                left: currentScroll + scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    },
+
+    // Select category
     selectCategory(category, element) {
         // Update active category
-        document.querySelectorAll('.category-item').forEach(item => {
+        document.querySelectorAll('.category-chip').forEach(item => {
             item.classList.remove('active');
         });
         element.classList.add('active');
 
-        // Filter and render channels
         if (category === 'all') {
-            this.renderAllChannels();
+            this.filteredChannels = [...this.channels];
         } else {
-            this.renderChannelsByCategory(category);
+            this.filteredChannels = this.categories[category] || [];
+        }
+
+        // Update channel count
+        const channelCount = document.getElementById('channelCount');
+        if (channelCount) {
+            channelCount.textContent = this.filteredChannels.length.toLocaleString();
+        }
+
+        // Reset virtual scrolling
+        this.virtualScrolling.visibleStart = 0;
+        this.virtualScrolling.visibleEnd = 0;
+        this.virtualScrolling.totalItems = this.filteredChannels.length;
+
+        // Reset scroll position
+        const container = document.getElementById('virtualScrollContainer');
+        if (container) {
+            container.scrollTop = 0;
+        }
+
+        this.updateVirtualScrolling();
+    },
+
+    // Setup virtual scrolling for large datasets
+    setupVirtualScrolling() {
+        const container = document.getElementById('virtualScrollContainer');
+        if (!container) return;
+
+        // Set up scroll listener with throttling
+        let scrollTimeout;
+        container.addEventListener('scroll', () => {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+            scrollTimeout = setTimeout(() => {
+                this.handleVirtualScroll();
+            }, 16); // ~60fps
+        });
+
+        // Set initial container height
+        this.virtualScrolling.containerHeight = container.clientHeight;
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            this.virtualScrolling.containerHeight = container.clientHeight;
+            this.updateVirtualScrolling();
+        });
+    },
+
+    // Handle virtual scroll events
+    handleVirtualScroll() {
+        const container = document.getElementById('virtualScrollContainer');
+        if (!container) return;
+
+        this.virtualScrolling.scrollTop = container.scrollTop;
+        this.updateVirtualScrolling();
+    },
+
+    // Update virtual scrolling calculations
+    updateVirtualScrolling() {
+        const { itemHeight, containerHeight, scrollTop, bufferSize } = this.virtualScrolling;
+        const totalItems = this.filteredChannels.length;
+
+        if (totalItems === 0) return;
+
+        // Calculate visible range
+        const visibleStart = Math.max(0, Math.floor(scrollTop / itemHeight) - bufferSize);
+        const visibleCount = Math.ceil(containerHeight / itemHeight) + (bufferSize * 2);
+        const visibleEnd = Math.min(totalItems, visibleStart + visibleCount);
+
+        // Only update if range changed significantly
+        if (Math.abs(visibleStart - this.virtualScrolling.visibleStart) > bufferSize ||
+            Math.abs(visibleEnd - this.virtualScrolling.visibleEnd) > bufferSize) {
+
+            this.virtualScrolling.visibleStart = visibleStart;
+            this.virtualScrolling.visibleEnd = visibleEnd;
+            this.virtualScrolling.totalItems = totalItems;
+
+            this.renderVirtualChannels();
         }
     },
 
-    // Render all channels
-    renderAllChannels() {
-        const channelsGrid = document.getElementById('channelsGrid');
-        if (!channelsGrid) return;
+    // Render only visible channels for performance
+    renderVirtualChannels() {
+        const channelsList = document.getElementById('channelsList');
+        const scrollContent = document.getElementById('virtualScrollContent');
+        if (!channelsList || !scrollContent) return;
 
-        channelsGrid.innerHTML = '';
+        const { visibleStart, visibleEnd, itemHeight, totalItems } = this.virtualScrolling;
 
-        this.channels.forEach(channel => {
-            const channelCard = this.createChannelCard(channel);
-            channelsGrid.appendChild(channelCard);
+        // Set total height for scrollbar
+        const totalHeight = totalItems * itemHeight;
+        scrollContent.style.height = `${totalHeight}px`;
+
+        // Clear existing content
+        channelsList.innerHTML = '';
+
+        // Set list position
+        channelsList.style.transform = `translateY(${visibleStart * itemHeight}px)`;
+
+        // Render visible items
+        const visibleChannels = this.filteredChannels.slice(visibleStart, visibleEnd);
+
+        // Use document fragment for better performance
+        const fragment = document.createDocumentFragment();
+
+        visibleChannels.forEach((channel, index) => {
+            const channelItem = this.createChannelListItem(channel, visibleStart + index);
+            fragment.appendChild(channelItem);
         });
+
+        channelsList.appendChild(fragment);
     },
 
-    // Render channels by category
-    renderChannelsByCategory(category) {
-        const channelsGrid = document.getElementById('channelsGrid');
-        if (!channelsGrid) return;
+    // Create channel list item (optimized for performance)
+    createChannelListItem(channel, index) {
+        const item = document.createElement('div');
+        item.className = 'channel-card';
+        item.setAttribute('data-channel-id', channel.id);
 
-        channelsGrid.innerHTML = '';
+        // Use placeholder for logo initially
+        const logoPlaceholder = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Crect width=%2260%22 height=%2260%22 fill=%22%23444%22 rx=%2212%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%2300d4ff%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2220%22%3E📺%3C/text%3E%3C/svg%3E';
 
-        const categoryChannels = this.categories[category] || [];
-        categoryChannels.forEach(channel => {
-            const channelCard = this.createChannelCard(channel);
-            channelsGrid.appendChild(channelCard);
-        });
-    },
-
-    // Create channel card element
-    createChannelCard(channel) {
-        const card = document.createElement('div');
-        card.className = 'channel-card';
-
-        const logo = channel.logo || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23333%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23666%22 text-anchor=%22middle%22 dy=%22.3em%22%3E📺%3C/text%3E%3C/svg%3E';
-
-        card.innerHTML = `
-            <div class="channel-logo">
-                <img src="${logo}" alt="${channel.name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23333%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23666%22 text-anchor=%22middle%22 dy=%22.3em%22%3E📺%3C/text%3E%3C/svg%3E'" />
-            </div>
-            <div class="channel-info">
-                <h4 class="channel-name">${channel.name}</h4>
-                <p class="channel-category">${channel.group}</p>
-            </div>
-            <div class="channel-actions">
-                <button class="play-btn" onclick="LiveTVModule.playChannel('${channel.id}')">
-                    <span class="play-icon">▶️</span>
-                    <span>Play</span>
-                </button>
-                <button class="external-player-btn" onclick="LiveTVModule.showExternalPlayerMenu('${channel.url}', '${channel.name}')" title="External Player">📺</button>
-                <button class="download-btn" onclick="LiveTVModule.downloadM3U8('${channel.url}', '${channel.name}')" title="Download">⬇️</button>
-                <button class="copy-btn" onclick="LiveTVModule.copyStreamUrl('${channel.url}')" title="Copy URL">📋</button>
-                <button class="share-btn" onclick="LiveTVModule.shareChannel('${channel.url}', '${channel.name}')" title="Share">📤</button>
-                <button class="more-btn" onclick="LiveTVModule.showChannelMenu('${channel.id}', '${channel.name}', '${channel.group}')" title="More">⋮</button>
+        item.innerHTML = `
+            <div class="channel-card-inner">
+                <div class="channel-logo-container">
+                    <img src="${logoPlaceholder}" 
+                         data-src="${channel.logo || logoPlaceholder}" 
+                         alt="${channel.name}" 
+                         class="channel-logo lazy-load" />
+                </div>
+                <div class="channel-info">
+                    <div class="channel-name" title="${channel.name}">${channel.name}</div>
+                    <div class="channel-category">${channel.group}</div>
+                </div>
+                <div class="channel-actions">
+                    <button class="play-btn" onclick="LiveTVModule.playChannel('${channel.id}')" title="Play Channel">
+                        ▶
+                    </button>
+                </div>
             </div>
         `;
 
-        return card;
+        // Add click handler for the entire item
+        item.onclick = (e) => {
+            if (!e.target.closest('button')) {
+                this.playChannel(channel.id);
+            }
+        };
+
+        // Setup lazy loading for images
+        this.setupLazyLoading(item);
+
+        return item;
     },
 
-    // Play selected channel
+    // Setup lazy loading for images
+    setupLazyLoading(item) {
+        const img = item.querySelector('.lazy-load');
+        if (!img) return;
+
+        // Use Intersection Observer for lazy loading
+        if (!this.imageObserver) {
+            this.imageObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        const src = img.dataset.src;
+
+                        if (src && src !== img.src) {
+                            img.src = src;
+                            img.onload = () => {
+                                img.classList.add('loaded');
+                            };
+                            img.onerror = () => {
+                                img.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect width=%2240%22 height=%2240%22 fill=%22%23333%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23666%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2212%22%3E📺%3C/text%3E%3C/svg%3E';
+                            };
+                        }
+                        this.imageObserver.unobserve(img);
+                    }
+                });
+            }, {
+                rootMargin: '50px'
+            });
+        }
+
+        this.imageObserver.observe(img);
+    },
+
+    // Render all channels (initial load)
+    renderAllChannels() {
+        this.filteredChannels = [...this.channels];
+        this.virtualScrolling.totalItems = this.filteredChannels.length;
+        this.updateVirtualScrolling();
+    },
+
+    // Play channel
     async playChannel(channelId) {
         const channel = this.channels.find(ch => ch.id === channelId);
         if (!channel) {
@@ -328,98 +592,111 @@ const LiveTVModule = {
         console.log('📺 Playing channel:', channel.name);
         this.currentChannel = channel;
 
-        // Show player
-        const playerContainer = document.getElementById('liveTVPlayer');
+        // Update current channel info
+        const channelInfo = document.getElementById('currentChannelInfo');
+        if (channelInfo) {
+            channelInfo.innerHTML = `
+                <div class="playing-channel-info">
+                    <div class="live-indicator">🔴 LIVE</div>
+                    <h3 class="playing-channel-name">${channel.name}</h3>
+                    <div class="playing-channel-category">${channel.group}</div>
+                    <div class="channel-actions-info">
+                        <button onclick="LiveTVModule.copyStreamUrl('${channel.url}')" class="copy-url-btn">
+                            📋 Copy URL
+                        </button>
+                        <button onclick="LiveTVModule.hideChannelInfo()" class="copy-url-btn">
+                            ✕ Hide
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Play stream
         const video = document.getElementById('liveTVVideo');
-        const channelName = document.getElementById('currentChannelName');
-        const channelCategory = document.getElementById('currentChannelCategory');
-
-        if (playerContainer && video && channelName && channelCategory) {
-            playerContainer.style.display = 'block';
-            channelName.textContent = channel.name;
-            channelCategory.textContent = channel.group;
-
-            // Clear previous source
-            video.innerHTML = '';
-            video.src = '';
-
+        if (video) {
             try {
-                // Check if it's an HLS stream
-                if (channel.url.includes('.m3u8')) {
-                    await this.playHLSStream(video, channel.url);
+                console.log('📺 Stream URL:', channel.url);
+
+                // Destroy existing HLS instance if any
+                if (this.hls) {
+                    this.hls.destroy();
+                    this.hls = null;
+                }
+
+                // Check if it's an M3U8/HLS stream
+                if (channel.url.includes('.m3u8') || channel.url.includes('m3u8')) {
+                    if (Hls.isSupported()) {
+                        console.log('📺 Using HLS.js for M3U8 stream');
+                        this.hls = new Hls({
+                            debug: false,
+                            enableWorker: true,
+                            lowLatencyMode: true,
+                            backBufferLength: 90
+                        });
+                        
+                        this.hls.loadSource(channel.url);
+                        this.hls.attachMedia(video);
+                        
+                        this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                            console.log('📺 HLS manifest parsed, starting playback');
+                            video.play().catch(e => {
+                                console.error('❌ HLS playback error:', e);
+                                this.showToast(`❌ Failed to play ${channel.name}`, 'error');
+                            });
+                        });
+
+                        this.hls.on(Hls.Events.ERROR, (event, data) => {
+                            console.error('❌ HLS error:', data);
+                            if (data.fatal) {
+                                switch (data.type) {
+                                    case Hls.ErrorTypes.NETWORK_ERROR:
+                                        console.log('📺 Network error, trying to recover...');
+                                        this.hls.startLoad();
+                                        break;
+                                    case Hls.ErrorTypes.MEDIA_ERROR:
+                                        console.log('📺 Media error, trying to recover...');
+                                        this.hls.recoverMediaError();
+                                        break;
+                                    default:
+                                        console.error('❌ Fatal HLS error, cannot recover');
+                                        this.showToast(`❌ Stream error for ${channel.name}`, 'error');
+                                        break;
+                                }
+                            }
+                        });
+
+                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        // Safari native HLS support
+                        console.log('📺 Using native HLS support');
+                        video.src = channel.url;
+                        await video.play();
+                    } else {
+                        throw new Error('HLS not supported in this browser');
+                    }
                 } else {
-                    // Direct stream
+                    // Regular video file
+                    console.log('📺 Using native video player');
                     video.src = channel.url;
+                    video.load();
                     await video.play();
                 }
 
-                // Mark as watched in history
-                if (window.HistoryModule) {
-                    window.HistoryModule.addToHistory({
-                        title: channel.name,
-                        image: channel.logo,
-                        provider: 'Live TV',
-                        link: channel.url,
-                        type: 'tv'
-                    });
-                }
+                this.showToast(`📺 Now playing: ${channel.name}`, 'success');
 
-                // Show success message
-                if (window.showToast) {
-                    window.showToast(`📺 Now playing: ${channel.name}`, 'success', 2000);
+                // Highlight selected channel
+                document.querySelectorAll('.channel-card').forEach(item => {
+                    item.classList.remove('active');
+                });
+                const channelElement = document.querySelector(`[data-channel-id="${channelId}"]`);
+                if (channelElement) {
+                    channelElement.classList.add('active');
                 }
 
             } catch (error) {
                 console.error('❌ Failed to play channel:', error);
-                if (window.showToast) {
-                    window.showToast(`❌ Failed to play ${channel.name}. Try another channel.`, 'error', 3000);
-                }
+                this.showToast(`❌ Failed to play ${channel.name}: ${error.message}`, 'error');
             }
-        }
-
-        // Scroll to player
-        playerContainer?.scrollIntoView({ behavior: 'smooth' });
-    },
-
-    // Play HLS stream using hls.js
-    async playHLSStream(video, streamUrl) {
-        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-            // Destroy previous HLS instance
-            if (window.currentLiveTVHls) {
-                window.currentLiveTVHls.destroy();
-            }
-
-            const hls = new Hls({
-                enableWorker: true,
-                maxBufferLength: 30,
-                maxMaxBufferLength: 600,
-            });
-
-            hls.loadSource(streamUrl);
-            hls.attachMedia(video);
-
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                console.log('✅ HLS manifest parsed for Live TV');
-                video.play().catch(e => {
-                    console.error('❌ HLS play error:', e);
-                    throw e;
-                });
-            });
-
-            hls.on(Hls.Events.ERROR, (event, data) => {
-                console.error('❌ HLS error in Live TV:', data);
-                if (data.fatal) {
-                    throw new Error(`HLS Error: ${data.type} - ${data.details}`);
-                }
-            });
-
-            window.currentLiveTVHls = hls;
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            // Native HLS support (Safari)
-            video.src = streamUrl;
-            await video.play();
-        } else {
-            throw new Error('HLS playback not supported in this browser');
         }
     },
 
@@ -427,181 +704,65 @@ const LiveTVModule = {
     searchChannels(query) {
         if (!query.trim()) {
             this.renderAllChannels();
+            // Reset category selection
+            document.querySelectorAll('.category-chip').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector('.category-chip').classList.add('active');
             return;
         }
 
-        const filteredChannels = this.channels.filter(channel =>
-            channel.name.toLowerCase().includes(query.toLowerCase()) ||
-            channel.group.toLowerCase().includes(query.toLowerCase())
-        );
+        const searchTerm = query.toLowerCase();
+        this.filteredChannels = this.channels.filter(channel => {
+            return channel.name.toLowerCase().includes(searchTerm) ||
+                channel.group.toLowerCase().includes(searchTerm);
+        });
 
-        const channelsGrid = document.getElementById('channelsGrid');
-        if (!channelsGrid) return;
-
-        channelsGrid.innerHTML = '';
-
-        if (filteredChannels.length === 0) {
-            channelsGrid.innerHTML = `
-                <div class="no-results">
-                    <h3>No channels found</h3>
-                    <p>Try searching with different keywords</p>
-                </div>
-            `;
-            return;
+        // Update channel count
+        const channelCount = document.getElementById('channelCount');
+        if (channelCount) {
+            channelCount.textContent = this.filteredChannels.length.toLocaleString();
         }
 
-        filteredChannels.forEach(channel => {
-            const channelCard = this.createChannelCard(channel);
-            channelsGrid.appendChild(channelCard);
+        // Reset virtual scrolling
+        this.virtualScrolling.visibleStart = 0;
+        this.virtualScrolling.visibleEnd = 0;
+        this.virtualScrolling.totalItems = this.filteredChannels.length;
+
+        // Reset scroll position
+        const container = document.getElementById('virtualScrollContainer');
+        if (container) {
+            container.scrollTop = 0;
+        }
+
+        this.updateVirtualScrolling();
+
+        // Clear category selection during search
+        document.querySelectorAll('.category-chip').forEach(item => {
+            item.classList.remove('active');
         });
     },
 
-    // Stop current playback
-    stopPlayback() {
-        const video = document.getElementById('liveTVVideo');
-        const playerContainer = document.getElementById('liveTVPlayer');
-
-        if (video) {
-            video.pause();
-            video.src = '';
-            video.innerHTML = '';
-        }
-
-        if (playerContainer) {
-            playerContainer.style.display = 'none';
-        }
-
-        if (window.currentLiveTVHls) {
-            window.currentLiveTVHls.destroy();
-            window.currentLiveTVHls = null;
-        }
-
-        this.currentChannel = null;
-        console.log('⏹️ Live TV playback stopped');
-    },
-
-    // Show external player menu
-    showExternalPlayerMenu(streamUrl, channelName) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>📺 Open in External Player</h3>
-                    <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
-                </div>
-                <div class="modal-body">
-                    <p>Choose an external player to open <strong>${channelName}</strong>:</p>
-                    <div class="external-player-options">
-                        <button class="player-option" onclick="LiveTVModule.openInExternalPlayer('vlc', '${streamUrl}', '${channelName}')">
-                            <span class="player-icon">🎥</span>
-                            <span>VLC Media Player</span>
-                        </button>
-                        <button class="player-option" onclick="LiveTVModule.openInExternalPlayer('potplayer', '${streamUrl}', '${channelName}')">
-                            <span class="player-icon">📺</span>
-                            <span>PotPlayer</span>
-                        </button>
-                        <button class="player-option" onclick="LiveTVModule.openInExternalPlayer('mpv', '${streamUrl}', '${channelName}')">
-                            <span class="player-icon">🎬</span>
-                            <span>MPV Player</span>
-                        </button>
-                        <button class="player-option" onclick="LiveTVModule.openInExternalPlayer('auto', '${streamUrl}', '${channelName}')">
-                            <span class="player-icon">🔄</span>
-                            <span>Auto Detect</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    },
-
-    // Open in external player
-    async openInExternalPlayer(playerType, streamUrl, channelName) {
+    // Refresh channels
+    async refreshChannels() {
         try {
-            // Check if running in Electron (desktop app)
-            const bridge = window.appBridge;
-            if (bridge?.openExternalPlayer) {
-                const result = await bridge.openExternalPlayer({
-                    url: streamUrl,
-                    title: channelName,
-                    player: playerType === 'auto' ? null : playerType
-                });
-                
-                if (result.ok) {
-                    if (window.showToast) {
-                        const playerName = result.player ? result.player.split(/[\\\/]/).pop() : playerType.toUpperCase();
-                        window.showToast(`📺 Opening ${channelName} in ${playerName}`, 'success', 2000);
-                    }
-                    document.querySelector('.modal-overlay')?.remove();
-                    return;
-                } else {
-                    throw new Error(result.error || 'Failed to open external player');
-                }
-            } else {
-                // Running in web browser - use web-based external player methods
-                console.log('🌐 Running in web browser, using web-based external player methods for Live TV');
-                document.querySelector('.modal-overlay')?.remove();
-                
-                // Use the same web-based external player function from app.js
-                if (window.openExternalPlayerWeb) {
-                    await window.openExternalPlayerWeb(streamUrl, playerType === 'auto' ? null : playerType, channelName, true, false);
-                } else {
-                    // Fallback to showing the modal directly
-                    if (window.showEnhancedExternalPlayerModal) {
-                        const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
-                        const isAndroid = /android/i.test(navigator.userAgent.toLowerCase());
-                        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
-                        window.showEnhancedExternalPlayerModal(streamUrl, channelName, null, isMobile, isAndroid, isIOS, false, false);
-                    } else {
-                        // Simple fallback
-                        if (navigator.clipboard && window.isSecureContext) {
-                            await navigator.clipboard.writeText(streamUrl);
-                            if (window.showToast) {
-                                window.showToast('📋 Stream URL copied to clipboard. Paste it in your external player.', 'info', 4000);
-                            }
-                        } else {
-                            if (window.showToast) {
-                                window.showToast('Copy this URL to your external player: ' + streamUrl, 'info', 6000);
-                            }
-                        }
-                    }
-                }
-                return;
-            }
-        } catch (error) {
-            console.error('❌ Failed to open external player:', error);
-            if (window.showToast) {
-                window.showToast(`❌ Failed to open ${playerType.toUpperCase()}: ${error.message}`, 'error', 3000);
-            }
-        }
-    },
+            this.showLoading(true, 'Refreshing channels...');
 
-    // Download M3U8 file
-    async downloadM3U8(streamUrl, channelName) {
-        try {
-            const response = await fetch(streamUrl);
-            const m3u8Content = await response.text();
-            
-            const blob = new Blob([m3u8Content], { type: 'application/vnd.apple.mpegurl' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${channelName.replace(/[^a-z0-9]/gi, '_')}.m3u8`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            if (window.showToast) {
-                window.showToast(`⬇️ Downloaded ${channelName}.m3u8`, 'success', 2000);
-            }
+            // Clear stored channels to force fresh load
+            localStorage.removeItem('liveTVChannels');
+            this.channels = [];
+            this.categories = {};
+
+            await this.loadPlaylist();
+            this.categorizeChannels();
+            this.renderCategories();
+            this.renderAllChannels();
+            this.showToast(`🔄 Refreshed ${this.channels.length.toLocaleString()} channels`, 'success');
         } catch (error) {
-            console.error('❌ Failed to download M3U8:', error);
-            if (window.showToast) {
-                window.showToast(`❌ Failed to download M3U8 file`, 'error', 3000);
-            }
+            console.error('❌ Failed to refresh channels:', error);
+            this.showToast('❌ Failed to refresh channels', 'error');
+        } finally {
+            this.showLoading(false);
         }
     },
 
@@ -609,708 +770,91 @@ const LiveTVModule = {
     async copyStreamUrl(streamUrl) {
         try {
             await navigator.clipboard.writeText(streamUrl);
-            if (window.showToast) {
-                window.showToast('📋 Stream URL copied to clipboard', 'success', 2000);
-            }
+            this.showToast('📋 Stream URL copied to clipboard', 'success');
         } catch (error) {
             console.error('❌ Failed to copy URL:', error);
-            if (window.showToast) {
-                window.showToast('❌ Failed to copy URL', 'error', 2000);
-            }
+            this.showToast('❌ Failed to copy URL', 'error');
         }
     },
 
-    // Share channel
-    shareChannel(streamUrl, channelName) {
-        if (navigator.share) {
-            navigator.share({
-                title: `Watch ${channelName}`,
-                text: `Check out this live TV channel: ${channelName}`,
-                url: streamUrl
-            }).catch(error => console.error('❌ Share failed:', error));
-        } else {
-            // Fallback: copy to clipboard
-            this.copyStreamUrl(`${channelName}: ${streamUrl}`);
+    // Hide channel info
+    hideChannelInfo() {
+        const channelInfo = document.getElementById('currentChannelInfo');
+        if (channelInfo) {
+            channelInfo.style.display = 'none';
         }
     },
 
-    // Show channel menu
-    showChannelMenu(channelId, channelName, channelCategory) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>⚙️ Channel Options</h3>
-                    <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
-                </div>
-                <div class="modal-body">
-                    <h4>${channelName}</h4>
-                    <p>Category: ${channelCategory}</p>
-                    <div class="channel-menu-options">
-                        <button onclick="LiveTVModule.editChannelName('${channelId}', '${channelName}')">✏️ Edit Name</button>
-                        <button onclick="LiveTVModule.changeChannelCategory('${channelId}', '${channelCategory}')">📁 Change Category</button>
-                        <button onclick="LiveTVModule.addToFavorites('${channelId}')">⭐ Add to Favorites</button>
-                        <button onclick="LiveTVModule.deleteChannel('${channelId}')">🗑️ Delete Channel</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    },
-
-    // Edit channel name
-    editChannelName(channelId, currentName) {
-        const newName = prompt('Enter new channel name:', currentName);
-        if (newName && newName !== currentName) {
-            const channel = this.channels.find(ch => ch.id === channelId);
-            if (channel) {
-                channel.name = newName;
-                this.saveChannelsToStorage();
-                this.renderAllChannels();
-                if (window.showToast) {
-                    window.showToast(`✏️ Channel renamed to "${newName}"`, 'success', 2000);
-                }
-            }
+    // Exit fullscreen mode
+    exitFullscreen() {
+        const container = document.querySelector('.livetv-container');
+        if (container) {
+            container.style.display = 'none';
         }
-        document.querySelector('.modal-overlay')?.remove();
-    },
 
-    // Change channel category
-    changeChannelCategory(channelId, currentCategory) {
-        const categories = Object.keys(this.categories);
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>📁 Change Category</h3>
-                    <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
-                </div>
-                <div class="modal-body">
-                    <p>Select new category:</p>
-                    <div class="category-options">
-                        ${categories.map(cat => `
-                            <button class="category-option ${cat === currentCategory ? 'active' : ''}" 
-                                    onclick="LiveTVModule.updateChannelCategory('${channelId}', '${cat}')">
-                                ${this.getCategoryIcon(cat)} ${cat}
-                            </button>
-                        `).join('')}
-                    </div>
-                    <div class="new-category-section">
-                        <input type="text" id="newCategoryInput" placeholder="Or create new category...">
-                        <button onclick="LiveTVModule.createNewCategory('${channelId}')">Create</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    },
-
-    // Update channel category
-    updateChannelCategory(channelId, newCategory) {
-        const channel = this.channels.find(ch => ch.id === channelId);
-        if (channel) {
-            const oldCategory = channel.group;
-            channel.group = newCategory;
-            this.categorizeChannels();
-            this.saveChannelsToStorage();
-            this.renderCategories();
-            this.renderAllChannels();
-            if (window.showToast) {
-                window.showToast(`📁 Channel moved to "${newCategory}"`, 'success', 2000);
-            }
+        // Stop video and cleanup HLS
+        const video = document.getElementById('liveTVVideo');
+        if (video) {
+            video.pause();
+            video.src = '';
         }
-        document.querySelector('.modal-overlay')?.remove();
-    },
-
-    // Create new category
-    createNewCategory(channelId) {
-        const input = document.getElementById('newCategoryInput');
-        const newCategory = input?.value.trim();
-        if (newCategory) {
-            this.updateChannelCategory(channelId, newCategory);
+        
+        // Destroy HLS instance
+        if (this.hls) {
+            this.hls.destroy();
+            this.hls = null;
         }
-    },
 
-    // Add to favorites
-    addToFavorites(channelId) {
-        const favorites = JSON.parse(localStorage.getItem('liveTVFavorites') || '[]');
-        if (!favorites.includes(channelId)) {
-            favorites.push(channelId);
-            localStorage.setItem('liveTVFavorites', JSON.stringify(favorites));
-            if (window.showToast) {
-                window.showToast('⭐ Added to favorites', 'success', 2000);
-            }
+        // Go back to main app
+        if (window.showView) {
+            window.showView('home');
         }
-        document.querySelector('.modal-overlay')?.remove();
-    },
-
-    // Delete channel
-    deleteChannel(channelId) {
-        if (confirm('Are you sure you want to delete this channel?')) {
-            this.channels = this.channels.filter(ch => ch.id !== channelId);
-            this.categorizeChannels();
-            this.saveChannelsToStorage();
-            this.renderCategories();
-            this.renderAllChannels();
-            if (window.showToast) {
-                window.showToast('🗑️ Channel deleted', 'success', 2000);
-            }
-        }
-        document.querySelector('.modal-overlay')?.remove();
     },
 
     // Save channels to storage
     saveChannelsToStorage() {
-        localStorage.setItem('liveTVChannels', JSON.stringify(this.channels));
+        try {
+            // Only save essential data to reduce storage size
+            const essentialData = this.channels.map(channel => ({
+                id: channel.id,
+                name: channel.name,
+                url: channel.url,
+                group: channel.group,
+                logo: channel.logo
+            }));
+
+            localStorage.setItem('liveTVChannels', JSON.stringify(essentialData));
+        } catch (error) {
+            console.error('❌ Failed to save channels to storage:', error);
+        }
     },
 
     // Load channels from storage
     loadChannelsFromStorage() {
-        const stored = localStorage.getItem('liveTVChannels');
-        if (stored) {
-            this.channels = JSON.parse(stored);
-            return true;
+        try {
+            const stored = localStorage.getItem('liveTVChannels');
+            if (stored) {
+                this.channels = JSON.parse(stored);
+                return true;
+            }
+        } catch (error) {
+            console.error('❌ Failed to load channels from storage:', error);
         }
         return false;
     },
 
-    // Add custom M3U8 URL
-    addCustomM3U8() {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>➕ Add Custom M3U8</h3>
-                    <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Channel Name:</label>
-                        <input type="text" id="customChannelName" placeholder="Enter channel name">
-                    </div>
-                    <div class="form-group">
-                        <label>M3U8 URL:</label>
-                        <input type="url" id="customChannelUrl" placeholder="https://example.com/stream.m3u8">
-                    </div>
-                    <div class="form-group">
-                        <label>Category:</label>
-                        <select id="customChannelCategory">
-                            ${Object.keys(this.categories).map(cat => `<option value="${cat}">${cat}</option>`).join('')}
-                            <option value="Custom">Custom</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Logo URL (optional):</label>
-                        <input type="url" id="customChannelLogo" placeholder="https://example.com/logo.png">
-                    </div>
-                    <div class="form-actions">
-                        <button onclick="LiveTVModule.saveCustomChannel()">Add Channel</button>
-                        <button onclick="this.closest('.modal-overlay').remove()">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
+    // Utility functions
+    showLoading(show = true, message = 'Loading...') {
+        if (window.showLoading) {
+            window.showLoading(show, message);
+        }
     },
 
-    // Save custom channel
-    saveCustomChannel() {
-        const name = document.getElementById('customChannelName')?.value.trim();
-        const url = document.getElementById('customChannelUrl')?.value.trim();
-        const category = document.getElementById('customChannelCategory')?.value;
-        const logo = document.getElementById('customChannelLogo')?.value.trim();
-
-        if (!name || !url) {
-            if (window.showToast) {
-                window.showToast('❌ Please fill in channel name and URL', 'error', 3000);
-            }
-            return;
-        }
-
-        const newChannel = {
-            id: `custom_${Date.now()}`,
-            name: name,
-            url: url,
-            group: category,
-            logo: logo || ''
-        };
-
-        this.channels.push(newChannel);
-        this.categorizeChannels();
-        this.saveChannelsToStorage();
-        this.renderCategories();
-        this.renderAllChannels();
-
+    showToast(message, type = 'info', duration = 3000) {
         if (window.showToast) {
-            window.showToast(`✅ Added "${name}" to ${category}`, 'success', 2000);
-        }
-
-        document.querySelector('.modal-overlay')?.remove();
-    },
-
-    // Export favorites as M3U8
-    exportFavorites() {
-        const favorites = JSON.parse(localStorage.getItem('liveTVFavorites') || '[]');
-        const favoriteChannels = this.channels.filter(ch => favorites.includes(ch.id));
-
-        if (favoriteChannels.length === 0) {
-            if (window.showToast) {
-                window.showToast('❌ No favorite channels to export', 'error', 2000);
-            }
-            return;
-        }
-
-        let m3u8Content = '#EXTM3U\n';
-        favoriteChannels.forEach(channel => {
-            m3u8Content += `#EXTINF:-1 tvg-logo="${channel.logo}" group-title="${channel.group}",${channel.name}\n`;
-            m3u8Content += `${channel.url}\n`;
-        });
-
-        const blob = new Blob([m3u8Content], { type: 'application/vnd.apple.mpegurl' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'favorites.m3u8';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        if (window.showToast) {
-            window.showToast(`📤 Exported ${favoriteChannels.length} favorite channels`, 'success', 2000);
-        }
-    },
-
-    // Import M3U8 file
-    importM3U8() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.m3u8,.m3u';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const content = e.target.result;
-                    const importedChannels = this.parseM3U(content);
-                    
-                    if (importedChannels.length > 0) {
-                        // Add unique IDs to imported channels
-                        importedChannels.forEach((channel, index) => {
-                            channel.id = `imported_${Date.now()}_${index}`;
-                        });
-                        
-                        this.channels.push(...importedChannels);
-                        this.categorizeChannels();
-                        this.saveChannelsToStorage();
-                        this.renderCategories();
-                        this.renderAllChannels();
-                        
-                        if (window.showToast) {
-                            window.showToast(`📥 Imported ${importedChannels.length} channels`, 'success', 2000);
-                        }
-                    } else {
-                        if (window.showToast) {
-                            window.showToast('❌ No valid channels found in file', 'error', 3000);
-                        }
-                    }
-                };
-                reader.readAsText(file);
-            }
-        };
-        input.click();
-    },
-
-    // Show favorites
-    showFavorites() {
-        const favorites = JSON.parse(localStorage.getItem('liveTVFavorites') || '[]');
-        const favoriteChannels = this.channels.filter(ch => favorites.includes(ch.id));
-
-        const channelsGrid = document.getElementById('channelsGrid');
-        if (!channelsGrid) return;
-
-        channelsGrid.innerHTML = '';
-
-        if (favoriteChannels.length === 0) {
-            channelsGrid.innerHTML = `
-                <div class="no-results">
-                    <h3>⭐ No Favorite Channels</h3>
-                    <p>Add channels to favorites to see them here</p>
-                </div>
-            `;
-            return;
-        }
-
-        favoriteChannels.forEach(channel => {
-            const channelCard = this.createChannelCard(channel);
-            channelsGrid.appendChild(channelCard);
-        });
-
-        // Update active category
-        document.querySelectorAll('.category-item').forEach(item => {
-            item.classList.remove('active');
-        });
-    },
-
-    // Toggle fullscreen
-    toggleFullscreen() {
-        const video = document.getElementById('liveTVVideo');
-        if (!video) return;
-
-        if (!document.fullscreenElement) {
-            video.requestFullscreen().catch(err => {
-                console.error('❌ Failed to enter fullscreen:', err);
-            });
+            window.showToast(message, type, duration);
         } else {
-            document.exitFullscreen();
-        }
-    },
-
-    // Toggle picture in picture
-    async togglePictureInPicture() {
-        const video = document.getElementById('liveTVVideo');
-        if (!video) return;
-
-        try {
-            if (document.pictureInPictureElement) {
-                await document.exitPictureInPicture();
-            } else {
-                await video.requestPictureInPicture();
-            }
-        } catch (error) {
-            console.error('❌ Picture-in-Picture error:', error);
-            if (window.showToast) {
-                window.showToast('❌ Picture-in-Picture not supported', 'error', 2000);
-            }
-        }
-    },
-
-    // Show video settings
-    showVideoSettings() {
-        const video = document.getElementById('liveTVVideo');
-        if (!video) return;
-
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>⚙️ Video Settings</h3>
-                    <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="setting-group">
-                        <label>Playback Speed:</label>
-                        <select id="playbackSpeed" onchange="LiveTVModule.setPlaybackSpeed(this.value)">
-                            <option value="0.5">0.5x</option>
-                            <option value="0.75">0.75x</option>
-                            <option value="1" selected>1x (Normal)</option>
-                            <option value="1.25">1.25x</option>
-                            <option value="1.5">1.5x</option>
-                            <option value="2">2x</option>
-                        </select>
-                    </div>
-                    <div class="setting-group">
-                        <label>Volume:</label>
-                        <input type="range" id="volumeSlider" min="0" max="100" value="${Math.round(video.volume * 100)}" 
-                               oninput="LiveTVModule.setVolume(this.value)">
-                        <span id="volumeValue">${Math.round(video.volume * 100)}%</span>
-                    </div>
-                    <div class="setting-group">
-                        <label>Brightness:</label>
-                        <input type="range" id="brightnessSlider" min="0" max="200" value="100" 
-                               oninput="LiveTVModule.setBrightness(this.value)">
-                        <span id="brightnessValue">100%</span>
-                    </div>
-                    <div class="setting-group">
-                        <label>Contrast:</label>
-                        <input type="range" id="contrastSlider" min="0" max="200" value="100" 
-                               oninput="LiveTVModule.setContrast(this.value)">
-                        <span id="contrastValue">100%</span>
-                    </div>
-                    <div class="setting-group">
-                        <label>Saturation:</label>
-                        <input type="range" id="saturationSlider" min="0" max="200" value="100" 
-                               oninput="LiveTVModule.setSaturation(this.value)">
-                        <span id="saturationValue">100%</span>
-                    </div>
-                    <div class="setting-actions">
-                        <button onclick="LiveTVModule.resetVideoSettings()">Reset to Default</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    },
-
-    // Set playback speed
-    setPlaybackSpeed(speed) {
-        const video = document.getElementById('liveTVVideo');
-        if (video) {
-            video.playbackRate = parseFloat(speed);
-        }
-    },
-
-    // Set volume
-    setVolume(volume) {
-        const video = document.getElementById('liveTVVideo');
-        if (video) {
-            video.volume = volume / 100;
-            document.getElementById('volumeValue').textContent = volume + '%';
-        }
-    },
-
-    // Set brightness
-    setBrightness(brightness) {
-        const video = document.getElementById('liveTVVideo');
-        if (video) {
-            const filter = `brightness(${brightness}%) contrast(${document.getElementById('contrastSlider')?.value || 100}%) saturate(${document.getElementById('saturationSlider')?.value || 100}%)`;
-            video.style.filter = filter;
-            document.getElementById('brightnessValue').textContent = brightness + '%';
-        }
-    },
-
-    // Set contrast
-    setContrast(contrast) {
-        const video = document.getElementById('liveTVVideo');
-        if (video) {
-            const filter = `brightness(${document.getElementById('brightnessSlider')?.value || 100}%) contrast(${contrast}%) saturate(${document.getElementById('saturationSlider')?.value || 100}%)`;
-            video.style.filter = filter;
-            document.getElementById('contrastValue').textContent = contrast + '%';
-        }
-    },
-
-    // Set saturation
-    setSaturation(saturation) {
-        const video = document.getElementById('liveTVVideo');
-        if (video) {
-            const filter = `brightness(${document.getElementById('brightnessSlider')?.value || 100}%) contrast(${document.getElementById('contrastSlider')?.value || 100}%) saturate(${saturation}%)`;
-            video.style.filter = filter;
-            document.getElementById('saturationValue').textContent = saturation + '%';
-        }
-    },
-
-    // Reset video settings
-    resetVideoSettings() {
-        const video = document.getElementById('liveTVVideo');
-        if (video) {
-            video.playbackRate = 1;
-            video.style.filter = 'none';
-            
-            // Reset sliders
-            document.getElementById('playbackSpeed').value = '1';
-            document.getElementById('brightnessSlider').value = '100';
-            document.getElementById('contrastSlider').value = '100';
-            document.getElementById('saturationSlider').value = '100';
-            
-            // Update labels
-            document.getElementById('brightnessValue').textContent = '100%';
-            document.getElementById('contrastValue').textContent = '100%';
-            document.getElementById('saturationValue').textContent = '100%';
-        }
-    },
-
-    // Show settings
-    showSettings() {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>⚙️ Live TV Settings</h3>
-                    <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="settings-section">
-                        <h4>🎵 Audio & Video</h4>
-                        <div class="setting-item">
-                            <label>
-                                <input type="checkbox" id="autoplay" ${this.getSettings().autoplay ? 'checked' : ''}>
-                                Auto-play channels
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <label>
-                                <input type="checkbox" id="showThumbnails" ${this.getSettings().showThumbnails ? 'checked' : ''}>
-                                Show channel thumbnails
-                            </label>
-                        </div>
-                    </div>
-                    <div class="settings-section">
-                        <h4>📱 Interface</h4>
-                        <div class="setting-item">
-                            <label>Grid Size:</label>
-                            <select id="gridSize">
-                                <option value="small" ${this.getSettings().gridSize === 'small' ? 'selected' : ''}>Small</option>
-                                <option value="medium" ${this.getSettings().gridSize === 'medium' ? 'selected' : ''}>Medium</option>
-                                <option value="large" ${this.getSettings().gridSize === 'large' ? 'selected' : ''}>Large</option>
-                            </select>
-                        </div>
-                        <div class="setting-item">
-                            <label>Theme:</label>
-                            <select id="theme">
-                                <option value="dark" ${this.getSettings().theme === 'dark' ? 'selected' : ''}>Dark</option>
-                                <option value="light" ${this.getSettings().theme === 'light' ? 'selected' : ''}>Light</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="settings-section">
-                        <h4>💾 Data Management</h4>
-                        <div class="setting-actions">
-                            <button onclick="LiveTVModule.backupSettings()">📤 Backup Settings</button>
-                            <button onclick="LiveTVModule.restoreSettings()">📥 Restore Settings</button>
-                            <button onclick="LiveTVModule.clearAllData()">🗑️ Clear All Data</button>
-                        </div>
-                    </div>
-                    <div class="modal-actions">
-                        <button onclick="LiveTVModule.saveSettings()">Save Settings</button>
-                        <button onclick="this.closest('.modal-overlay').remove()">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    },
-
-    // Get settings
-    getSettings() {
-        return JSON.parse(localStorage.getItem('liveTVSettings') || JSON.stringify({
-            autoplay: true,
-            showThumbnails: true,
-            gridSize: 'medium',
-            theme: 'dark'
-        }));
-    },
-
-    // Save settings
-    saveSettings() {
-        const settings = {
-            autoplay: document.getElementById('autoplay')?.checked || false,
-            showThumbnails: document.getElementById('showThumbnails')?.checked || false,
-            gridSize: document.getElementById('gridSize')?.value || 'medium',
-            theme: document.getElementById('theme')?.value || 'dark'
-        };
-
-        localStorage.setItem('liveTVSettings', JSON.stringify(settings));
-        
-        // Apply settings
-        this.applySettings(settings);
-        
-        if (window.showToast) {
-            window.showToast('✅ Settings saved', 'success', 2000);
-        }
-        
-        document.querySelector('.modal-overlay')?.remove();
-    },
-
-    // Apply settings
-    applySettings(settings) {
-        // Apply grid size
-        const channelsGrid = document.getElementById('channelsGrid');
-        if (channelsGrid) {
-            channelsGrid.className = `channels-grid grid-${settings.gridSize}`;
-        }
-
-        // Apply theme
-        document.body.setAttribute('data-theme', settings.theme);
-    },
-
-    // Backup settings
-    backupSettings() {
-        const backup = {
-            channels: this.channels,
-            favorites: JSON.parse(localStorage.getItem('liveTVFavorites') || '[]'),
-            settings: this.getSettings(),
-            timestamp: new Date().toISOString()
-        };
-
-        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `livetv_backup_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        if (window.showToast) {
-            window.showToast('📤 Settings backed up successfully', 'success', 2000);
-        }
-    },
-
-    // Restore settings
-    restoreSettings() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const backup = JSON.parse(e.target.result);
-                        
-                        if (backup.channels) {
-                            this.channels = backup.channels;
-                            this.categorizeChannels();
-                            this.saveChannelsToStorage();
-                        }
-                        
-                        if (backup.favorites) {
-                            localStorage.setItem('liveTVFavorites', JSON.stringify(backup.favorites));
-                        }
-                        
-                        if (backup.settings) {
-                            localStorage.setItem('liveTVSettings', JSON.stringify(backup.settings));
-                            this.applySettings(backup.settings);
-                        }
-                        
-                        this.renderCategories();
-                        this.renderAllChannels();
-                        
-                        if (window.showToast) {
-                            window.showToast('📥 Settings restored successfully', 'success', 2000);
-                        }
-                        
-                        document.querySelector('.modal-overlay')?.remove();
-                    } catch (error) {
-                        console.error('❌ Failed to restore backup:', error);
-                        if (window.showToast) {
-                            window.showToast('❌ Invalid backup file', 'error', 3000);
-                        }
-                    }
-                };
-                reader.readAsText(file);
-            }
-        };
-        input.click();
-    },
-
-    // Clear all data
-    clearAllData() {
-        if (confirm('Are you sure you want to clear all Live TV data? This cannot be undone.')) {
-            localStorage.removeItem('liveTVChannels');
-            localStorage.removeItem('liveTVFavorites');
-            localStorage.removeItem('liveTVSettings');
-            
-            // Reload original playlist
-            this.init().then(() => {
-                this.renderCategories();
-                this.renderAllChannels();
-                
-                if (window.showToast) {
-                    window.showToast('🗑️ All data cleared', 'success', 2000);
-                }
-            });
-            
-            document.querySelector('.modal-overlay')?.remove();
+            console.log(`${type.toUpperCase()}: ${message}`);
         }
     }
 };
@@ -1319,21 +863,28 @@ const LiveTVModule = {
 async function loadLiveTVPage() {
     console.log('📺 Loading Live TV page...');
 
-    if (window.showView) {
-        showView('liveTV');
-    }
+    try {
+        if (window.showView) {
+            showView('liveTV');
+        }
 
-    if (window.updateNavLinks) {
-        updateNavLinks('liveTV');
-    }
+        if (window.updateNavLinks) {
+            updateNavLinks('liveTV');
+        }
 
-    // Initialize Live TV module if not already done
-    if (LiveTVModule.channels.length === 0) {
-        await LiveTVModule.init();
-    }
+        // Initialize Live TV module if not already done
+        if (LiveTVModule.channels.length === 0) {
+            await LiveTVModule.init();
+        }
 
-    // Render the page
-    LiveTVModule.renderLiveTVPage();
+        // Render the page
+        LiveTVModule.renderLiveTVPage();
+
+        console.log('✅ Live TV page loaded successfully');
+
+    } catch (error) {
+        console.error('❌ Error loading Live TV page:', error);
+    }
 }
 
 // Make functions globally accessible
