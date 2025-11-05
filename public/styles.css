@@ -6105,15 +6105,7 @@ g Channel Info */
     box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
 }
 
-.category-chip.category-pinned {
-    background: linear-gradient(135deg, #ff6b35, #f7931e);
-    border-color: #ff6b35;
-}
-
-.category-chip.category-pinned.active {
-    background: linear-gradient(135deg, #ff6b35, #f7931e);
-    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.5);
-}
+/* Legacy pinned category style - now handled by specific classes */
 
 .category-icon {
     font-size: 24px;
@@ -6622,4 +6614,34 @@ ode Symbol Styling */
 .play-btn i,
 .category-nav-btn i {
     display: none;
+}
+* Pinned Category Styles */
+.category-chip.category-pinned-sports {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-color: #28a745;
+}
+
+.category-chip.category-pinned-sports.active {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.5);
+}
+
+.category-chip.category-pinned-cricket {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    border-color: #17a2b8;
+}
+
+.category-chip.category-pinned-cricket.active {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    box-shadow: 0 8px 25px rgba(23, 162, 184, 0.5);
+}
+
+.category-chip.category-pinned-india {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    border-color: #ff6b35;
+}
+
+.category-chip.category-pinned-india.active {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.5);
 }

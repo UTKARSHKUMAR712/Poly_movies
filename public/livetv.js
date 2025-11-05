@@ -133,7 +133,10 @@ const LiveTVModule = {
         if (name.includes('[in]') || name.includes('india')) {
             return '[IN] INDIA';
         }
-        if (name.includes('sports') || name.includes('cricket') || name.includes('football')) {
+        if (name.includes('cricket')) {
+            return 'Cricket';
+        }
+        if (name.includes('sports') || name.includes('sport') || name.includes('football') || name.includes('soccer')) {
             return 'Sports';
         }
         if (name.includes('news')) {
@@ -282,10 +285,22 @@ const LiveTVModule = {
         allOption.onclick = () => this.selectCategory('all', allOption);
         categoriesScroll.appendChild(allOption);
 
-        // Sort categories - pin [IN] INDIA at the top
+        // Sort categories with custom priority order
+        const categoryPriority = {
+            'Sports': 1,
+            'Cricket': 2,
+            '[IN] INDIA': 3
+        };
+
         const sortedCategories = Object.keys(this.categories).sort((a, b) => {
-            if (a === '[IN] INDIA') return -1;
-            if (b === '[IN] INDIA') return 1;
+            const priorityA = categoryPriority[a] || 999;
+            const priorityB = categoryPriority[b] || 999;
+            
+            if (priorityA !== priorityB) {
+                return priorityA - priorityB;
+            }
+            
+            // If same priority, sort by channel count (descending)
             return this.categories[b].length - this.categories[a].length;
         });
 
@@ -294,9 +309,13 @@ const LiveTVModule = {
             const categoryChip = document.createElement('div');
             categoryChip.className = 'category-chip';
 
-            // Special styling for IN section
+            // Special styling for pinned sections
             if (category === '[IN] INDIA') {
-                categoryChip.classList.add('category-pinned');
+                categoryChip.classList.add('category-pinned-india');
+            } else if (category === 'Sports') {
+                categoryChip.classList.add('category-pinned-sports');
+            } else if (category === 'Cricket') {
+                categoryChip.classList.add('category-pinned-cricket');
             }
 
             const icon = this.getCategoryIcon(category);
@@ -322,6 +341,7 @@ const LiveTVModule = {
         const icons = {
             '[IN] INDIA': '🇮🇳',
             'Sports': '🏆',
+            'Cricket': '🏏',
             'News': '📰',
             'Movies': '🎬',
             'Music': '🎵',
