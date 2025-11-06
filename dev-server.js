@@ -483,6 +483,72 @@ class DevServer {
       }
     });
 
+    // Cricket API endpoints
+    this.app.get("/api/cricket/test", (req, res) => {
+      console.log('🏏 Cricket test endpoint hit');
+      res.json({ 
+        status: "Cricket API is working", 
+        timestamp: new Date().toISOString(),
+        endpoint: "/api/cricket/matches",
+        server: "integrated"
+      });
+    });
+
+    this.app.get("/api/cricket/matches", async (req, res) => {
+      try {
+        console.log('🏏 Fetching cricket matches from Cricbuzz...');
+        
+        const response = await axios.get("https://www.cricbuzz.com/api/home", {
+          headers: { 
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Cache-Control": "no-cache",
+            "Referer": "https://www.cricbuzz.com/",
+            "Origin": "https://www.cricbuzz.com"
+          },
+          timeout: 15000
+        });
+
+        console.log('🏏 Cricket data fetched successfully');
+        
+        res.set('Access-Control-Allow-Origin', '*');
+        res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.set('Access-Control-Allow-Headers', 'Content-Type');
+        res.json(response.data);
+        
+      } catch (error) {
+        console.error('🏏 Cricket API error:', error.message);
+        res.status(500).json({
+          error: "Failed to fetch cricket data",
+          details: error.message,
+          fallback: {
+            matches: [],
+            message: "Cricket data temporarily unavailable"
+          }
+        });
+      }
+    });
+
+    // Alternative cricbuzz endpoint
+    this.app.get("/api/cricbuzz", async (req, res) => {
+      try {
+        const response = await axios.get("https://www.cricbuzz.com/api/home", {
+          headers: { "User-Agent": "Mozilla/5.0" },
+          timeout: 10000
+        });
+        
+        res.set('Access-Control-Allow-Origin', '*');
+        res.json(response.data);
+        
+      } catch (error) {
+        res.status(500).json({
+          error: "Failed",
+          details: error.toString()
+        });
+      }
+    });
+
     // 404 handler
     this.app.use((req, res) => {
       res.status(404).json({
@@ -501,6 +567,9 @@ class DevServer {
           "GET /api/:provider/meta?link=",
           "GET /api/:provider/episodes?url=",
           "GET /api/:provider/stream?link=&type=",
+          "GET /api/cricket/test",
+          "GET /api/cricket/matches",
+          "GET /api/cricbuzz",
         ],
       });
     });

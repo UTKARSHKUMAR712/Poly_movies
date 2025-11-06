@@ -2671,7 +2671,8 @@ select:focus {
 .genre-cards-wrapper {
     display: grid;
     grid-auto-flow: column;
-    grid-template-rows: repeat(2, 1fr);  /* Two horizontal rows */
+    grid-template-rows: repeat(2, 1fr);
+    /* Two horizontal rows */
     gap: 10px;
     overflow-x: auto;
     padding: 0 20px 20px;
@@ -5295,7 +5296,7 @@ nal Mobile Responsive Improvements */
     }
 }
 
-/* / * Troubleshooting Tips Styles */ 
+/* / * Troubleshooting Tips Styles */
 .troubleshooting-tips {
     background: #1a1a1a;
     border: 1px solid #333;
@@ -5366,7 +5367,9 @@ nal Mobile Responsive Improvements */
         font-size: 12px;
         padding: 4px 0;
     }
-}/*
+}
+
+/*
  Enhanced Download Button Styles */
 .stream-download-btn {
     background: #ff6b35 !important;
@@ -5394,12 +5397,12 @@ nal Mobile Responsive Improvements */
         width: 100% !important;
         margin-top: 8px !important;
     }
-    
+
     .stream-option-buttons {
         flex-direction: column !important;
         gap: 8px !important;
     }
-    
+
     .stream-option-button {
         width: 100% !important;
         justify-content: center !important;
@@ -5424,8 +5427,13 @@ nal Mobile Responsive Improvements */
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Mobile Navigation Improvements */
@@ -5434,17 +5442,17 @@ nal Mobile Responsive Improvements */
         align-items: center;
         gap: 8px;
     }
-    
+
     .mobile-nav-toggle {
         display: block;
         order: 3;
         margin-left: 8px;
     }
-    
+
     .search-icon-container {
         order: 1;
     }
-    
+
     .provider-select-compact {
         order: 2;
         min-width: 100px;
@@ -5474,20 +5482,21 @@ nal Mobile Responsive Improvements */
         padding: 15px 0;
         text-align: center;
     }
-    
+
     .content-header h1 {
         font-size: 24px;
         margin-bottom: 8px;
     }
-    
+
     .content-subtitle {
         font-size: 13px;
     }
-    
+
     .posts-grid {
         padding: 0 4px;
     }
 }
+
 /* 
 ===== LIVE TV MODULE STYLES ===== */
 .livetv-container {
@@ -5890,9 +5899,17 @@ nal Mobile Responsive Improvements */
 }
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
-    100% { opacity: 1; }
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 /* Responsive Design */
@@ -5900,16 +5917,16 @@ nal Mobile Responsive Improvements */
     .livetv-main-layout {
         flex-direction: column;
     }
-    
+
     .channels-panel {
         width: 100%;
         height: 300px;
     }
-    
+
     .categories-scroll-wrapper {
         margin: 0 20px;
     }
-    
+
     .category-nav-btn {
         display: none;
     }
@@ -5931,7 +5948,9 @@ nal Mobile Responsive Improvements */
 
 .virtual-scroll-container::-webkit-scrollbar-thumb:hover {
     background: #777;
-}/* Playin
+}
+
+/* Playin
 g Channel Info */
 .playing-channel-info {
     text-align: left;
@@ -5971,7 +5990,9 @@ g Channel Info */
 .copy-url-btn:hover {
     background: #007acc;
     border-color: #007acc;
-}/* =
+}
+
+/* =
 ==== LIVE TV MODULE STYLES ===== */
 .livetv-container {
     position: fixed;
@@ -6455,9 +6476,20 @@ g Channel Info */
 }
 
 @keyframes pulse {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.05); }
-    100% { opacity: 1; transform: scale(1); }
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Responsive Design */
@@ -6465,7 +6497,7 @@ g Channel Info */
     .channels-panel {
         width: 350px;
     }
-    
+
     .categories-scroll-wrapper {
         margin: 0 40px;
     }
@@ -6475,20 +6507,20 @@ g Channel Info */
     .livetv-main-layout {
         flex-direction: column;
     }
-    
+
     .channels-panel {
         width: 100%;
         height: 40vh;
     }
-    
+
     .categories-scroll-wrapper {
         margin: 0 20px;
     }
-    
+
     .category-nav-btn {
         display: none;
     }
-    
+
     .current-channel-info {
         position: relative;
         background: rgba(26, 26, 26, 0.95);
@@ -6520,9 +6552,16 @@ g Channel Info */
 }
 
 @keyframes shimmer {
-    0% { background-position: -200px 0; }
-    100% { background-position: calc(200px + 100%) 0; }
-}/* 
+    0% {
+        background-position: -200px 0;
+    }
+
+    100% {
+        background-position: calc(200px + 100%) 0;
+    }
+}
+
+/* 
 Exit Button */
 .livetv-actions .exit-btn {
     background: linear-gradient(135deg, #ff4757, #ff3742);
@@ -6532,7 +6571,9 @@ Exit Button */
 .livetv-actions .exit-btn:hover {
     background: linear-gradient(135deg, #ff3742, #ff2f3a);
     box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
-}/* 
+}
+
+/* 
 Improved Channel Logo Styles */
 .channels-panel .channel-logo {
     width: 100%;
@@ -6550,7 +6591,7 @@ Improved Channel Logo Styles */
 }
 
 .channels-panel .channel-logo-container.loading {
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 100%);
     background-size: 200px 100%;
     animation: shimmer 1.5s infinite;
 }
@@ -6559,8 +6600,8 @@ Improved Channel Logo Styles */
 .channel-number {
     display: none !important;
 }
-* Live TV Layout Fixes */
-.livetv-container .categories-scroll {
+
+* Live TV Layout Fixes */ .livetv-container .categories-scroll {
     display: flex;
     gap: 8px;
     overflow-x: auto;
@@ -6596,7 +6637,9 @@ Improved Channel Logo Styles */
 
 .livetv-container .category-nav-btn.next {
     right: 5px;
-}/* Unic
+}
+
+/* Unic
 ode Symbol Styling */
 .play-btn {
     font-family: Arial, sans-serif;
@@ -6615,8 +6658,8 @@ ode Symbol Styling */
 .category-nav-btn i {
     display: none;
 }
-* Pinned Category Styles */
-.category-chip.category-pinned-sports {
+
+* Pinned Category Styles */ .category-chip.category-pinned-sports {
     background: linear-gradient(135deg, #28a745, #20c997);
     border-color: #28a745;
 }
@@ -6644,4 +6687,913 @@ ode Symbol Styling */
 .category-chip.category-pinned-india.active {
     background: linear-gradient(135deg, #ff6b35, #f7931e);
     box-shadow: 0 8px 25px rgba(255, 107, 53, 0.5);
+}
+
+/* ==
+=== CRICKET LIVE SECTION ===== */
+.cricket-section {
+    margin: 20px 0;
+    padding: 0 20px;
+}
+
+.cricket-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.cricket-section .section-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.refresh-btn,
+.watch-live-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.refresh-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.refresh-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(180deg);
+}
+
+.watch-live-btn {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+.watch-live-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+.cricket-matches {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    max-width: 1400px;
+}
+
+.match-card {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9), rgba(42, 42, 42, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.match-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.match-card.live {
+    border-color: #ff4757;
+    box-shadow: 0 0 20px rgba(255, 71, 87, 0.3);
+}
+
+.live-indicator {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #ff4757;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    animation: pulse 2s infinite;
+}
+
+.match-header {
+    margin-bottom: 15px;
+}
+
+.series-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #00d4ff;
+    margin-bottom: 4px;
+}
+
+.match-format {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.teams-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 20px 0;
+}
+
+.team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.team .flag {
+    width: 24px;
+    height: 18px;
+    border-radius: 2px;
+    object-fit: cover;
+}
+
+.team-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+}
+
+.score {
+    font-size: 16px;
+    font-weight: 700;
+    color: #00d4ff;
+}
+
+.vs-divider {
+    font-size: 12px;
+    font-weight: 700;
+    color: #666;
+    margin: 0 15px;
+}
+
+.match-info {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.venue {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.status {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.match-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.watch-btn,
+.watch-cricket-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: none;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.watch-btn:hover,
+.watch-cricket-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.no-matches,
+.error-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+}
+
+.no-matches p,
+.error-state p {
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.error-state small {
+    display: block;
+    margin-bottom: 20px;
+    color: #666;
+    font-size: 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .cricket-matches {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .match-card {
+        padding: 15px;
+    }
+
+    .teams-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .vs-divider {
+        margin: 0;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+* Cricket Fallback Styles */ .cricket-fallback {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.fallback-card {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(32, 201, 151, 0.1));
+    border: 2px solid rgba(40, 167, 69, 0.3);
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    max-width: 300px;
+}
+
+.fallback-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.fallback-card h3 {
+    margin: 0 0 10px 0;
+    color: #fff;
+    font-size: 20px;
+}
+
+.fallback-card p {
+    margin: 0 0 20px 0;
+    color: #888;
+    font-size: 14px;
+}
+
+.fallback-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.retry-btn {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.retry-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+/*
+ ===== CRICKET LIVE SECTION (TOP PRIORITY) ===== */
+.cricket-section {
+    margin: 0 0 30px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.95), rgba(42, 42, 42, 0.95));
+    border-bottom: 2px solid rgba(255, 107, 53, 0.3);
+    backdrop-filter: blur(10px);
+    border-radius: 0 0 16px 16px;
+}
+
+.cricket-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.cricket-section .section-header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.cricket-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.cricket-refresh-btn,
+.cricket-watch-live-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.cricket-refresh-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cricket-refresh-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(180deg);
+}
+
+.cricket-watch-live-btn {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+.cricket-watch-live-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+.cricket-matches {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    max-width: 1400px;
+}
+
+.cricket-match-card {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9), rgba(42, 42, 42, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.cricket-match-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.cricket-match-card.live {
+    border-color: #ff4757;
+    box-shadow: 0 0 20px rgba(255, 71, 87, 0.3);
+}
+
+.cricket-live-indicator {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #ff4757;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    animation: pulse 2s infinite;
+}
+
+.cricket-fallback {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.cricket-fallback-card {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(32, 201, 151, 0.1));
+    border: 2px solid rgba(40, 167, 69, 0.3);
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    max-width: 400px;
+}
+
+.cricket-fallback-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.cricket-fallback-card h3 {
+    margin: 0 0 10px 0;
+    color: #fff;
+    font-size: 20px;
+}
+
+.cricket-fallback-card p {
+    margin: 0 0 20px 0;
+    color: #888;
+    font-size: 14px;
+}
+
+.cricket-watch-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: none;
+    border-radius: 25px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.cricket-watch-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+/*
+ Upcoming Cricket Match Styles */
+.cricket-match-card.upcoming {
+    border-color: #17a2b8;
+    box-shadow: 0 0 15px rgba(23, 162, 184, 0.2);
+}
+
+.cricket-upcoming-indicator,
+.upcoming-indicator {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #17a2b8;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Better match card styling */
+.match-card {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9), rgba(42, 42, 42, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    margin-bottom: 15px;
+}
+
+.match-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.match-card.live {
+    border-color: #ff4757;
+    box-shadow: 0 0 20px rgba(255, 71, 87, 0.3);
+}
+
+.match-card.upcoming {
+    border-color: #17a2b8;
+    box-shadow: 0 0 15px rgba(23, 162, 184, 0.2);
+}
+
+.match-header {
+    margin-bottom: 15px;
+}
+
+.series-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #00d4ff;
+    margin-bottom: 4px;
+}
+
+.match-format {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.teams-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 20px 0;
+}
+
+.team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.team .flag {
+    width: 24px;
+    height: 18px;
+    border-radius: 2px;
+    object-fit: cover;
+}
+
+.team-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+}
+
+.score {
+    font-size: 16px;
+    font-weight: 700;
+    color: #00d4ff;
+}
+
+.vs-divider {
+    font-size: 12px;
+    font-weight: 700;
+    color: #666;
+    margin: 0 15px;
+}
+
+.match-info {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.venue {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.status {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.match-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.watch-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: none;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.watch-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+/* * ===== HORIZONTAL CRICKET SECTION ===== */
+.cricket-section {
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.95), rgba(42, 42, 42, 0.95));
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.cricket-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.cricket-section .section-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.refresh-btn,
+.watch-live-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.refresh-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.refresh-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(180deg);
+}
+
+.watch-live-btn {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+.watch-live-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+/* Horizontal Scrolling Cricket Matches */
+.cricket-matches-horizontal {
+    position: relative;
+    overflow: hidden;
+}
+
+.cricket-matches-scroll {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0 0 10px 0;
+}
+
+.cricket-matches-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* Horizontal Match Cards */
+.cricket-matches-scroll .match-card {
+    min-width: 320px;
+    max-width: 320px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(42, 42, 42, 0.9), rgba(62, 62, 62, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    height: auto;
+}
+
+.cricket-matches-scroll .match-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.cricket-matches-scroll .match-card.live {
+    border-color: #ff4757;
+    box-shadow: 0 0 15px rgba(255, 71, 87, 0.3);
+}
+
+.cricket-matches-scroll .live-indicator {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #ff4757;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    animation: pulse 2s infinite;
+}
+
+.cricket-matches-scroll .match-header {
+    margin-bottom: 12px;
+}
+
+.cricket-matches-scroll .series-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #00d4ff;
+    margin-bottom: 3px;
+    line-height: 1.2;
+}
+
+.cricket-matches-scroll .match-format {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cricket-matches-scroll .teams-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 12px 0;
+}
+
+.cricket-matches-scroll .team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+}
+
+.cricket-matches-scroll .team .flag {
+    width: 20px;
+    height: 15px;
+    border-radius: 2px;
+    object-fit: cover;
+}
+
+.cricket-matches-scroll .team-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+    line-height: 1.1;
+}
+
+.cricket-matches-scroll .score {
+    font-size: 14px;
+    font-weight: 700;
+    color: #00d4ff;
+}
+
+.cricket-matches-scroll .vs-divider {
+    font-size: 10px;
+    font-weight: 700;
+    color: #666;
+    margin: 0 8px;
+}
+
+.cricket-matches-scroll .match-info {
+    margin: 12px 0;
+    text-align: center;
+}
+
+.cricket-matches-scroll .venue {
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.cricket-matches-scroll .status {
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.cricket-matches-scroll .match-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+}
+
+.cricket-matches-scroll .watch-btn {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: none;
+    border-radius: 16px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(40, 167, 69, 0.3);
+}
+
+.cricket-matches-scroll .watch-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+}
+
+/* Fallback styles for horizontal layout */
+.cricket-fallback {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.cricket-fallback-card {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(32, 201, 151, 0.1));
+    border: 2px solid rgba(40, 167, 69, 0.3);
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    max-width: 400px;
+}
+
+.cricket-fallback-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.cricket-fallback-card h3 {
+    margin: 0 0 10px 0;
+    color: #fff;
+    font-size: 20px;
+}
+
+.cricket-fallback-card p {
+    margin: 0 0 20px 0;
+    color: #888;
+    font-size: 14px;
+}
+
+.cricket-watch-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: none;
+    border-radius: 25px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.cricket-watch-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .cricket-matches-scroll .match-card {
+        min-width: 280px;
+        max-width: 280px;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
 }
