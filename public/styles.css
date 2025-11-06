@@ -7886,3 +7886,231 @@ et Video Overlay Controls */
     pointer-events: none;
     text-align: center;
 }
+/
+* Enhanced Cricket Channel Selector Styles */
+.cricket-channel-selector {
+    background: rgba(0, 0, 0, 0.95);
+    border-radius: 12px;
+    padding: 0;
+    margin-top: 15px;
+    border: 2px solid #ff6b35;
+    max-height: 400px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.cricket-selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #333;
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.cricket-selector-header h4 {
+    margin: 0;
+    color: #ff6b35;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.cricket-selector-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.channel-count {
+    color: #ccc;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.close-selector-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.close-selector-btn:hover {
+    background: rgba(255, 107, 53, 0.3);
+    transform: scale(1.1);
+}
+
+.cricket-channels-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    max-height: 320px;
+}
+
+.cricket-channels-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cricket-channels-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.cricket-channels-list::-webkit-scrollbar-thumb {
+    background: #ff6b35;
+    border-radius: 3px;
+}
+
+.cricket-channels-list::-webkit-scrollbar-thumb:hover {
+    background: #ff8c42;
+}
+
+.cricket-channel-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+    text-align: left;
+    position: relative;
+}
+
+.cricket-channel-btn:hover {
+    background: rgba(255, 107, 53, 0.2);
+    border-color: #ff6b35;
+    transform: translateX(5px);
+}
+
+.cricket-channel-btn.active {
+    background: rgba(255, 107, 53, 0.3);
+    border-color: #ff6b35;
+    box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+}
+
+.cricket-channel-btn img {
+    width: 32px;
+    height: 24px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.cricket-channel-btn span {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.cricket-channel-btn .channel-group {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 10px;
+    color: #ff6b35;
+    background: rgba(255, 107, 53, 0.2);
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.load-more-channels {
+    text-align: center;
+    padding: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 10px;
+}
+
+.load-more-btn {
+    background: linear-gradient(135deg, #ff6b35, #ff8c42);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+.load-more-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+    background: linear-gradient(135deg, #ff8c42, #ff6b35);
+}
+
+.load-more-btn:active {
+    transform: translateY(0);
+}
+
+/* Responsive adjustments for cricket selector */
+@media (max-width: 768px) {
+    .cricket-channel-selector {
+        max-height: 300px;
+    }
+    
+    .cricket-channels-list {
+        max-height: 220px;
+    }
+    
+    .cricket-channel-btn {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+    
+    .cricket-channel-btn img {
+        width: 28px;
+        height: 20px;
+    }
+    
+    .cricket-channel-btn span {
+        font-size: 13px;
+    }
+    
+    .cricket-selector-header {
+        padding: 12px 15px;
+    }
+    
+    .cricket-selector-header h4 {
+        font-size: 14px;
+    }
+}
+
+/* Loading state for channels */
+.cricket-channels-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #ccc;
+    font-size: 14px;
+}
+
+.cricket-channels-loading::before {
+    content: "🏏";
+    margin-right: 10px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

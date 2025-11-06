@@ -4,121 +4,12 @@ const CricketLive = {
     isLoading: false,
     hls: null, // HLS.js instance for cricket streaming
 
-    // Cricket channels for direct streaming
-    cricketChannels: [
-        {
-            "tvg_id": "741863",
-            "tvg_name": "[CR] WILLOW CRICKET UHD",
-            "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
-            "group_title": "[CR] CRICKET",
-            "channel_name": "",
-            "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741863"
-        },
-        {
-            "tvg_id": "741862",
-            "tvg_name": "[CR] WILLOW CRICKET HD",
-            "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
-            "group_title": "[CR] CRICKET",
-            "channel_name": "",
-            "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741862"
-        },
-        {
-            "tvg_id": "741861",
-            "tvg_name": "[CR] WILLOW CRICKET HD ?",
-            "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
-            "group_title": "[CR] CRICKET",
-            "channel_name": "",
-            "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741861"
-        },
-        {
-            "tvg_id": "741860",
-            "tvg_name": "[CR] WILLOW CRICKET EXTRA HD",
-            "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
-            "group_title": "[CR] CRICKET",
-            "channel_name": "",
-            "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741860"
-        },
-        {
-    "tvg_id": "689569",
-    "tvg_name": "P[SL] STAR SPORTS 1 HINDI HD",
-    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
-    "group_title": "[CR] CRICKET",
-    "channel_name": "P",
-    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=689569"
-  },
-  {
-    "tvg_id": "689568",
-    "tvg_name": "P[SL] STAR SPORTS HINDI 1",
-    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
-    "group_title": "[CR] CRICKET",
-    "channel_name": "P",
-    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=689568"
-  },
-  {
-    "tvg_id": "843537",
-    "tvg_name": "[INSPT] STAR SPORTS 1 FHD",
-    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HD.png",
-    "group_title": "[IN] SPORTS",
-    "channel_name": "",
-    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843537"
-  },
-  {
-    "tvg_id": "281630",
-    "tvg_name": "[INSPT] STAR SPORTS 1 ENGLISH UHD",
-    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-1-HD.jpg",
-    "group_title": "[IN] SPORTS",
-    "channel_name": "",
-    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281630"
-  },
-  {
-    "tvg_id": "281631",
-    "tvg_name": "[INSPT] STAR SPORTS 1 HINDI UHD",
-    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-1-HINDI-HD.jpg",
-    "group_title": "[IN] SPORTS",
-    "channel_name": "",
-    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281631"
-  },
-  {
-    "tvg_id": "843539",
-    "tvg_name": "[INSPT] STAR SPORTS HINDI 1 FHD",
-    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
-    "group_title": "[IN] SPORTS",
-    "channel_name": "",
-    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843539"
-  },
-  {
-    "tvg_id": "843538",
-    "tvg_name": "[INSPT] STAR SPORTS 2 FHD",
-    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-2-HD.jpeg",
-    "group_title": "[IN] SPORTS",
-    "channel_name": "",
-    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843538"
-  },
-  {
-    "tvg_id": "281632",
-    "tvg_name": "[INSPT] STAR SPORTS 2 UHD",
-    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-2-HD.jpeg",
-    "group_title": "[IN] SPORTS",
-    "channel_name": "",
-    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281632"
-  },
-  {
-    "tvg_id": "281633",
-    "tvg_name": "[INSPT] STAR SPORTS 3",
-    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-3.jpeg",
-    "group_title": "[IN] SPORTS",
-    "channel_name": "",
-    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281633"
-  },
-  {
-    "tvg_id": "281637",
-    "tvg_name": "[INSPT] STAR SPORTS TAMIL",
-    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-TAMIL.jpg",
-    "group_title": "[IN] SPORTS",
-    "channel_name": "",
-    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281637"
-  },
-    ],
+    // Cricket channels for direct streaming (loaded dynamically)
+    cricketChannels: [],
+    allCricketChannels: [], // Store all channels for pagination
+    channelsLoaded: false,
+    currentChannelPage: 0,
+    channelsPerPage: 20,
 
     // Country code mapping for flags
     countryCodes: {
@@ -147,6 +38,9 @@ const CricketLive = {
     init() {
         console.log('🏏 Initializing Cricket Live section');
 
+        // Load cricket channels first
+        this.loadCricketChannels();
+
         // Show initial fallback while loading
         this.showFallback();
 
@@ -162,6 +56,182 @@ const CricketLive = {
             console.log('🏏 Cricket API not available, showing fallback');
             this.showFallback();
         });
+    },
+
+    // Load cricket channels from API
+    async loadCricketChannels() {
+        try {
+            console.log('🏏 Loading cricket channels from API...');
+
+            // Use your API endpoint instead of hardcoded GitHub URL
+            const response = await fetch('https://raw.githubusercontent.com/UTKARSHKUMAR712/polyjson/refs/heads/main/cric.json');
+
+            if (!response.ok) {
+                throw new Error(`Failed to load cricket channels: ${response.status}`);
+            }
+
+            const channels = await response.json();
+
+            if (Array.isArray(channels)) {
+                this.allCricketChannels = channels;
+                this.loadChannelPage(0); // Load first page
+                this.channelsLoaded = true;
+                console.log(`🏏 Loaded ${channels.length} cricket channels`);
+            } else {
+                throw new Error('Invalid channel data format');
+            }
+
+        } catch (error) {
+            console.error('🏏 Failed to load cricket channels:', error);
+
+            // Fallback to default channels if API fails
+            this.allCricketChannels = [
+                {
+                    "tvg_id": "741863",
+                    "tvg_name": "[CR] WILLOW CRICKET UHD",
+                    "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
+                    "group_title": "[CR] CRICKET",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741863"
+                },
+    {
+        "tvg_id": "741862",
+        "tvg_name": "[CR] WILLOW CRICKET HD",
+        "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
+        "group_title": "[CR] CRICKET",
+        "channel_name": "",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741862"
+    },
+    {
+        "tvg_id": "741861",
+        "tvg_name": "[CR] WILLOW CRICKET HD ?",
+        "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
+        "group_title": "[CR] CRICKET",
+        "channel_name": "",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741861"
+    },
+    {
+        "tvg_id": "741860",
+        "tvg_name": "[CR] WILLOW CRICKET EXTRA HD",
+        "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
+        "group_title": "[CR] CRICKET",
+        "channel_name": "",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741860"
+    },
+    {
+        "tvg_id": "689569",
+        "tvg_name": "P[SL] STAR SPORTS 1 HINDI HD",
+        "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+        "group_title": "[CR] CRICKET",
+        "channel_name": "P",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=689569"
+    },
+    {
+        "tvg_id": "689568",
+        "tvg_name": "P[SL] STAR SPORTS HINDI 1",
+        "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+        "group_title": "[CR] CRICKET",
+        "channel_name": "P",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=689568"
+    },
+    {
+        "tvg_id": "843537",
+        "tvg_name": "[INSPT] STAR SPORTS 1 FHD",
+        "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HD.png",
+        "group_title": "[IN] SPORTS",
+        "channel_name": "",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843537"
+    },
+    {
+        "tvg_id": "281630",
+        "tvg_name": "[INSPT] STAR SPORTS 1 ENGLISH UHD",
+        "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-1-HD.jpg",
+        "group_title": "[IN] SPORTS",
+        "channel_name": "",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281630"
+    },
+    {
+        "tvg_id": "281631",
+        "tvg_name": "[INSPT] STAR SPORTS 1 HINDI UHD",
+        "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+        "group_title": "[IN] SPORTS",
+        "channel_name": "",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281631"
+    },
+    {
+        "tvg_id": "843539",
+        "tvg_name": "[INSPT] STAR SPORTS HINDI 1 FHD",
+        "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+        "group_title": "[IN] SPORTS",
+        "channel_name": "",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843539"
+    },
+    {
+        "tvg_id": "843538",
+        "tvg_name": "[INSPT] STAR SPORTS 2 FHD",
+        "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-2-HD.jpeg",
+        "group_title": "[IN] SPORTS",
+        "channel_name": "",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843538"
+    },
+    {
+        "tvg_id": "281632",
+        "tvg_name": "[INSPT] STAR SPORTS 2 UHD",
+        "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-2-HD.jpeg",
+        "group_title": "[IN] SPORTS",
+        "channel_name": "",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281632"
+    },
+    {
+        "tvg_id": "281633",
+        "tvg_name": "[INSPT] STAR SPORTS 3",
+        "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-3.jpeg",
+        "group_title": "[IN] SPORTS",
+        "channel_name": "",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281633"
+    },
+    {
+        "tvg_id": "281637",
+        "tvg_name": "[INSPT] STAR SPORTS TAMIL",
+        "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-TAMIL.jpg",
+        "group_title": "[IN] SPORTS",
+        "channel_name": "",
+        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281637"
+    }
+            ];
+            this.loadChannelPage(0);
+            this.channelsLoaded = true;
+        }
+    },
+
+    // Load specific page of channels
+    loadChannelPage(page) {
+        const startIndex = page * this.channelsPerPage;
+        const endIndex = startIndex + this.channelsPerPage;
+
+        if (page === 0) {
+            this.cricketChannels = this.allCricketChannels.slice(0, this.channelsPerPage);
+        } else {
+            // Add more channels to existing list
+            const newChannels = this.allCricketChannels.slice(startIndex, endIndex);
+            this.cricketChannels = [...this.cricketChannels, ...newChannels];
+        }
+
+        this.currentChannelPage = page;
+        console.log(`🏏 Loaded page ${page + 1}, showing ${this.cricketChannels.length} of ${this.allCricketChannels.length} channels`);
+    },
+
+    // Load more channels (for dropdown scroll)
+    loadMoreChannels() {
+        const nextPage = this.currentChannelPage + 1;
+        const maxPages = Math.ceil(this.allCricketChannels.length / this.channelsPerPage);
+
+        if (nextPage < maxPages) {
+            this.loadChannelPage(nextPage);
+            return true; // More channels loaded
+        }
+
+        return false; // No more channels
     },
 
     // Test if cricket API is available
@@ -356,11 +426,22 @@ const CricketLive = {
     },
 
     // Watch cricket live - direct streaming
-    watchCricketLive() {
+    async watchCricketLive() {
         console.log('🏏 Starting direct cricket streaming...');
 
-        // Get the primary cricket channel (UHD)
+        // Ensure channels are loaded
+        if (!this.channelsLoaded || this.cricketChannels.length === 0) {
+            console.log('🏏 Loading cricket channels first...');
+            await this.loadCricketChannels();
+        }
+
+        // Get the primary cricket channel
         const primaryChannel = this.cricketChannels[0];
+
+        if (!primaryChannel) {
+            alert('No cricket channels available. Please try again later.');
+            return;
+        }
 
         // Create full-screen cricket player
         this.createCricketPlayer(primaryChannel);
@@ -408,15 +489,29 @@ const CricketLive = {
                         </div>
                     </div>
                     <div class="cricket-channel-selector" id="cricketChannelSelector" style="display: none;">
-                        <h4>🏏 Cricket Channels</h4>
-                        <div class="cricket-channels-list">
+                        <div class="cricket-selector-header">
+                            <h4>🏏 Cricket Channels</h4>
+                            <div class="cricket-selector-controls">
+                                <span class="channel-count">${this.cricketChannels.length} of ${this.allCricketChannels.length} channels</span>
+                                <button onclick="CricketLive.hideChannelSelector()" class="close-selector-btn">✕</button>
+                            </div>
+                        </div>
+                        <div class="cricket-channels-list" id="cricketChannelsList" onscroll="CricketLive.handleChannelScroll(event)">
                             ${this.cricketChannels.map(ch => `
                                 <button class="cricket-channel-btn ${ch.tvg_id === channel.tvg_id ? 'active' : ''}" 
                                         onclick="CricketLive.switchCricketChannel('${ch.tvg_id}')">
                                     <img src="${ch.tvg_logo}" alt="${ch.tvg_name}" onerror="this.style.display='none'">
                                     <span>${ch.tvg_name}</span>
+                                    <div class="channel-group">${ch.group_title || 'Cricket'}</div>
                                 </button>
                             `).join('')}
+                            ${this.cricketChannels.length < this.allCricketChannels.length ? `
+                                <div class="load-more-channels" id="loadMoreChannels">
+                                    <button onclick="CricketLive.loadMoreChannelsManual()" class="load-more-btn">
+                                        📺 Load More Channels (${this.allCricketChannels.length - this.cricketChannels.length} remaining)
+                                    </button>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -526,6 +621,76 @@ const CricketLive = {
         const selector = document.getElementById('cricketChannelSelector');
         if (selector) {
             selector.style.display = selector.style.display === 'none' ? 'block' : 'none';
+
+            // Update channel list if it's being shown
+            if (selector.style.display === 'block') {
+                this.updateChannelSelector();
+            }
+        }
+    },
+
+    // Update channel selector with current channels
+    updateChannelSelector() {
+        const channelsList = document.getElementById('cricketChannelsList');
+        const channelCount = document.querySelector('.channel-count');
+
+        if (channelsList) {
+            channelsList.innerHTML = `
+                ${this.cricketChannels.map(ch => `
+                    <button class="cricket-channel-btn" 
+                            onclick="CricketLive.switchCricketChannel('${ch.tvg_id}')">
+                        <img src="${ch.tvg_logo}" alt="${ch.tvg_name}" onerror="this.style.display='none'">
+                        <span>${ch.tvg_name}</span>
+                        <div class="channel-group">${ch.group_title || 'Cricket'}</div>
+                    </button>
+                `).join('')}
+                ${this.cricketChannels.length < this.allCricketChannels.length ? `
+                    <div class="load-more-channels" id="loadMoreChannels">
+                        <button onclick="CricketLive.loadMoreChannelsManual()" class="load-more-btn">
+                            📺 Load More Channels (${this.allCricketChannels.length - this.cricketChannels.length} remaining)
+                        </button>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        if (channelCount) {
+            channelCount.textContent = `${this.cricketChannels.length} of ${this.allCricketChannels.length} channels`;
+        }
+    },
+
+    // Handle scroll in channel selector for auto-loading
+    handleChannelScroll(event) {
+        const container = event.target;
+        const scrollTop = container.scrollTop;
+        const scrollHeight = container.scrollHeight;
+        const clientHeight = container.clientHeight;
+
+        // Load more when scrolled to bottom (with 50px threshold)
+        if (scrollTop + clientHeight >= scrollHeight - 50) {
+            this.loadMoreChannelsAuto();
+        }
+    },
+
+    // Load more channels automatically on scroll
+    loadMoreChannelsAuto() {
+        if (this.cricketChannels.length < this.allCricketChannels.length) {
+            const hasMore = this.loadMoreChannels();
+            if (hasMore) {
+                this.updateChannelSelector();
+                console.log('🏏 Auto-loaded more channels on scroll');
+            }
+        }
+    },
+
+    // Load more channels manually via button
+    loadMoreChannelsManual() {
+        if (this.cricketChannels.length < this.allCricketChannels.length) {
+            const hasMore = this.loadMoreChannels();
+            if (hasMore) {
+                this.updateChannelSelector();
+                console.log('🏏 Manually loaded more channels');
+            }
         }
     },
 
