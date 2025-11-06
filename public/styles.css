@@ -7596,4 +7596,204 @@ ode Symbol Styling */
         flex-direction: column;
         gap: 8px;
     }
+}/* ==
+=== CRICKET PLAYER OVERLAY ===== */
+.cricket-player-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cricket-player-container {
+    width: 95vw;
+    height: 95vh;
+    max-width: 1400px;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.cricket-player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+    border-bottom: 1px solid #333;
+}
+
+.cricket-player-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.cricket-player-info h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.live-badge {
+    background: #ff4757;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    animation: pulse 2s infinite;
+}
+
+.cricket-player-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.channel-switch-btn, .close-player-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.channel-switch-btn {
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    color: white;
+}
+
+.channel-switch-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+}
+
+.close-player-btn {
+    background: #ff4757;
+    color: white;
+}
+
+.close-player-btn:hover {
+    background: #ff3742;
+    transform: translateY(-1px);
+}
+
+.cricket-video-container {
+    flex: 1;
+    position: relative;
+    background: #000;
+}
+
+.cricket-channel-selector {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    background: rgba(26, 26, 26, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 300px;
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+
+.cricket-channel-selector h4 {
+    margin: 0 0 15px 0;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.cricket-channels-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cricket-channel-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.cricket-channel-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #00d4ff;
+}
+
+.cricket-channel-btn.active {
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    border-color: #00d4ff;
+}
+
+.cricket-channel-btn img {
+    width: 32px;
+    height: 24px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.cricket-channel-btn span {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Responsive Cricket Player */
+@media (max-width: 768px) {
+    .cricket-player-container {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+    }
+    
+    .cricket-player-header {
+        padding: 10px 15px;
+    }
+    
+    .cricket-player-info h3 {
+        font-size: 16px;
+    }
+    
+    .cricket-channel-selector {
+        top: 60px;
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+    }
+    
+    .cricket-channels-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+}
+
+/* Keyboard shortcuts info */
+.cricket-player-overlay::before {
+    content: "Press ESC to close";
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    pointer-events: none;
 }
