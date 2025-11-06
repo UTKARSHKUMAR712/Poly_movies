@@ -174,8 +174,10 @@ const TMDBContentModule = {
 
         try {
             // Show loading overlay
-            if (typeof window.showLoading === 'function') {
-                window.showLoading(true, `Searching for "${title}"...`);
+            if (typeof window.showTMDBLoading === 'function') {
+                window.showTMDBLoading(true, `Searching for "${title}"...`);
+            } else if (typeof window.showLoading === 'function') {
+                window.showLoading(true, `Searching for "${title}"...`, 'tmdb');
             }
 
             // Search across all providers
@@ -213,7 +215,9 @@ const TMDBContentModule = {
             const validResults = results.filter(r => r !== null);
 
             // Hide loading
-            if (typeof window.showLoading === 'function') {
+            if (typeof window.showTMDBLoading === 'function') {
+                window.showTMDBLoading(false);
+            } else if (typeof window.showLoading === 'function') {
                 window.showLoading(false);
             }
 
@@ -222,7 +226,9 @@ const TMDBContentModule = {
 
         } catch (error) {
             console.error('TMDB search error:', error);
-            if (typeof window.showLoading === 'function') {
+            if (typeof window.showTMDBLoading === 'function') {
+                window.showTMDBLoading(false);
+            } else if (typeof window.showLoading === 'function') {
                 window.showLoading(false);
             }
             if (typeof window.showError === 'function') {

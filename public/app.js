@@ -573,16 +573,150 @@ const NavigationManager = {
 // Backward compatibility
 const HomeCache = CacheManager.home;
 
-// Utility Functions
-function showLoading(show = true, message = 'Loading...') {
-    const loadingEl = document.getElementById('loading');
+// Enhanced Loading System - Modern Left-Side Popup
+function showLoading(show = true, message = 'Loading...', context = 'default') {
+    let loadingPopup = document.getElementById('modernLoadingPopup');
+
+    if (!loadingPopup) {
+        // Create the modern loading popup
+        loadingPopup = document.createElement('div');
+        loadingPopup.id = 'modernLoadingPopup';
+        loadingPopup.className = 'modern-loading-popup';
+        loadingPopup.innerHTML = `
+            <div class="loading-popup-content" tabindex="-1" role="status" aria-live="polite">
+                <div class="loading-spinner" aria-hidden="true">
+                    <div class="spinner-ring"></div>
+                    <div class="spinner-ring"></div>
+                    <div class="spinner-ring"></div>
+                </div>
+                <div class="loading-text">
+                    <span class="loading-message">Loading...</span>
+                    <div class="loading-dots" aria-hidden="true">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(loadingPopup);
+
+        // Add click handler to dismiss (optional)
+        loadingPopup.addEventListener('click', (e) => {
+            if (e.target === loadingPopup) {
+                // Don't auto-dismiss, let the app control it
+                console.log('Loading popup clicked - controlled by app');
+            }
+        });
+    }
+
     if (show) {
-        loadingEl.querySelector('p').textContent = message;
-        loadingEl.style.display = 'block';
+        const messageEl = loadingPopup.querySelector('.loading-message');
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
+
+        // Set context for different styling
+        loadingPopup.setAttribute('data-context', context);
+        loadingPopup.classList.add('show');
+
+        // Update aria-label for accessibility
+        const content = loadingPopup.querySelector('.loading-popup-content');
+        if (content) {
+            content.setAttribute('aria-label', message);
+        }
+
+        // Auto-hide after 45 seconds to prevent stuck loading
+        if (loadingPopup.autoHideTimeout) {
+            clearTimeout(loadingPopup.autoHideTimeout);
+        }
+        loadingPopup.autoHideTimeout = setTimeout(() => {
+            if (loadingPopup.classList.contains('show')) {
+                console.warn('⚠️ Auto-hiding stuck loading popup after 45 seconds');
+                showLoading(false);
+            }
+        }, 45000);
+
+        console.log(`🔄 Loading started: ${message} (${context})`);
     } else {
-        loadingEl.style.display = 'none';
+        loadingPopup.classList.remove('show');
+        loadingPopup.removeAttribute('data-context');
+
+        // Clear auto-hide timeout
+        if (loadingPopup.autoHideTimeout) {
+            clearTimeout(loadingPopup.autoHideTimeout);
+            loadingPopup.autoHideTimeout = null;
+        }
+
+        console.log('✅ Loading completed');
+    }
+
+    // Also handle the old loading element for backward compatibility
+    const oldLoadingEl = document.getElementById('loading');
+    if (oldLoadingEl) {
+        if (show) {
+            const oldMessageEl = oldLoadingEl.querySelector('p');
+            if (oldMessageEl) {
+                oldMessageEl.textContent = message;
+            }
+            oldLoadingEl.style.display = 'block';
+        } else {
+            oldLoadingEl.style.display = 'none';
+        }
     }
 }
+
+// Enhanced loading function with context support
+window.showLoadingWithContext = function (show = true, message = 'Loading...', context = 'default') {
+    showLoading(show, message, context);
+};
+
+// Quick loading functions for common contexts
+window.showSearchLoading = function (show = true, message = 'Searching...') {
+    showLoading(show, message, 'search');
+};
+
+window.showDownloadLoading = function (show = true, message = 'Preparing download...') {
+    showLoading(show, message, 'download');
+};
+
+window.showTMDBLoading = function (show = true, message = 'Loading TMDB data...') {
+    showLoading(show, message, 'tmdb');
+};
+
+window.showErrorLoading = function (show = true, message = 'Processing...') {
+    showLoading(show, message, 'error');
+};
+
+// Demo function to test different loading contexts (for development)
+window.testLoadingSystem = function () {
+    console.log('🧪 Testing Modern Loading System...');
+
+    // Test default loading
+    showLoading(true, 'Testing default loading...');
+    setTimeout(() => {
+        showLoading(false);
+
+        // Test search loading
+        showSearchLoading(true, 'Testing search loading...');
+        setTimeout(() => {
+            showSearchLoading(false);
+
+            // Test download loading
+            showDownloadLoading(true, 'Testing download loading...');
+            setTimeout(() => {
+                showDownloadLoading(false);
+
+                // Test TMDB loading
+                showTMDBLoading(true, 'Testing TMDB loading...');
+                setTimeout(() => {
+                    showTMDBLoading(false);
+                    console.log('✅ Loading system test completed!');
+                }, 2000);
+            }, 2000);
+        }, 2000);
+    }, 2000);
+};
 
 function createSearchProviderSection(provider) {
     const section = document.createElement('div');
@@ -1465,7 +1599,7 @@ function renderStreamSelector(streams, provider, preferredStream = null) {
                 e.stopPropagation();
 
                 console.log('🔽 Enhanced download button clicked for stream:', stream.server);
-                showLoading(true, 'Preparing download...');
+                showDownloadLoading(true, 'Preparing download...');
 
                 try {
                     let downloadUrl = stream.link;
@@ -1523,7 +1657,7 @@ function renderStreamSelector(streams, provider, preferredStream = null) {
                     console.error('❌ Enhanced download failed:', error);
                     showError('Download failed: ' + error.message);
                 } finally {
-                    showLoading(false);
+                    showDownloadLoading(false);
                 }
             });
         }
@@ -1816,7 +1950,7 @@ async function openExternalPlayer(stream, preferredPlayer = null) {
         preferredPlayer
     });
 
-    showLoading(true, 'Preparing external player...');
+    showLoadingWithContext(true, 'Preparing external player...', 'default');
     try {
         let streamUrl = stream.link;
 
@@ -1888,7 +2022,7 @@ async function openExternalPlayer(stream, preferredPlayer = null) {
         console.error('❌ Failed to prepare external player link:', error);
         showError('Failed to prepare external player link: ' + error.message);
     } finally {
-        showLoading(false);
+        showLoadingWithContext(false);
     }
 }
 
@@ -3438,7 +3572,7 @@ async function performSearch() {
         provider: state.selectedProvider
     });
 
-    showLoading();
+    showSearchLoading(true, `Searching for "${query}"...`);
     try {
         // Search across ALL providers instead of just the selected one
         const allProviders = state.providers;
@@ -3485,7 +3619,7 @@ async function performSearch() {
     } catch (error) {
         showError('Search failed: ' + error.message);
     } finally {
-        showLoading(false);
+        showSearchLoading(false);
     }
 }
 
