@@ -204,7 +204,7 @@ function generateDownloadFilename(stream, contentTitle) {
     }
 }
 
-// Main App State.
+// Main App State with Home Screen Caching
 const state = {
     providers: [],
     selectedProvider: null,
@@ -217,6 +217,15 @@ const state = {
     retryCount: 0,
     maxRetries: 3,
     isVideoPlaying: false, // Track video playback state
+    // Home screen cache
+    homeCache: new Map(),
+    homeCacheTimestamp: new Map()
+};
+
+// Home screen cache configuration
+const HOME_CACHE_CONFIG = {
+    CACHE_DURATION: 10 * 60 * 1000, // 10 minutes
+    EXCLUDE_CRICKET: true // Don't cache cricket section
 };
 
 // Expose state and API_BASE globally for modules
@@ -225,6 +234,66 @@ window.state = state;
 // API Base URL
 const API_BASE = window.location.origin;
 window.API_BASE = API_BASE;
+
+// Home Screen Cache Management
+const HomeCache = {
+    // Check if cached data is still valid
+    isValid(provider) {
+        if (!state.homeCache.has(provider) || !state.homeCacheTimestamp.has(provider)) {
+            return false;
+        }
+
+        const timestamp = state.homeCacheTimestamp.get(provider);
+        const now = Date.now();
+        return (now - timestamp) < HOME_CACHE_CONFIG.CACHE_DURATION;
+    },
+
+    // Get cached home data
+    get(provider) {
+        if (this.isValid(provider)) {
+            console.log('📋 Using cached home data for:', provider);
+            return state.homeCache.get(provider);
+        }
+        return null;
+    },
+
+    // Store home data in cache
+    set(provider, data) {
+        console.log('💾 Caching home data for:', provider);
+        state.homeCache.set(provider, data);
+        state.homeCacheTimestamp.set(provider, Date.now());
+    },
+
+    // Clear cache for a specific provider
+    clear(provider) {
+        state.homeCache.delete(provider);
+        state.homeCacheTimestamp.delete(provider);
+        console.log('🗑️ Cleared cache for:', provider);
+    },
+
+    // Clear all cache
+    clearAll() {
+        state.homeCache.clear();
+        state.homeCacheTimestamp.clear();
+        console.log('🗑️ Cleared all home cache');
+    },
+
+    // Get cache info for debugging
+    getInfo() {
+        const info = {};
+        for (const [provider, timestamp] of state.homeCacheTimestamp.entries()) {
+            const age = Date.now() - timestamp;
+            const isValid = age < HOME_CACHE_CONFIG.CACHE_DURATION;
+            info[provider] = {
+                cached: true,
+                age: Math.round(age / 1000) + 's',
+                valid: isValid,
+                size: JSON.stringify(state.homeCache.get(provider) || {}).length
+            };
+        }
+        return info;
+    }
+};
 
 // Utility Functions
 function showLoading(show = true, message = 'Loading...') {
@@ -2875,10 +2944,29 @@ async function loadHomePage() {
         return;
     }
 
+    const catalogContainer = document.getElementById('catalogSections');
+
+    // Check cache first
+    const cachedData = HomeCache.get(provider);
+    if (cachedData) {
+        console.log('⚡ Loading from cache');
+        catalogContainer.innerHTML = cachedData.html;
+
+        // Always refresh cricket section (live data)
+        if (HOME_CACHE_CONFIG.EXCLUDE_CRICKET && window.CricketLive) {
+            console.log('🏏 Refreshing cricket section (live data)');
+            setTimeout(() => {
+                window.CricketLive.fetchMatches();
+            }, 100); // Small delay to ensure DOM is ready
+        }
+
+        showView('home');
+        return;
+    }
+
     showLoading();
     try {
         const catalogData = await fetchCatalog(provider);
-        const catalogContainer = document.getElementById('catalogSections');
         catalogContainer.innerHTML = '';
 
         // Render Hero Banner
@@ -2974,6 +3062,26 @@ async function loadHomePage() {
             genresSection.appendChild(genresGrid);
             catalogContainer.appendChild(genresSection);
         }
+
+        // Cache the rendered content (excluding cricket section if configured)
+        let htmlToCache = catalogContainer.innerHTML;
+
+        // Remove cricket section from cache if configured
+        if (HOME_CACHE_CONFIG.EXCLUDE_CRICKET) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlToCache;
+            const cricketSection = tempDiv.querySelector('#cricketLiveSection');
+            if (cricketSection) {
+                cricketSection.remove();
+                htmlToCache = tempDiv.innerHTML;
+            }
+        }
+
+        // Store in cache
+        HomeCache.set(provider, {
+            html: htmlToCache,
+            catalogData: catalogData
+        });
 
         showView('home');
     } catch (error) {
@@ -3286,8 +3394,15 @@ async function init() {
 
     // Event Listeners
     document.getElementById('providerSelect').addEventListener('change', (e) => {
-        state.selectedProvider = e.target.value;
-        if (e.target.value) {
+        const newProvider = e.target.value;
+
+        // Clear cache for old provider if switching
+        if (state.selectedProvider && state.selectedProvider !== newProvider) {
+            HomeCache.clear(state.selectedProvider);
+        }
+
+        state.selectedProvider = newProvider;
+        if (newProvider) {
             loadHomePage();
         }
     });
@@ -4762,77 +4877,26 @@ async function tryCopyDownloadUrl(url) {
         console.warn('❌ Clipboard copy failed:', error);
         return false;
     }
-}// Demo function to test download system (can be called from browser console)
-window.testDownloadSystem = async function () {
-    console.log('🧪 Testing Download System...');
-
-    // Check if DownloadManager is available
-    console.log('📊 DownloadManager available:', !!window.DownloadManager);
-    console.log('📊 DownloadManager type:', typeof window.DownloadManager);
-
-    if (window.DownloadManager) {
-        console.log('📊 DownloadManager methods:', Object.keys(window.DownloadManager));
-    }
-
-    // Test with a sample video URL
-    const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4';
-    const testFilename = 'test_video_sample.mp4';
-
-    try {
-        if (window.DownloadManager && typeof window.DownloadManager.startDownload === 'function') {
-            const downloadId = await window.DownloadManager.startDownload(testUrl, testFilename, {
-                source: 'test_system',
-                description: 'Test download to verify system functionality'
-            });
-
-            console.log('✅ Test download started successfully:', downloadId);
-            showToast('Test download started! Check the download panel.', 'success', 3000);
-            return downloadId;
-        } else {
-            console.log('⚠️ DownloadManager not available, testing fallback...');
-
-            // Test fallback system
-            if (window.trySimpleDownloadWithProgress) {
-                const success = await trySimpleDownloadWithProgress(testUrl, testFilename);
-                if (success) {
-                    console.log('✅ Fallback download test successful');
-                    showToast('Fallback download test started!', 'success', 3000);
-                    return 'fallback_success';
-                }
-            }
-
-            console.error('❌ No download system available');
-            showToast('No download system available', 'error');
-            return null;
-        }
-    } catch (error) {
-        console.error('❌ Test download failed:', error);
-        showToast(`Test download failed: ${error.message}`, 'error');
-        return null;
-    }
-};
-
-// Demo function to show download statistics
-window.showDownloadStats = function () {
-    if (window.DownloadManager) {
-        const stats = window.DownloadManager.getDownloadStats();
-        console.log('📊 Download Statistics:', stats);
-
-        const message = `Downloads: ${stats.total} total, ${stats.downloading} active, ${stats.completed} completed, ${stats.failed} failed`;
-        showToast(message, 'info', 4000);
-
-        return stats;
-    } else {
-        console.error('❌ DownloadManager not available');
-        return null;
-    }
-};
+}
 
 console.log('🎬 PolyMovies Enhanced Download System Loaded');
-console.log('💡 Try: testDownloadSystem() or showDownloadStats() in console');
-console.log('💡 Or try: testSimpleDownload() to test the enhanced download panel');
-console.log('💡 Or try: testDownloadPanel() to test the download panel UI');
-console.log('🏏 Cricket: testCricketMatches() to debug match display and check for undefined values');
+
+// Debug functions for cache management
+window.showCacheInfo = function () {
+    const info = HomeCache.getInfo();
+    console.log('📋 Home Cache Info:', info);
+    return info;
+};
+
+window.clearHomeCache = function (provider) {
+    if (provider) {
+        HomeCache.clear(provider);
+        console.log(`🗑️ Cleared cache for: ${provider}`);
+    } else {
+        HomeCache.clearAll();
+        console.log('🗑️ Cleared all home cache');
+    }
+};
 
 // Enhanced Download Manager with Visual Progress
 const SimpleDownloadManager = {
@@ -5434,82 +5498,7 @@ async function startDownload() {
     }
 }
 
-// Test function for simple download system
-window.testSimpleDownload = function () {
-    console.log('🧪 Testing Simple Download System...');
 
-    // Test with a small sample file
-    const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4';
-    const testFilename = 'test_sample_video.mp4';
-
-    if (window.trySimpleDownloadWithProgress) {
-        trySimpleDownloadWithProgress(testUrl, testFilename);
-        console.log('✅ Simple download test started');
-        showToast('Simple download test started! Check your downloads.', 'success', 3000);
-        return true;
-    } else {
-        console.error('❌ Simple download function not available');
-        showToast('Simple download function not loaded', 'error');
-        return false;
-    }
-};
-
-// Test function for download notification
-window.testDownloadNotification = function () {
-    console.log('🧪 Testing Download Notification...');
-
-    if (window.showSimpleDownloadProgress) {
-        showSimpleDownloadProgress('test_notification_file.mp4');
-        console.log('✅ Download notification test completed');
-        return true;
-    } else {
-        console.error('❌ Download notification function not available');
-        return false;
-    }
-};
-
-// Test function for enhanced download system
-window.testSimpleDownload = function () {
-    console.log('🧪 Testing Enhanced Download System...');
-
-    // Test with a small sample file
-    const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4';
-    const testFilename = 'test_sample_video.mp4';
-
-    if (window.SimpleDownloadManager) {
-        const downloadId = SimpleDownloadManager.startDownload(testUrl, testFilename);
-        console.log('✅ Enhanced download test started, ID:', downloadId);
-        showToast('Enhanced download test started! Check the download panel.', 'success', 3000);
-        return downloadId;
-    } else {
-        console.error('❌ Enhanced download manager not available');
-        showToast('Enhanced download manager not loaded', 'error');
-        return false;
-    }
-};
-
-// Test function for download panel
-window.testDownloadPanel = function () {
-    console.log('🧪 Testing Download Panel...');
-
-    if (window.SimpleDownloadManager) {
-        // Show the panel
-        SimpleDownloadManager.showPanel();
-
-        // Add a test download
-        const downloadId = SimpleDownloadManager.startDownload(
-            'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
-            'panel_test_video.mp4'
-        );
-
-        console.log('✅ Download panel test completed, ID:', downloadId);
-        showToast('Download panel opened with test download!', 'success', 3000);
-        return downloadId;
-    } else {
-        console.error('❌ Download panel not available');
-        return false;
-    }
-};
 
 // Make SimpleDownloadManager globally accessible
 window.SimpleDownloadManager = SimpleDownloadManager;
@@ -5537,126 +5526,3 @@ window.hideDownloadsPanel = function () {
     }
 };
 
-// Test function for download panel visibility
-window.testDownloadPanel = function () {
-    console.log('🧪 Testing Download Panel Show/Hide...');
-
-    // Show panel
-    console.log('📥 Showing panel...');
-    showDownloadsPanel();
-
-    // Hide panel after 3 seconds
-    setTimeout(() => {
-        console.log('📥 Hiding panel...');
-        hideDownloadsPanel();
-    }, 3000);
-
-    // Show panel again after 6 seconds
-    setTimeout(() => {
-        console.log('📥 Showing panel again...');
-        showDownloadsPanel();
-    }, 6000);
-
-    console.log('✅ Panel visibility test started - watch for 6 seconds');
-};// Test function for the new download button and progress tracking
-window.testNewDownloadSystem = function () {
-    console.log('🧪 Testing New Download System with Progress...');
-
-    // Test the header button
-    const downloadBtn = document.getElementById('downloadsBtn');
-    console.log('📊 Download button found:', !!downloadBtn);
-
-    // Test a download with progress tracking
-    if (window.DownloadManager) {
-        console.log('📥 Starting test download with progress tracking...');
-
-        // Use a larger file to see progress
-        const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_5mb.mp4';
-        const testFilename = 'progress_test_video.mp4';
-
-        DownloadManager.startDownload(testUrl, testFilename, {
-            source: 'progress_test',
-            description: 'Testing progress tracking'
-        }).then(downloadId => {
-            console.log('✅ Test download started with ID:', downloadId);
-            console.log('📊 Watch the download panel and header button for progress updates');
-        }).catch(error => {
-            console.error('❌ Test download failed:', error);
-        });
-    } else {
-        console.error('❌ DownloadManager not available');
-    }
-};// Test function for all the download fixes
-window.testDownloadFixes = function () {
-    console.log('🧪 Testing Download System Fixes...');
-
-    // Test 1: Panel hiding behavior
-    console.log('📥 Test 1: Panel hiding behavior');
-    showDownloadsPanel();
-    setTimeout(() => {
-        console.log('📥 Hiding panel manually...');
-        hideDownloadsPanel();
-    }, 2000);
-
-    // Test 2: Start a download to test speed and cancellation
-    setTimeout(() => {
-        console.log('📥 Test 2: Starting download for speed/cancel test...');
-        if (window.DownloadManager) {
-            // Use a larger file to test speed calculation
-            const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_10mb.mp4';
-            const testFilename = 'speed_cancel_test.mp4';
-
-            DownloadManager.startDownload(testUrl, testFilename, {
-                source: 'fix_test',
-                description: 'Testing fixes for speed and cancellation'
-            }).then(downloadId => {
-                console.log('✅ Test download started:', downloadId);
-                console.log('📊 Watch for: 1) Real speed updates, 2) Panel stays hidden if manually closed');
-
-                // Test cancellation after 10 seconds
-                setTimeout(() => {
-                    console.log('🚫 Testing download cancellation...');
-                    DownloadManager.cancelDownload(downloadId);
-                }, 10000);
-            });
-        }
-    }, 4000);
-
-    return 'Tests started - watch console and download panel for 15 seconds';
-};// Test function to check cricket match display
-window.testCricketMatches = function () {
-    console.log('🧪 Testing Cricket Match Display...');
-
-    if (window.CricketLive) {
-        console.log('📊 CricketLive available:', !!window.CricketLive);
-        console.log('📊 Total matches loaded:', window.CricketLive.matches.length);
-
-        // Log all matches
-        window.CricketLive.matches.forEach((match, index) => {
-            const info = match.match?.matchInfo;
-            console.log(`🏏 Match ${index + 1}:`, {
-                id: info?.matchId,
-                series: info?.seriesName,
-                teams: `${info?.team1?.teamSName} vs ${info?.team2?.teamSName}`,
-                status: info?.status,
-                state: info?.state
-            });
-        });
-
-        // Check how many match cards are in the DOM
-        const matchCards = document.querySelectorAll('.match-card');
-        console.log(`📊 Match cards in DOM: ${matchCards.length}`);
-
-        // Force re-render
-        console.log('🔄 Force re-rendering matches...');
-        window.CricketLive.renderMatches();
-
-        return {
-            totalMatches: window.CricketLive.matches.length,
-            cardsInDOM: matchCards.length
-        };
-    } else {
-        console.error('❌ CricketLive not available');
-        return null;
-    }
-};
