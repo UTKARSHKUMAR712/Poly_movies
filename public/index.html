@@ -47,6 +47,9 @@
                     <select id="providerSelect" class="provider-select-compact">
                         <option value="">Provider</option>
                     </select>
+                    <!-- <button id="downloadsBtn" class="downloads-btn" onclick="showDownloadsPanel()" title="Downloads">
+                        📥
+                    </button> -->
                     <button class="mobile-nav-toggle" id="mobileNavToggle">☰</button>
                 </div>
             </div>
@@ -99,6 +102,7 @@
 
                 <!-- Search Results View -->
                 <div id="searchView" class="view" style="display: none;">
+                    <button id="searchBackBtn" class="back-btn">← Back</button>
                     <h2 id="searchTitle">Search Results</h2>
                     <div id="searchResults" class="posts-grid"></div>
                     <div id="searchPagination" class="pagination"></div>
@@ -211,6 +215,7 @@
 
 
         <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+        <script src="download-manager.js"></script>
         <script src="history.js"></script>
         <script src="tmdb-content.js"></script>
         <script src="new-updates.js"></script>

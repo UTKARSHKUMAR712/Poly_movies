@@ -9147,3 +9147,413 @@ icket Matches Container - Ensure All Matches Are Visible */
         padding: 0 5px;
     }
 }
+/* Modern
+ Loading Popup - Left Side Non-Intrusive */
+.modern-loading-popup {
+    position: fixed;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%) translateX(-120%);
+    z-index: 9999;
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+}
+
+.modern-loading-popup.show {
+    transform: translateY(-50%) translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.loading-popup-content {
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    border: 2px solid #e50914;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(229, 9, 20, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.loading-popup-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(229, 9, 20, 0.1), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    position: relative;
+    width: 60px;
+    height: 60px;
+}
+
+.spinner-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 3px solid transparent;
+    border-radius: 50%;
+    animation: spin 1.5s linear infinite;
+}
+
+.spinner-ring:nth-child(1) {
+    border-top-color: #e50914;
+    animation-delay: 0s;
+}
+
+.spinner-ring:nth-child(2) {
+    border-right-color: #ff6b6b;
+    animation-delay: -0.5s;
+    width: 80%;
+    height: 80%;
+    top: 10%;
+    left: 10%;
+}
+
+.spinner-ring:nth-child(3) {
+    border-bottom-color: #ffa500;
+    animation-delay: -1s;
+    width: 60%;
+    height: 60%;
+    top: 20%;
+    left: 20%;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Loading Text */
+.loading-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.loading-message {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.loading-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.loading-dots span {
+    width: 6px;
+    height: 6px;
+    background: #e50914;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+}
+
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+.loading-dots span:nth-child(3) { animation-delay: 0s; }
+
+@keyframes bounce {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .modern-loading-popup {
+        left: 10px;
+        transform: translateY(-50%) translateX(-110%);
+    }
+    
+    .modern-loading-popup.show {
+        transform: translateY(-50%) translateX(0);
+    }
+    
+    .loading-popup-content {
+        padding: 20px;
+        min-width: 180px;
+        border-radius: 12px;
+    }
+    
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .loading-message {
+        font-size: 14px;
+    }
+}
+
+/* Tablet Responsive */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .modern-loading-popup {
+        left: 15px;
+    }
+    
+    .loading-popup-content {
+        padding: 22px;
+        min-width: 190px;
+    }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .loading-popup-content {
+        border-width: 1px;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .modern-loading-popup {
+        transition: opacity 0.2s ease;
+    }
+    
+    .spinner-ring {
+        animation: none;
+        border: 3px solid #e50914;
+        border-top-color: transparent;
+    }
+    
+    .loading-dots span {
+        animation: none;
+        opacity: 0.7;
+    }
+    
+    .loading-popup-content::before {
+        animation: none;
+    }
+}
+
+/* Dark Theme Enhancements */
+@media (prefers-color-scheme: dark) {
+    .loading-popup-content {
+        background: rgba(10, 10, 10, 0.98);
+        border-color: #e50914;
+        box-shadow: 
+            0 25px 50px rgba(0, 0, 0, 0.9),
+            0 0 0 1px rgba(229, 9, 20, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+}
+
+/* Loading Popup Hover Effects (for accessibility) */
+.loading-popup-content:hover {
+    border-color: #ff1e2d;
+    box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.9),
+        0 0 20px rgba(229, 9, 20, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Accessibility Improvements */
+.loading-popup-content {
+    outline: none;
+}
+
+.loading-popup-content:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+/* Animation Performance Optimization */
+.loading-spinner,
+.loading-dots span,
+.loading-popup-content::before {
+    will-change: transform;
+}
+
+/* Ensure popup doesn't interfere with scrolling */
+.modern-loading-popup {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Loading States for Different Contexts */
+.modern-loading-popup[data-context="search"] .spinner-ring:nth-child(1) {
+    border-top-color: #4CAF50;
+}
+
+.modern-loading-popup[data-context="download"] .spinner-ring:nth-child(1) {
+    border-top-color: #2196F3;
+}
+
+.modern-loading-popup[data-context="error"] .spinner-ring:nth-child(1) {
+    border-top-color: #f44336;
+}
+
+.modern-loading-popup[data-context="tmdb"] .spinner-ring:nth-child(1) {
+    border-top-color: #FFD700;
+}
+/* Loa
+ding System Enhancements */
+
+/* Context-specific loading messages */
+.modern-loading-popup[data-context="search"] .loading-message::after {
+    content: " 🔍";
+}
+
+.modern-loading-popup[data-context="download"] .loading-message::after {
+    content: " 📥";
+}
+
+.modern-loading-popup[data-context="tmdb"] .loading-message::after {
+    content: " 🎬";
+}
+
+.modern-loading-popup[data-context="error"] .loading-message::after {
+    content: " ⚠️";
+}
+
+/* Enhanced visual feedback for different contexts */
+.modern-loading-popup[data-context="search"] .loading-popup-content {
+    border-color: #4CAF50;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.8),
+        0 0 20px rgba(76, 175, 80, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.modern-loading-popup[data-context="download"] .loading-popup-content {
+    border-color: #2196F3;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.8),
+        0 0 20px rgba(33, 150, 243, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.modern-loading-popup[data-context="tmdb"] .loading-popup-content {
+    border-color: #FFD700;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.8),
+        0 0 20px rgba(255, 215, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.modern-loading-popup[data-context="error"] .loading-popup-content {
+    border-color: #f44336;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.8),
+        0 0 20px rgba(244, 67, 54, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Smooth transitions between contexts */
+.loading-popup-content {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading dots color variations */
+.modern-loading-popup[data-context="search"] .loading-dots span {
+    background: #4CAF50;
+}
+
+.modern-loading-popup[data-context="download"] .loading-dots span {
+    background: #2196F3;
+}
+
+.modern-loading-popup[data-context="tmdb"] .loading-dots span {
+    background: #FFD700;
+}
+
+.modern-loading-popup[data-context="error"] .loading-dots span {
+    background: #f44336;
+}
+
+/* Ensure loading popup is above all other elements */
+.modern-loading-popup {
+    z-index: 999999;
+}
+
+/* Prevent body scroll when loading is active (optional) */
+body.loading-active {
+    /* Uncomment if you want to prevent scrolling during loading */
+    /* overflow: hidden; */
+}
+
+/* Loading popup entrance animation */
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateY(-50%) translateX(-120%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(-50%) translateX(0);
+        opacity: 1;
+    }
+}
+
+.modern-loading-popup.show {
+    animation: slideInFromLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading popup exit animation */
+@keyframes slideOutToLeft {
+    0% {
+        transform: translateY(-50%) translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-50%) translateX(-120%);
+        opacity: 0;
+    }
+}
+
+.modern-loading-popup.hiding {
+    animation: slideOutToLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .loading-popup-content {
+        border-width: 3px;
+        background: rgba(0, 0, 0, 1);
+    }
+    
+    .loading-message {
+        font-weight: 700;
+        text-shadow: none;
+    }
+}
+
+/* Print styles (hide loading popup) */
+@media print {
+    .modern-loading-popup {
+        display: none !important;
+    }
+}

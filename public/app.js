@@ -2,15 +2,20 @@
 if (typeof require !== 'undefined') {
     try {
         const { ipcRenderer } = require("electron");
-        
+
         ipcRenderer.on("show-download-dialog", () => {
             // Open download UI
             showDownloadDialog();
         });
-        
+
         ipcRenderer.on("show-about-dialog", () => {
             // Show about info popup
             showAboutDialog();
+        });
+
+        ipcRenderer.on("show-downloads-panel", () => {
+            // Show downloads panel
+            showDownloadsPanel();
         });
     } catch (error) {
         console.log('Running in browser mode, IPC not available');
@@ -77,28 +82,129 @@ function showAboutDialog() {
     document.body.appendChild(modal);
 }
 
-// Download function
-function startDownload() {
+// Simple fallback download function
+async function trySimpleDownload(url, filename) {
+    try {
+        // Create download link
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        console.log('✅ Simple download started:', filename);
+        return true;
+    } catch (error) {
+        console.error('❌ Simple download failed:', error);
+        return false;
+    }
+}
+
+// Enhanced download function with progress tracking
+async function startDownload() {
     const url = document.getElementById('downloadUrl').value;
     if (!url) {
         alert('Please enter a valid URL');
         return;
     }
-    
-    // Create download link
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'stream.m3u8';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    // Close modal
-    document.querySelector('.modal-overlay').remove();
-    showToast('Download started', 'success');
+
+    // Extract filename from URL or use default
+    const filename = extractFilenameFromUrl(url) || 'stream.m3u8';
+
+    try {
+        // Start download with progress tracking if available
+        if (window.DownloadManager && typeof window.DownloadManager.startDownload === 'function') {
+            const downloadId = await DownloadManager.startDownload(url, filename, {
+                source: 'manual_download',
+                userInitiated: true
+            });
+
+            showToast(`Download started: ${filename}`, 'success');
+            console.log(`📥 Started download with ID: ${downloadId}`);
+        } else {
+            // Fallback to simple download
+            const success = await trySimpleDownload(url, filename);
+            if (success) {
+                showToast(`Download started: ${filename}`, 'success');
+            } else {
+                showToast('Download may have started. Check your downloads folder.', 'info');
+            }
+        }
+
+        // Close modal
+        const modal = document.querySelector('.modal-overlay');
+        if (modal) {
+            modal.remove();
+        }
+
+    } catch (error) {
+        console.error('❌ Download failed:', error);
+        showToast(`Download failed: ${error.message}`, 'error');
+    }
 }
 
-// Main App State.
+// Helper function to extract filename from URL
+function extractFilenameFromUrl(url) {
+    try {
+        const urlObj = new URL(url);
+        const pathname = urlObj.pathname;
+        const filename = pathname.split('/').pop();
+
+        if (filename && filename.includes('.')) {
+            return filename;
+        }
+
+        // Generate filename based on content type or default
+        const extension = url.includes('.m3u8') ? '.m3u8' :
+            url.includes('.mp4') ? '.mp4' :
+                url.includes('.mkv') ? '.mkv' : '.mp4';
+
+        return `download_${Date.now()}${extension}`;
+    } catch (error) {
+        return `download_${Date.now()}.mp4`;
+    }
+}
+
+// Generate smart download filename based on stream and content info
+function generateDownloadFilename(stream, contentTitle) {
+    try {
+        // Clean content title for filename
+        let title = contentTitle || 'Video';
+        title = title.replace(/[<>:"/\\|?*]/g, ''); // Remove invalid filename characters
+        title = title.substring(0, 50); // Limit length
+
+        // Determine file extension
+        let extension = '.mp4'; // default
+        if (stream.type === 'm3u8' || stream.link.includes('.m3u8')) {
+            extension = '.m3u8';
+        } else if (stream.link.includes('.mkv')) {
+            extension = '.mkv';
+        } else if (stream.link.includes('.avi')) {
+            extension = '.avi';
+        } else if (stream.link.includes('.mov')) {
+            extension = '.mov';
+        }
+
+        // Add quality info if available
+        const quality = stream.quality ? `_${stream.quality}p` : '';
+
+        // Add server info for identification
+        const server = stream.server ? `_${stream.server.replace(/[<>:"/\\|?*]/g, '')}` : '';
+
+        // Construct filename
+        const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const filename = `${title}${quality}${server}_${timestamp}${extension}`;
+
+        return filename;
+    } catch (error) {
+        console.error('Error generating filename:', error);
+        return `download_${Date.now()}.mp4`;
+    }
+}
+
+// Main App State with Enhanced Caching and Navigation
 const state = {
     providers: [],
     selectedProvider: null,
@@ -111,6 +217,28 @@ const state = {
     retryCount: 0,
     maxRetries: 3,
     isVideoPlaying: false, // Track video playback state
+
+    // Enhanced caching system (no search caching)
+    homeCache: new Map(),
+    homeCacheTimestamp: new Map(),
+    detailsCache: new Map(),
+    detailsCacheTimestamp: new Map(),
+
+    // Search state preservation (not caching)
+    searchPageState: null, // Stores the exact DOM state of search page
+
+    // Navigation history
+    navigationHistory: [],
+    currentHistoryIndex: -1
+};
+
+// Session-based cache configuration (no search caching)
+const CACHE_CONFIG = {
+    SESSION_BASED: true, // Cache persists until app closes
+    EXCLUDE_CRICKET: true, // Don't cache cricket section (always fresh)
+    NO_SEARCH_CACHE: true, // Don't cache search data, only preserve state
+    MAX_HISTORY: 50, // Increased navigation history entries
+    PRESERVE_SEARCH_DOM: true // Keep exact DOM state of search page
 };
 
 // Expose state and API_BASE globally for modules
@@ -120,16 +248,475 @@ window.state = state;
 const API_BASE = window.location.origin;
 window.API_BASE = API_BASE;
 
-// Utility Functions
-function showLoading(show = true, message = 'Loading...') {
-    const loadingEl = document.getElementById('loading');
+// Enhanced Cache Management System
+const CacheManager = {
+    // Home Cache
+    home: {
+        isValid(provider) {
+            return state.homeCache.has(provider);
+        },
+
+        get(provider) {
+            if (this.isValid(provider)) {
+                console.log('📋 Using cached home data for:', provider);
+                return state.homeCache.get(provider);
+            }
+            return null;
+        },
+
+        set(provider, data) {
+            console.log('💾 Caching home data for:', provider);
+            state.homeCache.set(provider, data);
+            state.homeCacheTimestamp.set(provider, Date.now());
+        },
+
+        clear(provider) {
+            state.homeCache.delete(provider);
+            state.homeCacheTimestamp.delete(provider);
+            console.log('🗑️ Cleared home cache for:', provider);
+        }
+    },
+
+    // Search State Preservation (No Caching - Just DOM State)
+    searchState: {
+        // Save the exact DOM state of search page
+        savePageState() {
+            if (state.currentView === 'search') {
+                const searchContainer = document.getElementById('searchResults');
+                const paginationContainer = document.getElementById('searchPagination');
+                const searchInput = document.getElementById('searchInput');
+                const searchTitle = document.getElementById('searchTitle');
+
+                if (searchContainer) {
+                    state.searchPageState = {
+                        query: state.searchQuery,
+                        page: state.currentPage,
+                        provider: state.selectedProvider,
+                        scrollPosition: window.scrollY || 0,
+                        searchInputValue: searchInput ? searchInput.value : '',
+                        searchTitleText: searchTitle ? searchTitle.textContent : '',
+                        resultsHTML: searchContainer.innerHTML,
+                        paginationHTML: paginationContainer ? paginationContainer.innerHTML : '',
+                        timestamp: Date.now()
+                    };
+                    console.log('💾 Saved search page state (no caching)');
+                }
+            }
+        },
+
+        // Restore the exact DOM state of search page
+        restorePageState() {
+            if (state.searchPageState && state.searchPageState.provider === state.selectedProvider) {
+                console.log('⚡ Restoring exact search page state');
+
+                const searchContainer = document.getElementById('searchResults');
+                const paginationContainer = document.getElementById('searchPagination');
+                const searchInput = document.getElementById('searchInput');
+                const searchTitle = document.getElementById('searchTitle');
+
+                // Restore all elements
+                if (searchContainer && state.searchPageState.resultsHTML) {
+                    searchContainer.innerHTML = state.searchPageState.resultsHTML;
+
+                    // Re-attach event listeners to movie cards
+                    this.reattachEventListeners(searchContainer);
+                }
+
+                if (paginationContainer && state.searchPageState.paginationHTML) {
+                    paginationContainer.innerHTML = state.searchPageState.paginationHTML;
+                }
+
+                if (searchInput) {
+                    searchInput.value = state.searchPageState.searchInputValue || '';
+                }
+
+                if (searchTitle) {
+                    searchTitle.textContent = state.searchPageState.searchTitleText || '';
+                }
+
+                // Restore state variables
+                state.searchQuery = state.searchPageState.query;
+                state.currentPage = state.searchPageState.page;
+
+                // Restore scroll position
+                setTimeout(() => {
+                    window.scrollTo(0, state.searchPageState.scrollPosition || 0);
+                }, 100);
+
+                showView('search');
+                return true;
+            }
+            return false;
+        },
+
+        // Re-attach event listeners to restored DOM elements
+        reattachEventListeners(container) {
+            console.log('🔗 Re-attaching event listeners to restored search results');
+
+            // Find all movie/post cards and re-attach click events
+            const postCards = container.querySelectorAll('.post-card, .movie-card, .content-card, .post');
+
+            postCards.forEach(card => {
+                // Add click event listener
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+
+                    // Get the link and provider from data attributes
+                    const link = card.getAttribute('data-link');
+                    const provider = card.getAttribute('data-provider') || state.selectedProvider;
+                    const title = card.getAttribute('data-title') || 'Unknown';
+
+                    if (link && provider) {
+                        console.log('🎬 Opening movie details from restored card:', { provider, link, title });
+                        loadDetails(provider, link);
+                    } else {
+                        console.warn('⚠️ Missing link or provider for movie card', {
+                            link,
+                            provider,
+                            cardData: {
+                                dataLink: card.getAttribute('data-link'),
+                                dataProvider: card.getAttribute('data-provider'),
+                                selectedProvider: state.selectedProvider
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Re-attach pagination event listeners if any
+            const paginationBtns = document.querySelectorAll('#searchPagination button');
+            paginationBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = parseInt(btn.dataset.page) || parseInt(btn.textContent) || 1;
+                    if (page && state.searchQuery) {
+                        console.log('📄 Pagination click:', page);
+                        changePage(page);
+                    }
+                });
+            });
+        },
+
+        // Clear search state
+        clear() {
+            state.searchPageState = null;
+            console.log('🗑️ Cleared search page state');
+        },
+
+        // Check if we have saved state for current provider
+        hasState() {
+            return state.searchPageState &&
+                state.searchPageState.provider === state.selectedProvider;
+        }
+    },
+
+    // Details Cache
+    details: {
+        generateKey(provider, link) {
+            return `${provider}:${btoa(link).substring(0, 50)}`;
+        },
+
+        isValid(key) {
+            return state.detailsCache.has(key);
+        },
+
+        get(provider, link) {
+            const key = this.generateKey(provider, link);
+            if (this.isValid(key)) {
+                console.log('📄 Using cached details data for:', key);
+                return state.detailsCache.get(key);
+            }
+            return null;
+        },
+
+        set(provider, link, data) {
+            const key = this.generateKey(provider, link);
+            console.log('💾 Caching details data for:', key);
+            state.detailsCache.set(key, data);
+            state.detailsCacheTimestamp.set(key, Date.now());
+        },
+
+        clear(provider) {
+            // Clear all details cache for a provider
+            const keysToDelete = [];
+            for (const key of state.detailsCache.keys()) {
+                if (key.startsWith(provider + ':')) {
+                    keysToDelete.push(key);
+                }
+            }
+            keysToDelete.forEach(key => {
+                state.detailsCache.delete(key);
+                state.detailsCacheTimestamp.delete(key);
+            });
+            console.log('🗑️ Cleared details cache for:', provider);
+        }
+    },
+
+    // Clear all caches and search state
+    clearAll() {
+        state.homeCache.clear();
+        state.homeCacheTimestamp.clear();
+        state.detailsCache.clear();
+        state.detailsCacheTimestamp.clear();
+        state.searchPageState = null;
+        console.log('🗑️ Cleared all caches and search state');
+    },
+
+    // Get cache info for debugging
+    getInfo() {
+        return {
+            home: this.getCacheInfo(state.homeCache, 'Session-based'),
+            searchState: state.searchPageState ? {
+                provider: state.searchPageState.provider,
+                query: state.searchPageState.query,
+                page: state.searchPageState.page,
+                hasState: 'DOM state preserved',
+                type: 'State preservation (no caching)'
+            } : { hasState: 'No saved state' },
+            details: this.getCacheInfo(state.detailsCache, 'Session-based')
+        };
+    },
+
+    getCacheInfo(cache, type) {
+        const info = {};
+        for (const [key, data] of cache.entries()) {
+            info[key] = {
+                type: type,
+                size: JSON.stringify(data || {}).length,
+                cached: true,
+                persistent: 'Until app closes'
+            };
+        }
+        return info;
+    }
+};
+
+// Navigation History Management
+const NavigationManager = {
+    // Add a new navigation entry
+    push(view, data = {}) {
+        const entry = {
+            view,
+            data,
+            timestamp: Date.now(),
+            provider: state.selectedProvider
+        };
+
+        // Remove entries after current index (when navigating back then forward)
+        if (state.currentHistoryIndex < state.navigationHistory.length - 1) {
+            state.navigationHistory = state.navigationHistory.slice(0, state.currentHistoryIndex + 1);
+        }
+
+        // Add new entry
+        state.navigationHistory.push(entry);
+        state.currentHistoryIndex = state.navigationHistory.length - 1;
+
+        // Limit history size
+        if (state.navigationHistory.length > CACHE_CONFIG.MAX_HISTORY) {
+            state.navigationHistory.shift();
+            state.currentHistoryIndex--;
+        }
+
+        console.log('📍 Navigation pushed:', view, data);
+    },
+
+    // Get previous navigation entry
+    getPrevious() {
+        if (state.currentHistoryIndex > 0) {
+            return state.navigationHistory[state.currentHistoryIndex - 1];
+        }
+        return null;
+    },
+
+    // Navigate back
+    goBack() {
+        const previous = this.getPrevious();
+        if (previous) {
+            state.currentHistoryIndex--;
+            console.log('⬅️ Navigating back to:', previous.view, previous.data);
+            return previous;
+        }
+        return null;
+    },
+
+    // Get current navigation entry
+    getCurrent() {
+        if (state.currentHistoryIndex >= 0) {
+            return state.navigationHistory[state.currentHistoryIndex];
+        }
+        return null;
+    },
+
+    // Clear navigation history
+    clear() {
+        state.navigationHistory = [];
+        state.currentHistoryIndex = -1;
+        console.log('🗑️ Cleared navigation history');
+    },
+
+    // Get navigation info for debugging
+    getInfo() {
+        return {
+            current: state.currentHistoryIndex,
+            total: state.navigationHistory.length,
+            history: state.navigationHistory.map((entry, index) => ({
+                index,
+                view: entry.view,
+                data: entry.data,
+                provider: entry.provider,
+                isCurrent: index === state.currentHistoryIndex
+            }))
+        };
+    }
+};
+
+// Backward compatibility
+const HomeCache = CacheManager.home;
+
+// Enhanced Loading System - Modern Left-Side Popup
+function showLoading(show = true, message = 'Loading...', context = 'default') {
+    let loadingPopup = document.getElementById('modernLoadingPopup');
+
+    if (!loadingPopup) {
+        // Create the modern loading popup
+        loadingPopup = document.createElement('div');
+        loadingPopup.id = 'modernLoadingPopup';
+        loadingPopup.className = 'modern-loading-popup';
+        loadingPopup.innerHTML = `
+            <div class="loading-popup-content" tabindex="-1" role="status" aria-live="polite">
+                <div class="loading-spinner" aria-hidden="true">
+                    <div class="spinner-ring"></div>
+                    <div class="spinner-ring"></div>
+                    <div class="spinner-ring"></div>
+                </div>
+                <div class="loading-text">
+                    <span class="loading-message">Loading...</span>
+                    <div class="loading-dots" aria-hidden="true">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(loadingPopup);
+
+        // Add click handler to dismiss (optional)
+        loadingPopup.addEventListener('click', (e) => {
+            if (e.target === loadingPopup) {
+                // Don't auto-dismiss, let the app control it
+                console.log('Loading popup clicked - controlled by app');
+            }
+        });
+    }
+
     if (show) {
-        loadingEl.querySelector('p').textContent = message;
-        loadingEl.style.display = 'block';
+        const messageEl = loadingPopup.querySelector('.loading-message');
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
+
+        // Set context for different styling
+        loadingPopup.setAttribute('data-context', context);
+        loadingPopup.classList.add('show');
+
+        // Update aria-label for accessibility
+        const content = loadingPopup.querySelector('.loading-popup-content');
+        if (content) {
+            content.setAttribute('aria-label', message);
+        }
+
+        // Auto-hide after 45 seconds to prevent stuck loading
+        if (loadingPopup.autoHideTimeout) {
+            clearTimeout(loadingPopup.autoHideTimeout);
+        }
+        loadingPopup.autoHideTimeout = setTimeout(() => {
+            if (loadingPopup.classList.contains('show')) {
+                console.warn('⚠️ Auto-hiding stuck loading popup after 45 seconds');
+                showLoading(false);
+            }
+        }, 45000);
+
+        console.log(`🔄 Loading started: ${message} (${context})`);
     } else {
-        loadingEl.style.display = 'none';
+        loadingPopup.classList.remove('show');
+        loadingPopup.removeAttribute('data-context');
+
+        // Clear auto-hide timeout
+        if (loadingPopup.autoHideTimeout) {
+            clearTimeout(loadingPopup.autoHideTimeout);
+            loadingPopup.autoHideTimeout = null;
+        }
+
+        console.log('✅ Loading completed');
+    }
+
+    // Also handle the old loading element for backward compatibility
+    const oldLoadingEl = document.getElementById('loading');
+    if (oldLoadingEl) {
+        if (show) {
+            const oldMessageEl = oldLoadingEl.querySelector('p');
+            if (oldMessageEl) {
+                oldMessageEl.textContent = message;
+            }
+            oldLoadingEl.style.display = 'block';
+        } else {
+            oldLoadingEl.style.display = 'none';
+        }
     }
 }
+
+// Enhanced loading function with context support
+window.showLoadingWithContext = function (show = true, message = 'Loading...', context = 'default') {
+    showLoading(show, message, context);
+};
+
+// Quick loading functions for common contexts
+window.showSearchLoading = function (show = true, message = 'Searching...') {
+    showLoading(show, message, 'search');
+};
+
+window.showDownloadLoading = function (show = true, message = 'Preparing download...') {
+    showLoading(show, message, 'download');
+};
+
+window.showTMDBLoading = function (show = true, message = 'Loading TMDB data...') {
+    showLoading(show, message, 'tmdb');
+};
+
+window.showErrorLoading = function (show = true, message = 'Processing...') {
+    showLoading(show, message, 'error');
+};
+
+// Demo function to test different loading contexts (for development)
+window.testLoadingSystem = function () {
+    console.log('🧪 Testing Modern Loading System...');
+
+    // Test default loading
+    showLoading(true, 'Testing default loading...');
+    setTimeout(() => {
+        showLoading(false);
+
+        // Test search loading
+        showSearchLoading(true, 'Testing search loading...');
+        setTimeout(() => {
+            showSearchLoading(false);
+
+            // Test download loading
+            showDownloadLoading(true, 'Testing download loading...');
+            setTimeout(() => {
+                showDownloadLoading(false);
+
+                // Test TMDB loading
+                showTMDBLoading(true, 'Testing TMDB loading...');
+                setTimeout(() => {
+                    showTMDBLoading(false);
+                    console.log('✅ Loading system test completed!');
+                }, 2000);
+            }, 2000);
+        }, 2000);
+    }, 2000);
+};
 
 function createSearchProviderSection(provider) {
     const section = document.createElement('div');
@@ -351,6 +938,9 @@ async function fetchPosts(provider, filter = '', page = 1) {
 }
 
 async function searchPosts(provider, query, page = 1) {
+    // No caching - always fetch fresh data
+    console.log('🔍 Fetching fresh search results (no cache)');
+
     try {
         const response = await fetch(`${API_BASE}/api/${provider}/search?query=${encodeURIComponent(query)}&page=${page}`);
         if (!response.ok) {
@@ -365,27 +955,31 @@ async function searchPosts(provider, query, page = 1) {
         const data = await response.json();
 
         // Handle different response formats
+        let result;
         if (Array.isArray(data)) {
             // Direct array response - wrap it in an object with pagination info
-            return {
+            result = {
                 posts: data,
                 hasNextPage: false, // Default to false for array responses
                 provider: provider
             };
         } else if (data && typeof data === 'object') {
             // Already in the expected format
-            return {
+            result = {
                 ...data,
                 provider: provider
             };
         } else {
             // Unexpected format - return empty structure
-            return {
+            result = {
                 posts: [],
                 hasNextPage: false,
                 provider: provider
             };
         }
+
+        // No caching - just return the result
+        return result;
     } catch (error) {
         console.warn(`Search failed for provider ${provider}:`, error);
         // Return empty structure instead of throwing error
@@ -398,9 +992,22 @@ async function searchPosts(provider, query, page = 1) {
 }
 
 async function fetchMeta(provider, link) {
+    // Check cache first
+    const cachedData = CacheManager.details.get(provider, link);
+    if (cachedData) {
+        console.log('⚡ Loading details from cache');
+        return cachedData;
+    }
+
     const response = await fetch(`${API_BASE}/api/${provider}/meta?link=${encodeURIComponent(link)}`);
     if (!response.ok) throw new Error('Failed to fetch metadata');
-    return response.json();
+
+    const data = await response.json();
+
+    // Cache the result
+    CacheManager.details.set(provider, link, data);
+
+    return data;
 }
 
 async function fetchEpisodes(provider, url) {
@@ -448,6 +1055,12 @@ function renderPostCard(post, provider) {
 
     // Use the provider from the post object if available (for search results)
     const displayProvider = post.provider || provider;
+    const targetProvider = post.provider || provider;
+
+    // Add data attributes for re-attaching event listeners
+    card.setAttribute('data-link', post.link);
+    card.setAttribute('data-provider', targetProvider);
+    card.setAttribute('data-title', post.title);
 
     card.innerHTML = `
         <img src="${post.image}" alt="${post.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22300%22%3E%3Crect width=%22200%22 height=%22300%22 fill=%22%23333%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23666%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E'" />
@@ -458,8 +1071,7 @@ function renderPostCard(post, provider) {
     `;
 
     card.addEventListener('click', () => {
-        // Use the provider from the post object if available (for search results)
-        const targetProvider = post.provider || provider;
+        console.log('🎬 Movie card clicked:', { targetProvider, link: post.link, title: post.title });
         loadDetails(targetProvider, post.link);
     });
 
@@ -884,7 +1496,7 @@ function renderStreamSelector(streams, provider, preferredStream = null) {
         }
 
         if (isPreferred) {
-            indicator += '<span style="font-size: 11px; color: #FFD700; margin-left: 5px;">⭐ Preferred</span>';
+            indicator += '<span style="font-size: 11px; color: #FFD700; margin-left: 5px;">Enjoy</span>';
         }
 
         if (hasDolbyAtmos) {
@@ -986,11 +1598,12 @@ function renderStreamSelector(streams, provider, preferredStream = null) {
             downloadBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
 
-                console.log('🔽 Download button clicked for stream:', stream.server);
-                showLoading(true, 'Preparing download...');
+                console.log('🔽 Enhanced download button clicked for stream:', stream.server);
+                showDownloadLoading(true, 'Preparing download...');
 
                 try {
                     let downloadUrl = stream.link;
+                    let filename = generateDownloadFilename(stream, state.currentMeta?.meta?.title);
 
                     // Extract if needed
                     if (stream.requiresExtraction) {
@@ -1016,20 +1629,35 @@ function renderStreamSelector(streams, provider, preferredStream = null) {
                         downloadUrl = `${API_BASE}/api/proxy/video?url=${encodeURIComponent(downloadUrl)}&headers=${headersParam}`;
                     }
 
-                    // Try multiple download methods
-                    const success = await tryDownloadMethods(downloadUrl, stream, state.currentMeta?.meta?.title);
+                    // Start enhanced download with progress tracking
+                    if (window.DownloadManager && typeof window.DownloadManager.startDownload === 'function') {
+                        const downloadId = await DownloadManager.startDownload(downloadUrl, filename, {
+                            source: 'stream_download',
+                            streamServer: stream.server,
+                            quality: stream.quality,
+                            contentTitle: state.currentMeta?.meta?.title,
+                            provider: state.selectedProvider,
+                            streamType: stream.type
+                        });
 
-                    if (success) {
-                        showToast('Download started successfully!', 'success', 3000);
+                        showToast(`Download started: ${filename}`, 'success', 3000);
+                        console.log(`📥 Started enhanced download with ID: ${downloadId}`);
                     } else {
-                        showToast('Download may have started. Check your downloads folder.', 'info', 4000);
+                        // Fallback to simple download with progress indicator
+                        console.log('📥 DownloadManager not available, using fallback download');
+                        const success = await trySimpleDownloadWithProgress(downloadUrl, filename);
+                        if (success) {
+                            showToast(`Download started: ${filename}`, 'success', 3000);
+                        } else {
+                            showToast('Download may have started. Check your downloads folder.', 'info', 4000);
+                        }
                     }
 
                 } catch (error) {
-                    console.error('❌ Download failed:', error);
+                    console.error('❌ Enhanced download failed:', error);
                     showError('Download failed: ' + error.message);
                 } finally {
-                    showLoading(false);
+                    showDownloadLoading(false);
                 }
             });
         }
@@ -1322,7 +1950,7 @@ async function openExternalPlayer(stream, preferredPlayer = null) {
         preferredPlayer
     });
 
-    showLoading(true, 'Preparing external player...');
+    showLoadingWithContext(true, 'Preparing external player...', 'default');
     try {
         let streamUrl = stream.link;
 
@@ -1394,7 +2022,7 @@ async function openExternalPlayer(stream, preferredPlayer = null) {
         console.error('❌ Failed to prepare external player link:', error);
         showError('Failed to prepare external player link: ' + error.message);
     } finally {
-        showLoading(false);
+        showLoadingWithContext(false);
     }
 }
 
@@ -2745,7 +3373,7 @@ function initializeMobileNavigation() {
 }
 
 // Event Handlers
-async function loadHomePage() {
+async function loadHomePage(skipNavigation = false) {
     console.log('🏠 loadHomePage called, provider:', state.selectedProvider);
     const provider = state.selectedProvider;
     if (!provider) {
@@ -2753,10 +3381,34 @@ async function loadHomePage() {
         return;
     }
 
+    // Add to navigation history
+    if (!skipNavigation) {
+        NavigationManager.push('home', { provider });
+    }
+
+    const catalogContainer = document.getElementById('catalogSections');
+
+    // Check cache first
+    const cachedData = CacheManager.home.get(provider);
+    if (cachedData) {
+        console.log('⚡ Loading home from cache');
+        catalogContainer.innerHTML = cachedData.html;
+
+        // Always refresh cricket section (live data)
+        if (CACHE_CONFIG.EXCLUDE_CRICKET && window.CricketLive) {
+            console.log('🏏 Refreshing cricket section (live data)');
+            setTimeout(() => {
+                window.CricketLive.fetchMatches();
+            }, 100); // Small delay to ensure DOM is ready
+        }
+
+        showView('home');
+        return;
+    }
+
     showLoading();
     try {
         const catalogData = await fetchCatalog(provider);
-        const catalogContainer = document.getElementById('catalogSections');
         catalogContainer.innerHTML = '';
 
         // Render Hero Banner
@@ -2853,6 +3505,26 @@ async function loadHomePage() {
             catalogContainer.appendChild(genresSection);
         }
 
+        // Cache the rendered content (excluding cricket section if configured)
+        let htmlToCache = catalogContainer.innerHTML;
+
+        // Remove cricket section from cache if configured
+        if (CACHE_CONFIG.EXCLUDE_CRICKET) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlToCache;
+            const cricketSection = tempDiv.querySelector('#cricketLiveSection');
+            if (cricketSection) {
+                cricketSection.remove();
+                htmlToCache = tempDiv.innerHTML;
+            }
+        }
+
+        // Store in cache
+        CacheManager.home.set(provider, {
+            html: htmlToCache,
+            catalogData: catalogData
+        });
+
         showView('home');
     } catch (error) {
         showError('Failed to load catalog: ' + error.message);
@@ -2890,7 +3562,17 @@ async function performSearch() {
         return;
     }
 
-    showLoading();
+    // Save current page state before new search
+    saveCurrentPageState();
+
+    // Add to navigation history
+    NavigationManager.push('search', {
+        query,
+        page: 1,
+        provider: state.selectedProvider
+    });
+
+    showSearchLoading(true, `Searching for "${query}"...`);
     try {
         // Search across ALL providers instead of just the selected one
         const allProviders = state.providers;
@@ -2937,7 +3619,7 @@ async function performSearch() {
     } catch (error) {
         showError('Search failed: ' + error.message);
     } finally {
-        showLoading(false);
+        showSearchLoading(false);
     }
 }
 
@@ -2991,6 +3673,16 @@ async function changeCatalogPage(newPage) {
 }
 
 async function loadDetails(provider, link) {
+    // Save current page state before navigating to details
+    saveCurrentPageState();
+
+    // Add to navigation history
+    NavigationManager.push('details', {
+        provider,
+        link,
+        title: state.currentMeta?.meta?.title || 'Details'
+    });
+
     showLoading();
     try {
         const meta = await fetchMeta(provider, link);
@@ -3164,8 +3856,18 @@ async function init() {
 
     // Event Listeners
     document.getElementById('providerSelect').addEventListener('change', (e) => {
-        state.selectedProvider = e.target.value;
-        if (e.target.value) {
+        const newProvider = e.target.value;
+
+        // Clear cache and navigation for old provider if switching
+        if (state.selectedProvider && state.selectedProvider !== newProvider) {
+            CacheManager.home.clear(state.selectedProvider);
+            CacheManager.details.clear(state.selectedProvider);
+            CacheManager.searchState.clear(); // Clear search state
+            NavigationManager.clear(); // Clear navigation when switching providers
+        }
+
+        state.selectedProvider = newProvider;
+        if (newProvider) {
             loadHomePage();
         }
     });
@@ -3194,7 +3896,18 @@ async function init() {
     if (backBtn) {
         backBtn.addEventListener('click', () => {
             if (state.selectedProvider) {
-                loadHomePage();
+                smartBack();
+                updateNavLinks('home');
+            }
+        });
+    }
+
+    // Search back button
+    const searchBackBtn = document.getElementById('searchBackBtn');
+    if (searchBackBtn) {
+        searchBackBtn.addEventListener('click', () => {
+            if (state.selectedProvider) {
+                smartBack();
                 updateNavLinks('home');
             }
         });
@@ -4641,3 +5354,798 @@ async function tryCopyDownloadUrl(url) {
         return false;
     }
 }
+
+console.log('🎬 PolyMovies Enhanced System Loaded');
+console.log('💾 Session Cache: Persists until app closes (no time limits)');
+console.log('📍 Smart Navigation: Back button remembers your exact path');
+console.log('� Sebarch State: Preserves exact search results and scroll position');
+console.log('🔧 Debug: showCacheInfo(), showNavigationInfo(), clearHomeCache(), debugSearchState()');
+
+// Debug functions for cache management
+window.showCacheInfo = function () {
+    const info = CacheManager.getInfo();
+    console.log('📋 Cache Info:', info);
+    return info;
+};
+
+window.clearHomeCache = function (provider) {
+    if (provider) {
+        CacheManager.home.clear(provider);
+        CacheManager.details.clear(provider);
+        CacheManager.searchState.clear();
+        console.log(`🗑️ Cleared all cache and search state for: ${provider}`);
+    } else {
+        CacheManager.clearAll();
+        console.log('🗑️ Cleared all cache and search state');
+    }
+};
+
+// Smart back navigation function
+// Save current page state before navigation
+function saveCurrentPageState() {
+    if (state.currentView === 'search') {
+        // Save the exact DOM state of search page (including loading states)
+        CacheManager.searchState.savePageState();
+    }
+}
+
+function smartBack() {
+    // Save current state before navigating
+    saveCurrentPageState();
+
+    const previous = NavigationManager.goBack();
+
+    if (previous) {
+        console.log('⬅️ Smart back to:', previous.view, previous.data);
+
+        switch (previous.view) {
+            case 'home':
+                loadHomePage(true); // Skip navigation tracking
+                break;
+
+            case 'search':
+                // Restore search state
+                const searchData = previous.data;
+                if (searchData.query) {
+                    // Load cached search results if available
+                    restoreSearchResults(searchData);
+                } else {
+                    loadHomePage(true);
+                }
+                break;
+
+            case 'details':
+                // Restore details page
+                const detailsData = previous.data;
+                if (detailsData.provider && detailsData.link) {
+                    loadDetails(detailsData.provider, detailsData.link);
+                } else {
+                    loadHomePage(true);
+                }
+                break;
+
+            default:
+                loadHomePage(true);
+                break;
+        }
+    } else {
+        // No navigation history, go to home
+        loadHomePage(true);
+    }
+}
+
+// Restore search page state (no caching, just DOM state)
+async function restoreSearchResults(searchData) {
+    const { query, page = 1, provider } = searchData;
+
+    console.log('🔄 Restoring search state:', { query, page, provider });
+
+    try {
+        // Try to restore exact DOM state first (including loading states)
+        if (CacheManager.searchState.restorePageState()) {
+            console.log('⚡ Restored exact search page state (including any loading states)');
+            return;
+        }
+
+        // If no saved state, perform fresh search
+        console.log('🔍 No saved state, performing fresh search');
+
+        // Set up search input
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.value = query;
+        }
+
+        // Update state
+        state.searchQuery = query;
+        state.currentPage = page;
+
+        // Perform fresh search
+        showLoading();
+        const results = await searchPosts(provider, query, page);
+
+        // Display results
+        document.getElementById('searchTitle').textContent = `Search Results for "${query}"`;
+        renderPosts(results.posts || [], 'searchResults', provider);
+
+        // Add pagination if available
+        if (results.hasNextPage !== undefined) {
+            renderPagination('searchPagination', page, results.hasNextPage, 'changePage(');
+        }
+
+        showView('search');
+        showLoading(false);
+
+    } catch (error) {
+        console.error('Failed to restore search:', error);
+        showLoading(false);
+        loadHomePage(true);
+    }
+}
+
+// Debug functions for navigation and cache
+window.showNavigationInfo = function () {
+    const info = NavigationManager.getInfo();
+    console.log('📍 Navigation Info:', info);
+    return info;
+};
+
+window.clearNavigation = function () {
+    NavigationManager.clear();
+    console.log('🗑️ Cleared navigation history');
+};
+
+// Debug function for search state
+window.debugSearchState = function () {
+    console.log('🔍 Search State Debug:', {
+        currentView: state.currentView,
+        searchQuery: state.searchQuery,
+        currentPage: state.currentPage,
+        selectedProvider: state.selectedProvider,
+        hasSearchPageState: !!state.searchPageState,
+        searchPageState: state.searchPageState
+    });
+
+    const searchContainer = document.getElementById('searchResults');
+    const postCards = searchContainer ? searchContainer.querySelectorAll('.post-card') : [];
+
+    console.log('🎬 Search Results Debug:', {
+        searchContainer: !!searchContainer,
+        postCardsCount: postCards.length,
+        postCardsWithData: Array.from(postCards).map(card => ({
+            hasDataLink: !!card.getAttribute('data-link'),
+            hasDataProvider: !!card.getAttribute('data-provider'),
+            dataLink: card.getAttribute('data-link'),
+            dataProvider: card.getAttribute('data-provider')
+        }))
+    });
+};
+
+// Enhanced Download Manager with Visual Progress
+const SimpleDownloadManager = {
+    downloads: new Map(),
+    downloadCounter: 0,
+
+    // Initialize the download manager
+    init() {
+        this.createDownloadPanel();
+        console.log('📥 Simple Download Manager initialized');
+    },
+
+    // Create the download panel UI
+    createDownloadPanel() {
+        if (document.getElementById('simpleDownloadPanel')) return;
+
+        const panel = document.createElement('div');
+        panel.id = 'simpleDownloadPanel';
+        panel.className = 'simple-download-panel';
+        panel.innerHTML = `
+            <div class="download-panel-header">
+                <h3>📥 Downloads</h3>
+                <div class="download-panel-controls">
+                    <button onclick="SimpleDownloadManager.togglePanel()" class="panel-toggle-btn">−</button>
+                    <button onclick="SimpleDownloadManager.clearCompleted()" class="panel-clear-btn">Clear</button>
+                </div>
+            </div>
+            <div class="download-panel-content" id="simpleDownloadContent">
+                <div class="no-downloads">No active downloads</div>
+            </div>
+        `;
+
+        document.body.appendChild(panel);
+    },
+
+    // Start a new download with progress tracking
+    startDownload(url, filename) {
+        const downloadId = ++this.downloadCounter;
+        const download = {
+            id: downloadId,
+            url: url,
+            filename: filename,
+            status: 'starting',
+            progress: 0,
+            downloadedBytes: 0,
+            totalBytes: 0,
+            speed: 0,
+            startTime: Date.now(),
+            lastUpdate: Date.now()
+        };
+
+        this.downloads.set(downloadId, download);
+        this.updateUI();
+        this.showPanel();
+
+        // Start the download process
+        this.performDownload(download);
+
+        return downloadId;
+    },
+
+    // Perform the actual download with progress simulation
+    async performDownload(download) {
+        try {
+            download.status = 'downloading';
+            this.updateUI();
+
+            // Try to get file size first
+            try {
+                const headResponse = await fetch(download.url, { method: 'HEAD' });
+                if (headResponse.ok) {
+                    const contentLength = headResponse.headers.get('content-length');
+                    if (contentLength) {
+                        download.totalBytes = parseInt(contentLength);
+                    }
+                }
+            } catch (e) {
+                console.log('Could not get file size, continuing...');
+            }
+
+            // Start actual download
+            const response = await fetch(download.url);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const reader = response.body.getReader();
+            const chunks = [];
+            let receivedLength = 0;
+
+            // Read the stream with progress updates
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) break;
+
+                chunks.push(value);
+                receivedLength += value.length;
+
+                // Update progress
+                download.downloadedBytes = receivedLength;
+                if (download.totalBytes > 0) {
+                    download.progress = (receivedLength / download.totalBytes) * 100;
+                } else {
+                    // Simulate progress if we don't know total size
+                    download.progress = Math.min(90, (receivedLength / (1024 * 1024)) * 10); // 10% per MB
+                }
+
+                // Calculate speed
+                const now = Date.now();
+                const timeDiff = (now - download.lastUpdate) / 1000;
+                if (timeDiff > 0.5) { // Update every 500ms
+                    const bytesDiff = receivedLength - (download.lastBytes || 0);
+                    download.speed = bytesDiff / timeDiff;
+                    download.lastBytes = receivedLength;
+                    download.lastUpdate = now;
+                    this.updateUI();
+                }
+
+                // Small delay to prevent UI blocking
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
+
+            // Create blob and download
+            const blob = new Blob(chunks);
+            const downloadUrl = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = download.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            URL.revokeObjectURL(downloadUrl);
+
+            // Mark as completed
+            download.status = 'completed';
+            download.progress = 100;
+            this.updateUI();
+
+            // Show success notification
+            showToast(`Download completed: ${download.filename}`, 'success', 3000);
+
+        } catch (error) {
+            console.error('❌ Download failed:', error);
+            download.status = 'failed';
+            download.error = error.message;
+            this.updateUI();
+            showToast(`Download failed: ${download.filename}`, 'error', 3000);
+        }
+    },
+
+    // Update the UI
+    updateUI() {
+        const content = document.getElementById('simpleDownloadContent');
+        if (!content) return;
+
+        const downloads = Array.from(this.downloads.values());
+
+        if (downloads.length === 0) {
+            content.innerHTML = '<div class="no-downloads">No active downloads</div>';
+            return;
+        }
+
+        content.innerHTML = downloads.map(download => this.createDownloadItem(download)).join('');
+
+        // Show panel if there are active downloads
+        const panel = document.getElementById('simpleDownloadPanel');
+        if (panel && downloads.some(d => d.status === 'downloading')) {
+            panel.classList.add('has-active');
+        }
+    },
+
+    // Create download item HTML
+    createDownloadItem(download) {
+        const progressPercent = Math.round(download.progress);
+        const downloadedMB = (download.downloadedBytes / (1024 * 1024)).toFixed(1);
+        const totalMB = download.totalBytes > 0 ? (download.totalBytes / (1024 * 1024)).toFixed(1) : '?';
+        const speedText = this.formatSpeed(download.speed);
+        const statusIcon = this.getStatusIcon(download.status);
+
+        return `
+            <div class="download-item ${download.status}" data-id="${download.id}">
+                <div class="download-header">
+                    <span class="status-icon">${statusIcon}</span>
+                    <span class="filename" title="${download.filename}">${download.filename}</span>
+                    <button onclick="SimpleDownloadManager.removeDownload(${download.id})" class="remove-btn">×</button>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                    </div>
+                    <span class="progress-text">${progressPercent}%</span>
+                </div>
+                
+                <div class="download-stats">
+                    <span class="size-info">${downloadedMB} MB / ${totalMB} MB</span>
+                    ${download.status === 'downloading' ? `<span class="speed-info">${speedText}</span>` : ''}
+                    ${download.error ? `<span class="error-info">Error: ${download.error}</span>` : ''}
+                </div>
+            </div>
+        `;
+    },
+
+    // Get status icon
+    getStatusIcon(status) {
+        const icons = {
+            starting: '🔄',
+            downloading: '📥',
+            completed: '✅',
+            failed: '❌'
+        };
+        return icons[status] || '📄';
+    },
+
+    // Format download speed
+    formatSpeed(bytesPerSecond) {
+        if (!bytesPerSecond || bytesPerSecond === 0) return '0 B/s';
+
+        const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+        let size = bytesPerSecond;
+        let unitIndex = 0;
+
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+
+        return `${size.toFixed(1)} ${units[unitIndex]}`;
+    },
+
+    // Toggle panel visibility
+    togglePanel() {
+        const panel = document.getElementById('simpleDownloadPanel');
+        if (panel) {
+            panel.classList.toggle('collapsed');
+            const toggleBtn = panel.querySelector('.panel-toggle-btn');
+            if (toggleBtn) {
+                toggleBtn.textContent = panel.classList.contains('collapsed') ? '+' : '−';
+            }
+        }
+    },
+
+    // Show panel
+    showPanel() {
+        const panel = document.getElementById('simpleDownloadPanel');
+        if (panel) {
+            panel.classList.remove('collapsed');
+            panel.style.display = 'block';
+            const toggleBtn = panel.querySelector('.panel-toggle-btn');
+            if (toggleBtn) {
+                toggleBtn.textContent = '−';
+            }
+        }
+    },
+
+    // Remove a download
+    removeDownload(downloadId) {
+        this.downloads.delete(downloadId);
+        this.updateUI();
+    },
+
+    // Clear completed downloads
+    clearCompleted() {
+        const toRemove = [];
+        this.downloads.forEach((download, id) => {
+            if (download.status === 'completed' || download.status === 'failed') {
+                toRemove.push(id);
+            }
+        });
+
+        toRemove.forEach(id => this.downloads.delete(id));
+        this.updateUI();
+
+        if (toRemove.length > 0) {
+            showToast(`Cleared ${toRemove.length} completed downloads`, 'info', 2000);
+        }
+    }
+};
+
+// Initialize the download manager when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    SimpleDownloadManager.init();
+});
+
+// Enhanced download progress function
+function showSimpleDownloadProgress(filename) {
+    // Use the enhanced download manager instead
+    return SimpleDownloadManager.startDownload('', filename);
+}
+
+// Update the trySimpleDownload function to show progress
+async function trySimpleDownloadWithProgress(url, filename) {
+    try {
+        // Use the enhanced download manager
+        const downloadId = SimpleDownloadManager.startDownload(url, filename);
+        console.log('✅ Enhanced download started:', filename, 'ID:', downloadId);
+        return true;
+    } catch (error) {
+        console.error('❌ Enhanced download failed:', error);
+        return false;
+    }
+}
+
+// Add CSS for enhanced download panel
+const style = document.createElement('style');
+style.textContent = `
+    .simple-download-panel {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 400px;
+        max-height: 500px;
+        background: rgba(0, 0, 0, 0.95);
+        border: 2px solid #e50914;
+        border-radius: 12px;
+        z-index: 10000;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        display: none;
+    }
+    
+    .simple-download-panel.has-active {
+        display: block;
+        border-color: #4CAF50;
+        box-shadow: 0 8px 32px rgba(76, 175, 80, 0.3);
+    }
+    
+    .simple-download-panel.collapsed {
+        transform: translateY(calc(100% - 60px));
+    }
+    
+    .download-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(229, 9, 20, 0.1);
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .download-panel-header h3 {
+        margin: 0;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    
+    .download-panel-controls {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .panel-toggle-btn,
+    .panel-clear-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s ease;
+    }
+    
+    .panel-toggle-btn:hover,
+    .panel-clear-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.05);
+    }
+    
+    .download-panel-content {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 10px;
+    }
+    
+    .download-panel-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .download-panel-content::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+    
+    .download-panel-content::-webkit-scrollbar-thumb {
+        background: #e50914;
+        border-radius: 3px;
+    }
+    
+    .no-downloads {
+        text-align: center;
+        color: #999;
+        padding: 40px 20px;
+        font-style: italic;
+    }
+    
+    .download-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    .download-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .download-item.downloading {
+        border-color: #4CAF50;
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+    }
+    
+    .download-item.completed {
+        border-color: #2196F3;
+        background: rgba(33, 150, 243, 0.1);
+    }
+    
+    .download-item.failed {
+        border-color: #f44336;
+        background: rgba(244, 67, 54, 0.1);
+    }
+    
+    .download-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .status-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+    
+    .filename {
+        color: #fff;
+        font-weight: 500;
+        font-size: 14px;
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .remove-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #fff;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        transition: all 0.2s ease;
+    }
+    
+    .remove-btn:hover {
+        background: rgba(255, 0, 0, 0.3);
+        transform: scale(1.1);
+    }
+    
+    .progress-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    
+    .progress-bar {
+        flex: 1;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+        position: relative;
+    }
+    
+    .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    
+    .progress-text {
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        min-width: 35px;
+        text-align: right;
+    }
+    
+    .download-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: #ccc;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .size-info {
+        font-weight: 500;
+    }
+    
+    .speed-info {
+        color: #4CAF50;
+        font-weight: 600;
+    }
+    
+    .error-info {
+        color: #f44336;
+        font-weight: 500;
+        flex: 1 1 100%;
+        margin-top: 5px;
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .simple-download-panel {
+            width: calc(100vw - 40px);
+            right: 20px;
+            left: 20px;
+            bottom: 10px;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// Enhanced download function with progress tracking
+async function startDownload() {
+    const url = document.getElementById('downloadUrl').value;
+    if (!url) {
+        alert('Please enter a valid URL');
+        return;
+    }
+
+    // Extract filename from URL or use default
+    const filename = extractFilenameFromUrl(url) || 'stream.m3u8';
+
+    try {
+        // Start download with progress tracking if available
+        if (window.DownloadManager && typeof window.DownloadManager.startDownload === 'function') {
+            const downloadId = await DownloadManager.startDownload(url, filename, {
+                source: 'manual_download',
+                userInitiated: true
+            });
+
+            showToast(`Download started: ${filename}`, 'success');
+            console.log(`📥 Started download with ID: ${downloadId}`);
+        } else {
+            // Fallback to simple download with progress indicator
+            const success = await trySimpleDownloadWithProgress(url, filename);
+            if (success) {
+                showToast(`Download started: ${filename}`, 'success');
+            } else {
+                showToast('Download may have started. Check your downloads folder.', 'info');
+            }
+        }
+
+        // Close modal
+        const modal = document.querySelector('.modal-overlay');
+        if (modal) {
+            modal.remove();
+        }
+
+    } catch (error) {
+        console.error('❌ Download failed:', error);
+        showToast(`Download failed: ${error.message}`, 'error');
+    }
+}
+
+
+
+// Make SimpleDownloadManager globally accessible
+window.SimpleDownloadManager = SimpleDownloadManager;
+
+// Function to show downloads panel (called from Electron menu or manually)
+window.showDownloadsPanel = function () {
+    console.log('📥 Showing downloads panel from menu');
+
+    if (window.DownloadManager && typeof window.DownloadManager.showPanel === 'function') {
+        window.DownloadManager.showPanel();
+        showToast('Downloads panel opened', 'info', 2000);
+    } else {
+        console.error('❌ DownloadManager not available');
+        showToast('Download system not loaded', 'error');
+    }
+};
+
+// Function to hide downloads panel
+window.hideDownloadsPanel = function () {
+    console.log('📥 Hiding downloads panel');
+
+    if (window.DownloadManager && typeof window.DownloadManager.hidePanel === 'function') {
+        window.DownloadManager.hidePanel();
+        showToast('Downloads panel closed', 'info', 1500);
+    }
+};
+
