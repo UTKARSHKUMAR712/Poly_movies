@@ -300,6 +300,9 @@ const CricketLive = {
                             <span class="live-badge">🔴 LIVE</span>
                         </div>
                         <div class="cricket-player-controls">
+                            <button onclick="CricketLive.toggleFullscreen()" class="fullscreen-btn" title="Toggle Fullscreen">
+                                ⛶ Fullscreen
+                            </button>
                             <button onclick="CricketLive.showChannelSelector()" class="channel-switch-btn" title="Switch Channel">
                                 📺 Switch
                             </button>
@@ -316,6 +319,13 @@ const CricketLive = {
                                style="width: 100%; height: 100%; background: #000;">
                             Your browser does not support the video tag.
                         </video>
+                        <div class="cricket-video-overlay">
+                            <div class="cricket-video-controls">
+                                <button onclick="CricketLive.toggleFullscreen()" class="video-fullscreen-btn" title="Fullscreen (F)">
+                                    ⛶
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div class="cricket-channel-selector" id="cricketChannelSelector" style="display: none;">
                         <h4>🏏 Cricket Channels</h4>
@@ -447,14 +457,95 @@ const CricketLive = {
         }
     },
 
+    // Toggle fullscreen mode
+    toggleFullscreen() {
+        const video = document.getElementById('cricketVideo');
+        if (!video) return;
+
+        try {
+            if (!document.fullscreenElement) {
+                // Enter fullscreen
+                if (video.requestFullscreen) {
+                    video.requestFullscreen();
+                } else if (video.webkitRequestFullscreen) {
+                    video.webkitRequestFullscreen();
+                } else if (video.msRequestFullscreen) {
+                    video.msRequestFullscreen();
+                }
+
+                // Update button text
+                this.updateFullscreenButton(true);
+                console.log('🏏 Entered fullscreen mode');
+
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+
+                // Update button text
+                this.updateFullscreenButton(false);
+                console.log('🏏 Exited fullscreen mode');
+            }
+        } catch (error) {
+            console.error('❌ Fullscreen error:', error);
+        }
+    },
+
+    // Update fullscreen button text
+    updateFullscreenButton(isFullscreen) {
+        const fullscreenBtn = document.querySelector('.fullscreen-btn');
+        const videoFullscreenBtn = document.querySelector('.video-fullscreen-btn');
+
+        if (fullscreenBtn) {
+            if (isFullscreen) {
+                fullscreenBtn.innerHTML = '⛶ Exit Fullscreen';
+                fullscreenBtn.title = 'Exit Fullscreen';
+            } else {
+                fullscreenBtn.innerHTML = '⛶ Fullscreen';
+                fullscreenBtn.title = 'Toggle Fullscreen';
+            }
+        }
+
+        if (videoFullscreenBtn) {
+            if (isFullscreen) {
+                videoFullscreenBtn.innerHTML = '⛶';
+                videoFullscreenBtn.title = 'Exit Fullscreen (F)';
+            } else {
+                videoFullscreenBtn.innerHTML = '⛶';
+                videoFullscreenBtn.title = 'Fullscreen (F)';
+            }
+        }
+    },
+
     // Add keyboard support
     addKeyboardSupport() {
         this.keyboardHandler = (e) => {
             if (e.key === 'Escape') {
-                this.closeCricketPlayer();
+                // If in fullscreen, exit fullscreen first, then close player on second ESC
+                if (document.fullscreenElement) {
+                    this.toggleFullscreen();
+                } else {
+                    this.closeCricketPlayer();
+                }
+            } else if (e.key === 'f' || e.key === 'F') {
+                // F key for fullscreen toggle
+                this.toggleFullscreen();
             }
         };
         document.addEventListener('keydown', this.keyboardHandler);
+
+        // Listen for fullscreen changes
+        this.fullscreenChangeHandler = () => {
+            this.updateFullscreenButton(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', this.fullscreenChangeHandler);
+        document.addEventListener('webkitfullscreenchange', this.fullscreenChangeHandler);
+        document.addEventListener('msfullscreenchange', this.fullscreenChangeHandler);
     },
 
     // Remove keyboard support
@@ -462,6 +553,13 @@ const CricketLive = {
         if (this.keyboardHandler) {
             document.removeEventListener('keydown', this.keyboardHandler);
             this.keyboardHandler = null;
+        }
+
+        if (this.fullscreenChangeHandler) {
+            document.removeEventListener('fullscreenchange', this.fullscreenChangeHandler);
+            document.removeEventListener('webkitfullscreenchange', this.fullscreenChangeHandler);
+            document.removeEventListener('msfullscreenchange', this.fullscreenChangeHandler);
+            this.fullscreenChangeHandler = null;
         }
     },
 
