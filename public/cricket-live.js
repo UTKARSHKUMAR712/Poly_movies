@@ -31,7 +31,60 @@ const CricketLive = {
         "UAE": "ae",
         "Oman": "om",
         "USA": "us",
-        "Canada": "ca"
+        "Canada": "ca",
+        "Hong Kong": "hk",
+        "Namibia": "na",
+        "Papua New Guinea": "pg",
+        "Kenya": "ke",
+        "Malaysia": "my",
+        "Singapore": "sg",
+        "Qatar": "qa",
+        "Saudi Arabia": "sa",
+        "Bermuda": "bm",
+        "Jersey": "je",
+        "Kuwait": "kw",
+        "Tanzania": "tz",
+        "Vanuatu": "vu",
+        "Uganda": "ug",
+        "Germany": "de",
+        "Italy": "it",
+        "Ghana": "gh",
+        "Morocco": "ma",
+        "Nigeria": "ng",
+        "Bhutan": "bt",
+        "Botswana": "bw",
+        "France": "fr",
+        "Guernsey": "gg",
+        "Israel": "il",
+        "Malawi": "mw",
+        "Norway": "no",
+        "Romania": "ro",
+        "Serbia": "rs",
+        "Spain": "es",
+        "Sweden": "se",
+        "Switzerland": "ch",
+        "Denmark": "dk",
+        "Portugal": "pt",
+        "Belgium": "be",
+        "Estonia": "ee",
+        "Greece": "gr",
+        "Russia": "ru",
+        "Finland": "fi",
+        "Fiji": "fj",
+        "Mexico": "mx",
+        "Argentina": "ar",
+        "Brazil": "br",
+        "Chile": "cl",
+        "Peru": "pe",
+        "Panama": "pa",
+        "Costa Rica": "cr",
+        "Ecuador": "ec",
+        "China": "cn",
+        "Mongolia": "mn",
+        "Turkey": "tr",
+        "Cayman Islands": "ky",
+        "Belize": "bz",
+        "Slovenia": "si"
     },
 
     // Initialize cricket section
@@ -94,110 +147,110 @@ const CricketLive = {
                     "channel_name": "",
                     "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741863"
                 },
-    {
-        "tvg_id": "741862",
-        "tvg_name": "[CR] WILLOW CRICKET HD",
-        "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
-        "group_title": "[CR] CRICKET",
-        "channel_name": "",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741862"
-    },
-    {
-        "tvg_id": "741861",
-        "tvg_name": "[CR] WILLOW CRICKET HD ?",
-        "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
-        "group_title": "[CR] CRICKET",
-        "channel_name": "",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741861"
-    },
-    {
-        "tvg_id": "741860",
-        "tvg_name": "[CR] WILLOW CRICKET EXTRA HD",
-        "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
-        "group_title": "[CR] CRICKET",
-        "channel_name": "",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741860"
-    },
-    {
-        "tvg_id": "689569",
-        "tvg_name": "P[SL] STAR SPORTS 1 HINDI HD",
-        "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
-        "group_title": "[CR] CRICKET",
-        "channel_name": "P",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=689569"
-    },
-    {
-        "tvg_id": "689568",
-        "tvg_name": "P[SL] STAR SPORTS HINDI 1",
-        "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
-        "group_title": "[CR] CRICKET",
-        "channel_name": "P",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=689568"
-    },
-    {
-        "tvg_id": "843537",
-        "tvg_name": "[INSPT] STAR SPORTS 1 FHD",
-        "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HD.png",
-        "group_title": "[IN] SPORTS",
-        "channel_name": "",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843537"
-    },
-    {
-        "tvg_id": "281630",
-        "tvg_name": "[INSPT] STAR SPORTS 1 ENGLISH UHD",
-        "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-1-HD.jpg",
-        "group_title": "[IN] SPORTS",
-        "channel_name": "",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281630"
-    },
-    {
-        "tvg_id": "281631",
-        "tvg_name": "[INSPT] STAR SPORTS 1 HINDI UHD",
-        "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-1-HINDI-HD.jpg",
-        "group_title": "[IN] SPORTS",
-        "channel_name": "",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281631"
-    },
-    {
-        "tvg_id": "843539",
-        "tvg_name": "[INSPT] STAR SPORTS HINDI 1 FHD",
-        "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
-        "group_title": "[IN] SPORTS",
-        "channel_name": "",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843539"
-    },
-    {
-        "tvg_id": "843538",
-        "tvg_name": "[INSPT] STAR SPORTS 2 FHD",
-        "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-2-HD.jpeg",
-        "group_title": "[IN] SPORTS",
-        "channel_name": "",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843538"
-    },
-    {
-        "tvg_id": "281632",
-        "tvg_name": "[INSPT] STAR SPORTS 2 UHD",
-        "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-2-HD.jpeg",
-        "group_title": "[IN] SPORTS",
-        "channel_name": "",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281632"
-    },
-    {
-        "tvg_id": "281633",
-        "tvg_name": "[INSPT] STAR SPORTS 3",
-        "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-3.jpeg",
-        "group_title": "[IN] SPORTS",
-        "channel_name": "",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281633"
-    },
-    {
-        "tvg_id": "281637",
-        "tvg_name": "[INSPT] STAR SPORTS TAMIL",
-        "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-TAMIL.jpg",
-        "group_title": "[IN] SPORTS",
-        "channel_name": "",
-        "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281637"
-    }
+                {
+                    "tvg_id": "741862",
+                    "tvg_name": "[CR] WILLOW CRICKET HD",
+                    "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
+                    "group_title": "[CR] CRICKET",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741862"
+                },
+                {
+                    "tvg_id": "741861",
+                    "tvg_name": "[CR] WILLOW CRICKET HD ?",
+                    "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
+                    "group_title": "[CR] CRICKET",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741861"
+                },
+                {
+                    "tvg_id": "741860",
+                    "tvg_name": "[CR] WILLOW CRICKET EXTRA HD",
+                    "tvg_logo": "http://103.176.90.118/picons-dino/logos/WILLOW-CRICKET.jpeg",
+                    "group_title": "[CR] CRICKET",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741860"
+                },
+                {
+                    "tvg_id": "689569",
+                    "tvg_name": "P[SL] STAR SPORTS 1 HINDI HD",
+                    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+                    "group_title": "[CR] CRICKET",
+                    "channel_name": "P",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=689569"
+                },
+                {
+                    "tvg_id": "689568",
+                    "tvg_name": "P[SL] STAR SPORTS HINDI 1",
+                    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+                    "group_title": "[CR] CRICKET",
+                    "channel_name": "P",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=689568"
+                },
+                {
+                    "tvg_id": "843537",
+                    "tvg_name": "[INSPT] STAR SPORTS 1 FHD",
+                    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HD.png",
+                    "group_title": "[IN] SPORTS",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843537"
+                },
+                {
+                    "tvg_id": "281630",
+                    "tvg_name": "[INSPT] STAR SPORTS 1 ENGLISH UHD",
+                    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-1-HD.jpg",
+                    "group_title": "[IN] SPORTS",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281630"
+                },
+                {
+                    "tvg_id": "281631",
+                    "tvg_name": "[INSPT] STAR SPORTS 1 HINDI UHD",
+                    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+                    "group_title": "[IN] SPORTS",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281631"
+                },
+                {
+                    "tvg_id": "843539",
+                    "tvg_name": "[INSPT] STAR SPORTS HINDI 1 FHD",
+                    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+                    "group_title": "[IN] SPORTS",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843539"
+                },
+                {
+                    "tvg_id": "843538",
+                    "tvg_name": "[INSPT] STAR SPORTS 2 FHD",
+                    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-2-HD.jpeg",
+                    "group_title": "[IN] SPORTS",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843538"
+                },
+                {
+                    "tvg_id": "281632",
+                    "tvg_name": "[INSPT] STAR SPORTS 2 UHD",
+                    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-2-HD.jpeg",
+                    "group_title": "[IN] SPORTS",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281632"
+                },
+                {
+                    "tvg_id": "281633",
+                    "tvg_name": "[INSPT] STAR SPORTS 3",
+                    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-3.jpeg",
+                    "group_title": "[IN] SPORTS",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281633"
+                },
+                {
+                    "tvg_id": "281637",
+                    "tvg_name": "[INSPT] STAR SPORTS TAMIL",
+                    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-TAMIL.jpg",
+                    "group_title": "[IN] SPORTS",
+                    "channel_name": "",
+                    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281637"
+                }
             ];
             this.loadChannelPage(0);
             this.channelsLoaded = true;
@@ -285,17 +338,23 @@ const CricketLive = {
             }
 
             this.matches = data.matches || [];
-            console.log(`🏏 Loaded ${this.matches.length} cricket matches`);
+            console.log(`🏏 Loaded ${this.matches.length} cricket matches from API`);
 
-            // Debug: Log first match details
-            if (this.matches.length > 0) {
-                const firstMatch = this.matches[0];
-                console.log('🏏 First match details:', {
-                    status: firstMatch.match?.matchInfo?.status,
-                    state: firstMatch.match?.matchInfo?.state,
-                    teams: `${firstMatch.match?.matchInfo?.team1?.teamName} vs ${firstMatch.match?.matchInfo?.team2?.teamName}`
+            // Debug: Log ALL match details to see what we're getting
+            console.log('🏏 All matches received from API:');
+            this.matches.forEach((match, index) => {
+                const info = match.match?.matchInfo;
+                console.log(`  Match ${index + 1}:`, {
+                    id: info?.matchId,
+                    series: info?.seriesName,
+                    desc: info?.matchDesc,
+                    status: info?.status,
+                    state: info?.state,
+                    teams: `${info?.team1?.teamSName} vs ${info?.team2?.teamSName}`,
+                    startDate: info?.startDate,
+                    format: info?.matchFormat
                 });
-            }
+            });
 
             this.renderMatches();
 
@@ -338,21 +397,24 @@ const CricketLive = {
             return;
         }
 
-        // Filter for live and upcoming matches (more inclusive)
-        const liveMatches = this.matches.filter(match => {
-            const status = match.match?.matchInfo?.status?.toLowerCase() || '';
-            const state = match.match?.matchInfo?.state?.toLowerCase() || '';
+        // Show ALL matches from API (no filtering to ensure all 6 matches are displayed)
+        const liveMatches = this.matches.slice(0, 10); // Show up to 10 matches to ensure we get all
+        
+        console.log(`🏏 API returned ${this.matches.length} total matches`);
+        console.log('🏏 Match details:', this.matches.map(m => ({
+            id: m.match?.matchInfo?.matchId,
+            series: m.match?.matchInfo?.seriesName,
+            status: m.match?.matchInfo?.status,
+            state: m.match?.matchInfo?.state,
+            teams: `${m.match?.matchInfo?.team1?.teamSName} vs ${m.match?.matchInfo?.team2?.teamSName}`
+        })));
+        
+        // If still showing fewer matches, let's debug the filtering
+        if (liveMatches.length < this.matches.length) {
+            console.log('🏏 Some matches were filtered out. Showing all matches instead.');
+        }
 
-            // Include live matches, upcoming matches, and matches starting soon
-            return status.includes('live') || status.includes('innings') ||
-                status.includes('batting') || status.includes('bowling') ||
-                status.includes('upcoming') || status.includes('toss') ||
-                status.includes('match starts') || status.includes('preview') ||
-                state.includes('live') || state.includes('preview') ||
-                state.includes('innings') || state.includes('complete');
-        }).slice(0, 6); // Show max 6 matches
-
-        console.log(`🏏 Filtered ${liveMatches.length} matches from ${this.matches.length} total matches`);
+        console.log(`🏏 Displaying ${liveMatches.length} matches from ${this.matches.length} total matches`);
 
         container.innerHTML = `
             <div class="cricket-section">
@@ -372,7 +434,103 @@ const CricketLive = {
         `;
     },
 
-    // Create individual match card
+    // Convert timestamp to IST
+    convertToIST(timestamp) {
+        if (!timestamp) return 'Time TBA';
+
+        try {
+            const date = new Date(timestamp);
+            // Convert to IST (UTC+5:30)
+            const istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
+
+            const options = {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            };
+
+            return new Intl.DateTimeFormat('en-IN', options).format(date);
+        } catch (error) {
+            console.error('Error converting time:', error);
+            return 'Time TBA';
+        }
+    },
+
+    // Get match timing details
+    getMatchTiming(info) {
+        const startTime = this.convertToIST(info.startDate);
+        const endTime = info.endDate ? this.convertToIST(info.endDate) : null;
+
+        let timingText = startTime;
+        if (endTime && info.matchFormat === 'TEST') {
+            timingText += ` - ${endTime}`;
+        }
+
+        return timingText;
+    },
+
+    // Get detailed score information
+    getDetailedScore(score, info) {
+        if (!score) return { team1: '', team2: '', details: '' };
+
+        let team1Score = '';
+        let team2Score = '';
+        let scoreDetails = '';
+
+        // Team 1 Score
+        if (score.team1Score) {
+            const inngs1 = score.team1Score.inngs1;
+            const inngs2 = score.team1Score.inngs2;
+
+            if (inngs1) {
+                const runs = inngs1.runs !== undefined && inngs1.runs !== null ? inngs1.runs : 0;
+                const wickets = inngs1.wickets !== undefined && inngs1.wickets !== null ? inngs1.wickets : 0;
+                team1Score = `${runs}/${wickets}`;
+                if (inngs1.overs) team1Score += ` (${inngs1.overs})`;
+            }
+
+            if (inngs2) {
+                const runs = inngs2.runs !== undefined && inngs2.runs !== null ? inngs2.runs : 0;
+                const wickets = inngs2.wickets !== undefined && inngs2.wickets !== null ? inngs2.wickets : 0;
+                team1Score += ` & ${runs}/${wickets}`;
+                if (inngs2.overs) team1Score += ` (${inngs2.overs})`;
+            }
+        }
+
+        // Team 2 Score
+        if (score.team2Score) {
+            const inngs1 = score.team2Score.inngs1;
+            const inngs2 = score.team2Score.inngs2;
+
+            if (inngs1) {
+                const runs = inngs1.runs !== undefined && inngs1.runs !== null ? inngs1.runs : 0;
+                const wickets = inngs1.wickets !== undefined && inngs1.wickets !== null ? inngs1.wickets : 0;
+                team2Score = `${runs}/${wickets}`;
+                if (inngs1.overs) team2Score += ` (${inngs1.overs})`;
+            }
+
+            if (inngs2) {
+                const runs = inngs2.runs !== undefined && inngs2.runs !== null ? inngs2.runs : 0;
+                const wickets = inngs2.wickets !== undefined && inngs2.wickets !== null ? inngs2.wickets : 0;
+                team2Score += ` & ${runs}/${wickets}`;
+                if (inngs2.overs) team2Score += ` (${inngs2.overs})`;
+            }
+        }
+
+        // Current batting team indicator
+        if (info.currBatTeamId) {
+            const battingTeam = info.currBatTeamId === info.team1?.teamId ? info.team1?.teamSName : info.team2?.teamSName;
+            scoreDetails = `${battingTeam} batting`;
+        }
+
+        return { team1: team1Score, team2: team2Score, details: scoreDetails };
+    },
+
+    // Create individual match card with comprehensive details
     createMatchCard(matchObj) {
         const match = matchObj.match;
         const info = match.matchInfo;
@@ -381,44 +539,118 @@ const CricketLive = {
         const team1Flag = this.getFlagUrl(info.team1?.teamName);
         const team2Flag = this.getFlagUrl(info.team2?.teamName);
 
-        const isLive = info.status?.toLowerCase().includes('live') ||
+        // Determine match status
+        const isLive = info.state?.toLowerCase().includes('progress') ||
+            info.status?.toLowerCase().includes('live') ||
             info.status?.toLowerCase().includes('innings') ||
-            info.status?.toLowerCase().includes('batting') ||
-            info.state?.toLowerCase().includes('live');
+            info.status?.toLowerCase().includes('session');
+
+        const isUpcoming = info.state?.toLowerCase().includes('preview') ||
+            info.status?.toLowerCase().includes('upcoming');
+
+        const isCompleted = info.state?.toLowerCase().includes('complete');
+
+        // Get detailed scores
+        const detailedScore = this.getDetailedScore(score, info);
+
+        // Get match timing
+        const matchTiming = this.getMatchTiming(info);
+
+        // Match type and format
+        const matchType = info.matchType || 'International';
+        const matchFormat = info.matchFormat || 'Unknown';
+
+        // Venue details
+        const venue = info.venueInfo;
+        const venueText = venue ? `${venue.ground}, ${venue.city}` : 'Venue TBA';
+        const timezone = venue?.timezone || '+05:30';
 
         return `
-            <div class="match-card ${isLive ? 'live' : ''}">
-                ${isLive ? '<div class="live-indicator">🔴 LIVE</div>' : ''}
+            <div class="match-card ${isLive ? 'live' : isUpcoming ? 'upcoming' : isCompleted ? 'completed' : ''}">
+                <div class="match-status-indicator">
+                    ${isLive ? '<span class="status-badge live">🔴 LIVE</span>' : ''}
+                    ${isUpcoming ? '<span class="status-badge upcoming">🕐 UPCOMING</span>' : ''}
+                    ${isCompleted ? '<span class="status-badge completed">✅ COMPLETED</span>' : ''}
+                </div>
                 
                 <div class="match-header">
-                    <div class="series-name">${info.seriesName || 'Cricket Match'}</div>
-                    <div class="match-format">${info.matchFormat || ''}</div>
+                    <div class="series-info">
+                        <div class="series-name">${info.seriesName || 'Cricket Match'}</div>
+                        <div class="match-details">
+                            <span class="match-desc">${info.matchDesc || ''}</span>
+                            <span class="match-format">${matchFormat}</span>
+                            <span class="match-type">${matchType}</span>
+                        </div>
+                    </div>
+                    <div class="match-id">Match #${info.matchId}</div>
                 </div>
                 
                 <div class="teams-container">
-                    <div class="team">
-                        ${team1Flag ? `<img class="flag" src="${team1Flag}" alt="${info.team1?.teamName}" onerror="this.style.display='none'">` : ''}
-                        <span class="team-name">${info.team1?.teamSName || info.team1?.teamName || 'Team 1'}</span>
-                        ${score.team1Score ? `<span class="score">${score.team1Score.inngs1?.runs || 0}/${score.team1Score.inngs1?.wickets || 0}</span>` : ''}
+                    <div class="team ${info.currBatTeamId === info.team1?.teamId ? 'batting' : ''}">
+                        <div class="team-info">
+                            ${team1Flag ? `<img class="flag" src="${team1Flag}" alt="${info.team1?.teamName}" onerror="this.style.display='none'">` : ''}
+                            <div class="team-names">
+                                <span class="team-name">${info.team1?.teamSName || 'T1'}</span>
+                                <span class="team-full-name">${info.team1?.teamName || 'Team 1'}</span>
+                            </div>
+                        </div>
+                        <div class="team-score">
+                            ${detailedScore.team1 ? `<span class="score">${detailedScore.team1}</span>` : '<span class="no-score">-</span>'}
+                        </div>
                     </div>
                     
-                    <div class="vs-divider">VS</div>
+                    <div class="vs-divider">
+                        <span class="vs-text">VS</span>
+                        ${detailedScore.details ? `<div class="batting-info">${detailedScore.details}</div>` : ''}
+                    </div>
                     
-                    <div class="team">
-                        ${team2Flag ? `<img class="flag" src="${team2Flag}" alt="${info.team2?.teamName}" onerror="this.style.display='none'">` : ''}
-                        <span class="team-name">${info.team2?.teamSName || info.team2?.teamName || 'Team 2'}</span>
-                        ${score.team2Score ? `<span class="score">${score.team2Score.inngs1?.runs || 0}/${score.team2Score.inngs1?.wickets || 0}</span>` : ''}
+                    <div class="team ${info.currBatTeamId === info.team2?.teamId ? 'batting' : ''}">
+                        <div class="team-info">
+                            ${team2Flag ? `<img class="flag" src="${team2Flag}" alt="${info.team2?.teamName}" onerror="this.style.display='none'">` : ''}
+                            <div class="team-names">
+                                <span class="team-name">${info.team2?.teamSName || 'T2'}</span>
+                                <span class="team-full-name">${info.team2?.teamName || 'Team 2'}</span>
+                            </div>
+                        </div>
+                        <div class="team-score">
+                            ${detailedScore.team2 ? `<span class="score">${detailedScore.team2}</span>` : '<span class="no-score">-</span>'}
+                        </div>
                     </div>
                 </div>
                 
-                <div class="match-info">
-                    <div class="venue">${info.venueInfo?.ground || ''}, ${info.venueInfo?.city || ''}</div>
-                    <div class="status">${info.status || info.shortStatus || 'Scheduled'}</div>
+                <div class="match-status">
+                    <div class="current-status">${info.status || info.stateTitle || 'Status Unknown'}</div>
+                    ${info.shortStatus ? `<div class="short-status">${info.shortStatus}</div>` : ''}
+                </div>
+                
+                <div class="match-timing">
+                    <div class="timing-info">
+                        <span class="timing-label">🕐 Time (IST):</span>
+                        <span class="timing-value">${matchTiming}</span>
+                    </div>
+                    ${info.isTimeAnnounced ? '<span class="time-confirmed">✅ Confirmed</span>' : '<span class="time-tentative">⏳ Tentative</span>'}
+                </div>
+                
+                <div class="venue-info">
+                    <div class="venue-details">
+                        <span class="venue-label">🏟️ Venue:</span>
+                        <span class="venue-name">${venueText}</span>
+                    </div>
+                    <div class="timezone-info">Timezone: ${timezone}</div>
+                </div>
+                
+                <div class="series-info-footer">
+                    <div class="series-duration">
+                        Series: ${this.convertToIST(info.seriesStartDt)} - ${this.convertToIST(info.seriesEndDt)}
+                    </div>
                 </div>
                 
                 <div class="match-actions">
                     <button onclick="CricketLive.watchCricketLive()" class="watch-btn">
                         📺 Watch Live
+                    </button>
+                    <button onclick="CricketLive.showMatchDetails(${info.matchId})" class="details-btn">
+                        📊 Details
                     </button>
                 </div>
             </div>
@@ -862,6 +1094,72 @@ const CricketLive = {
         `;
     }
 };
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🏏 DOM loaded, initializing cricket section...');
+
+    // Small delay to ensure other components are loaded
+    setTimeout(() => {
+        const container = document.getElementById('cricketLiveSection');
+        if (container) {
+            console.log('🏏 Cricket container found, initializing...');
+            CricketLive.init();
+        } else {
+            console.error('🏏 Cricket container not found during initialization!');
+        }
+    }, 1000);
+});
+
+// Test function for debugging cricket matches
+window.testCricketMatches = function() {
+    console.log('🏏 Testing Cricket Matches Display');
+    console.log('🏏 Total matches from API:', CricketLive.matches.length);
+    
+    CricketLive.matches.forEach((match, index) => {
+        const info = match.match?.matchInfo;
+        const score = match.match?.matchScore;
+        
+        console.log(`🏏 Match ${index + 1}:`, {
+            id: info?.matchId,
+            teams: `${info?.team1?.teamSName} vs ${info?.team2?.teamSName}`,
+            status: info?.status,
+            state: info?.state,
+            team1Score: score?.team1Score,
+            team2Score: score?.team2Score,
+            series: info?.seriesName
+        });
+        
+        // Check for undefined values in scores
+        if (score?.team1Score?.inngs1) {
+            const inngs1 = score.team1Score.inngs1;
+            console.log(`  Team1 Inngs1: runs=${inngs1.runs}, wickets=${inngs1.wickets}, overs=${inngs1.overs}`);
+        }
+        if (score?.team2Score?.inngs1) {
+            const inngs1 = score.team2Score.inngs1;
+            console.log(`  Team2 Inngs1: runs=${inngs1.runs}, wickets=${inngs1.wickets}, overs=${inngs1.overs}`);
+        }
+    });
+    
+    const matchCards = document.querySelectorAll('.match-card');
+    console.log(`🏏 Match cards in DOM: ${matchCards.length}`);
+    
+    // Force refresh if needed
+    if (matchCards.length !== CricketLive.matches.length) {
+        console.log('🏏 Mismatch detected, refreshing display...');
+        CricketLive.renderMatches();
+    }
+    
+    return {
+        totalMatches: CricketLive.matches.length,
+        displayedCards: matchCards.length,
+        matches: CricketLive.matches
+    };
+};
+
+// Make globally accessible  
+window.CricketLive = CricketLive;
+
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {

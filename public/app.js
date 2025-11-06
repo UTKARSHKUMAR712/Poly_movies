@@ -4832,6 +4832,7 @@ console.log('🎬 PolyMovies Enhanced Download System Loaded');
 console.log('💡 Try: testDownloadSystem() or showDownloadStats() in console');
 console.log('💡 Or try: testSimpleDownload() to test the enhanced download panel');
 console.log('💡 Or try: testDownloadPanel() to test the download panel UI');
+console.log('🏏 Cricket: testCricketMatches() to debug match display and check for undefined values');
 
 // Enhanced Download Manager with Visual Progress
 const SimpleDownloadManager = {
@@ -5622,4 +5623,40 @@ window.testDownloadFixes = function () {
     }, 4000);
 
     return 'Tests started - watch console and download panel for 15 seconds';
+};// Test function to check cricket match display
+window.testCricketMatches = function () {
+    console.log('🧪 Testing Cricket Match Display...');
+
+    if (window.CricketLive) {
+        console.log('📊 CricketLive available:', !!window.CricketLive);
+        console.log('📊 Total matches loaded:', window.CricketLive.matches.length);
+
+        // Log all matches
+        window.CricketLive.matches.forEach((match, index) => {
+            const info = match.match?.matchInfo;
+            console.log(`🏏 Match ${index + 1}:`, {
+                id: info?.matchId,
+                series: info?.seriesName,
+                teams: `${info?.team1?.teamSName} vs ${info?.team2?.teamSName}`,
+                status: info?.status,
+                state: info?.state
+            });
+        });
+
+        // Check how many match cards are in the DOM
+        const matchCards = document.querySelectorAll('.match-card');
+        console.log(`📊 Match cards in DOM: ${matchCards.length}`);
+
+        // Force re-render
+        console.log('🔄 Force re-rendering matches...');
+        window.CricketLive.renderMatches();
+
+        return {
+            totalMatches: window.CricketLive.matches.length,
+            cardsInDOM: matchCards.length
+        };
+    } else {
+        console.error('❌ CricketLive not available');
+        return null;
+    }
 };
