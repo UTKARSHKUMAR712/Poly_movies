@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 const { minify } = require("terser");
+const axios = require("axios");
 
 // Build configuration
 const PROVIDERS_DIR = "./providers";
@@ -50,19 +51,64 @@ class ProviderBuilder {
   }
 
   /**
-   * Discover all provider directories
+   * Discover all provider directories and fetch remote manifest
    */
-  discoverProviders() {
+  async discoverProviders() {
+    // Discover local providers
     const items = fs.readdirSync(PROVIDERS_DIR, { withFileTypes: true });
-
-    this.providers = items
+    const localProviders = items
       .filter((item) => item.isDirectory())
       .filter((item) => !item.name.startsWith("."))
       .map((item) => item.name);
 
-    log.info(
-      `Found ${this.providers.length} providers: ${this.providers.join(", ")}`
-    );
+    // Fetch remote manifest to get provider info
+    try {
+      log.info("📡 Fetching remote manifest for provider information...");
+      const response = await axios.get('https://raw.githubusercontent.com/UTKARSHKUMAR712/polyjson/main/manifest.json', {
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      this.manifest = response.data;
+      const enabledProviders = this.manifest.filter(p => !p.disabled);
+      
+      log.success(`✅ Remote manifest loaded: ${enabledProviders.length} enabled providers from ${this.manifest.length} total`);
+      
+      // Use local providers that exist in filesystem
+      this.providers = localProviders;
+      
+      log.info(`📁 Local providers found: ${this.providers.join(", ")}`);
+      log.info(`🌐 Remote enabled providers: ${enabledProviders.map(p => p.value).join(", ")}`);
+      
+    } catch (error) {
+      log.warning(`⚠️ Failed to fetch remote manifest: ${error.message}`);
+      log.info("📁 Using local provider discovery only");
+      
+      this.providers = localProviders;
+      this.manifest = []; // Empty manifest as fallback
+    }
+
+    log.info(`🔨 Building ${this.providers.length} local providers: ${this.providers.join(", ")}`);
+    
+    // Save remote manifest locally for offline use
+    if (this.manifest.length > 0) {
+      this.saveManifestLocally();
+    }
+  }
+
+  /**
+   * Save remote manifest locally for offline use
+   */
+  saveManifestLocally() {
+    try {
+      const manifestPath = path.join(".", "manifest.json");
+      fs.writeFileSync(manifestPath, JSON.stringify(this.manifest, null, 2));
+      log.success(`💾 Saved remote manifest locally (${this.manifest.length} providers)`);
+    } catch (error) {
+      log.warning(`⚠️ Failed to save manifest locally: ${error.message}`);
+    }
   }
 
   /**
@@ -247,7 +293,7 @@ class ProviderBuilder {
     }
 
     this.cleanDist();
-    this.discoverProviders();
+    await this.discoverProviders();
 
     const compiled = this.compileAllProviders();
     if (!compiled) {

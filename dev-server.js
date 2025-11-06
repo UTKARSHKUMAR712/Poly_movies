@@ -74,15 +74,33 @@ class DevServer {
   }
 
   setupRoutes() {
-    // Serve manifest.json
-    this.app.get("/manifest.json", (req, res) => {
-      const manifestPath = path.join(this.currentDir, "manifest.json");
-      console.log(`Serving manifest from: ${manifestPath}`);
+    // Serve manifest.json from remote source
+    this.app.get("/manifest.json", async (_req, res) => {
+      try {
+        console.log('📡 Fetching manifest from remote source...');
+        const response = await axios.get('https://raw.githubusercontent.com/UTKARSHKUMAR712/polyjson/main/manifest.json', {
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
 
-      if (fs.existsSync(manifestPath)) {
-        res.sendFile(manifestPath);
-      } else {
-        res.status(404).json({ error: "Manifest not found. Run build first." });
+        console.log(`✅ Remote manifest loaded with ${response.data.length} providers`);
+        res.json(response.data);
+      } catch (error) {
+        console.error('❌ Failed to fetch remote manifest:', error.message);
+
+        // Fallback to local manifest if exists
+        const localManifestPath = path.join(this.currentDir, "manifest.json");
+        if (fs.existsSync(localManifestPath)) {
+          console.log('📄 Using local manifest as fallback');
+          res.sendFile(localManifestPath);
+        } else {
+          res.status(404).json({
+            error: "Manifest not available",
+            details: "Remote manifest failed and no local fallback found"
+          });
+        }
       }
     });
 
@@ -116,16 +134,38 @@ class DevServer {
       }
     });
 
-    // Status endpoint
-    this.app.get("/status", (req, res) => {
-      const providers = this.getAvailableProviders();
-      res.json({
-        status: "running",
-        port: this.port,
-        providers: providers.length,
-        providerList: providers,
-        buildTime: this.getBuildTime(),
-      });
+    // Status endpoint with remote manifest info
+    this.app.get("/status", async (req, res) => {
+      const localProviders = this.getAvailableProviders();
+
+      try {
+        const remoteManifest = await this.getRemoteManifest();
+        const enabledRemoteProviders = remoteManifest.filter(p => !p.disabled);
+
+        res.json({
+          status: "running",
+          port: this.port,
+          localProviders: localProviders.length,
+          localProviderList: localProviders,
+          remoteProviders: enabledRemoteProviders.length,
+          remoteProviderList: enabledRemoteProviders.map(p => ({ name: p.display_name, value: p.value, version: p.version })),
+          buildTime: this.getBuildTime(),
+          manifestSource: "remote"
+        });
+      } catch (error) {
+        console.error('Failed to fetch remote manifest for status:', error.message);
+        res.json({
+          status: "running",
+          port: this.port,
+          localProviders: localProviders.length,
+          localProviderList: localProviders,
+          remoteProviders: 0,
+          remoteProviderList: [],
+          buildTime: this.getBuildTime(),
+          manifestSource: "local_fallback",
+          manifestError: error.message
+        });
+      }
     });
 
     // List available providers
@@ -138,22 +178,74 @@ class DevServer {
     this.app.get("/health", (req, res) => {
       res.json({ status: "healthy", timestamp: new Date().toISOString() });
     });
+
+    // Remote manifest status endpoint
+    this.app.get("/api/manifest/status", async (req, res) => {
+      try {
+        const manifest = await this.getRemoteManifest();
+        const enabledProviders = manifest.filter(p => !p.disabled);
+        const disabledProviders = manifest.filter(p => p.disabled);
+
+        res.json({
+          status: "success",
+          source: "https://raw.githubusercontent.com/UTKARSHKUMAR712/polyjson/main/manifest.json",
+          totalProviders: manifest.length,
+          enabledProviders: enabledProviders.length,
+          disabledProviders: disabledProviders.length,
+          providers: manifest.map(p => ({
+            name: p.display_name,
+            value: p.value,
+            version: p.version,
+            type: p.type,
+            disabled: p.disabled
+          })),
+          lastFetched: new Date().toISOString()
+        });
+      } catch (error) {
+        res.status(500).json({
+          status: "error",
+          source: "https://raw.githubusercontent.com/UTKARSHKUMAR712/polyjson/main/manifest.json",
+          error: error.message,
+          fallback: "local manifest (if available)"
+        });
+      }
+    });
   }
 
   setupApiRoutes() {
-    // Get all providers from manifest
-    this.app.get("/api/providers", (req, res) => {
+    // Get all providers from remote manifest
+    this.app.get("/api/providers", async (req, res) => {
       try {
-        const manifestPath = path.join(this.currentDir, "manifest.json");
-        if (!fs.existsSync(manifestPath)) {
-          return res.status(404).json({ error: "Manifest not found" });
-        }
-        const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+        console.log('📡 Fetching providers from remote manifest...');
+        const response = await axios.get('https://raw.githubusercontent.com/UTKARSHKUMAR712/polyjson/main/manifest.json', {
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+
+        const manifest = response.data;
         const enabledProviders = manifest.filter((p) => !p.disabled);
+        console.log(`✅ Found ${enabledProviders.length} enabled providers from ${manifest.length} total`);
         res.json(enabledProviders);
       } catch (error) {
-        console.error("Error reading manifest:", error);
-        res.status(500).json({ error: error.message });
+        console.error("❌ Error fetching remote manifest:", error.message);
+
+        // Fallback to local manifest
+        try {
+          const manifestPath = path.join(this.currentDir, "manifest.json");
+          if (fs.existsSync(manifestPath)) {
+            console.log('📄 Using local manifest as fallback');
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+            const enabledProviders = manifest.filter((p) => !p.disabled);
+            res.json(enabledProviders);
+          } else {
+            res.status(404).json({ error: "No manifest available (remote failed, no local fallback)" });
+          }
+        } catch (localError) {
+          console.error("❌ Local manifest fallback also failed:", localError.message);
+          res.status(500).json({ error: "Both remote and local manifest failed" });
+        }
       }
     });
 
@@ -357,17 +449,17 @@ class DevServer {
         const processedStreams = await Promise.all(result.map(async stream => {
           // Check if it's a Gofile direct download link that might be expired/limited
           const isGofileDirectDownload = stream.link.match(/file[\w-]*\.gofile\.io\/download\//);
-          
+
           // Check if it's a Gofile page URL that needs extraction
           const isGofilePageUrl = stream.link.includes('gofile.io/d/');
-          
+
           // Check if it's other page URLs that need extraction
           const needsExtraction = stream.link.includes('drive.google.com/file') ||
             stream.link.includes('hubcloud.cc') ||
             stream.link.match(/nexdrive\.pro\/[a-z0-9]+\/?$/);
-          
+
           // Gofile streams removed - provider no longer supported
-          
+
           // Handle other extraction needs
           if (needsExtraction) {
             return {
@@ -376,7 +468,7 @@ class DevServer {
               extractionService: this.getExtractionService(stream.link)
             };
           }
-          
+
           return stream;
         }));
 
@@ -391,7 +483,7 @@ class DevServer {
     this.app.get("/api/proxy/stream", async (req, res) => {
       try {
         const { url } = req.query;
-        
+
         if (!url) {
           return res.status(400).json({ error: "URL parameter is required" });
         }
@@ -422,7 +514,7 @@ class DevServer {
     this.app.get("/api/proxy/video", async (req, res) => {
       try {
         const { url, headers: customHeaders } = req.query;
-        
+
         if (!url) {
           return res.status(400).json({ error: "URL parameter is required" });
         }
@@ -434,7 +526,7 @@ class DevServer {
         let streamHeaders = {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         };
-        
+
         if (customHeaders) {
           try {
             const parsed = JSON.parse(decodeURIComponent(customHeaders));
@@ -486,8 +578,8 @@ class DevServer {
     // Cricket API endpoints
     this.app.get("/api/cricket/test", (req, res) => {
       console.log('🏏 Cricket test endpoint hit');
-      res.json({ 
-        status: "Cricket API is working", 
+      res.json({
+        status: "Cricket API is working",
         timestamp: new Date().toISOString(),
         endpoint: "/api/cricket/matches",
         server: "integrated"
@@ -497,9 +589,9 @@ class DevServer {
     this.app.get("/api/cricket/matches", async (req, res) => {
       try {
         console.log('🏏 Fetching cricket matches from Cricbuzz...');
-        
+
         const response = await axios.get("https://www.cricbuzz.com/api/home", {
-          headers: { 
+          headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "application/json, text/plain, */*",
             "Accept-Language": "en-US,en;q=0.9",
@@ -511,12 +603,12 @@ class DevServer {
         });
 
         console.log('🏏 Cricket data fetched successfully');
-        
+
         res.set('Access-Control-Allow-Origin', '*');
         res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
         res.set('Access-Control-Allow-Headers', 'Content-Type');
         res.json(response.data);
-        
+
       } catch (error) {
         console.error('🏏 Cricket API error:', error.message);
         res.status(500).json({
@@ -537,10 +629,10 @@ class DevServer {
           headers: { "User-Agent": "Mozilla/5.0" },
           timeout: 10000
         });
-        
+
         res.set('Access-Control-Allow-Origin', '*');
         res.json(response.data);
-        
+
       } catch (error) {
         res.status(500).json({
           error: "Failed",
@@ -554,13 +646,14 @@ class DevServer {
       res.status(404).json({
         error: "Not found",
         availableEndpoints: [
-          "GET /manifest.json",
+          "GET /manifest.json (remote)",
           "GET /dist/:provider/:file",
           "POST /build",
           "GET /status",
           "GET /providers",
           "GET /health",
-          "GET /api/providers",
+          "GET /api/providers (remote)",
+          "GET /api/manifest/status",
           "GET /api/:provider/catalog",
           "GET /api/:provider/posts?filter=&page=",
           "GET /api/:provider/search?query=&page=",
@@ -586,6 +679,17 @@ class DevServer {
       .map((item) => item.name);
   }
 
+  // Helper method to fetch remote manifest
+  async getRemoteManifest() {
+    const response = await axios.get('https://raw.githubusercontent.com/UTKARSHKUMAR712/polyjson/main/manifest.json', {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    return response.data;
+  }
+
   getExtractionService(url) {
     if (url.includes('nexdrive')) return 'nexdrive';
     if (url.includes('hubcloud')) return 'hubcloud';
@@ -596,17 +700,17 @@ class DevServer {
   async extractNexdriveLink(url) {
     try {
       console.log('Extracting nexdrive/supervideo link:', url);
-      
+
       // Nexdrive usually returns direct links or uses superVideoExtractor
       const result = await this.providerContext.extractors.superVideoExtractor(url);
       console.log('Nexdrive extraction result:', result);
-      
+
       if (result && typeof result === 'object' && result.link) {
         return result.link;
       } else if (typeof result === 'string') {
         return result;
       }
-      
+
       return null;
     } catch (error) {
       console.error('Nexdrive extraction error:', error);
@@ -666,10 +770,11 @@ class DevServer {
 📱 For Vega App:
   - Update vega app to use: http://${localIp}:${this.port}
 
+🌐 Remote Manifest: https://raw.githubusercontent.com/UTKARSHKUMAR712/polyjson/main/manifest.json
 🔄 Auto-rebuild: POST to /build to rebuild after changes
       `);
 
-      // Check if build exists
+        // Check if build exists
         if (!fs.existsSync(this.distDir)) {
           console.log('\n⚠️  No build found. Run "node build.js" first!\n');
         }
