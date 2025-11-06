@@ -1,7 +1,7 @@
 {
-  "name": "vega-providers",
+  "name": "polymovies",
   "version": "3.5.0",
-  "description": "providers for vega-app",
+  "description": "Ultimate app",
   "license": "ISC",
   "author": "",
   "type": "commonjs",
