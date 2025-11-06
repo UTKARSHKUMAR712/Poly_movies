@@ -142,6 +142,8 @@ const TMDBContentModule = {
             `;
             
             card.addEventListener('click', () => {
+                // Close the modal before showing details
+                this.closeTMDBModal();
                 this.showTMDBDetails(item, type);
             });
             
@@ -256,7 +258,7 @@ const TMDBContentModule = {
                                 <h3 class="tmdb-provider-name">📦 ${result.displayName}</h3>
                                 <div class="tmdb-results-grid">
                                     ${result.posts.map(post => `
-                                        <div class="tmdb-result-card" onclick="TMDBContentModule.closeSearchModal(); loadDetails('${result.provider}', '${post.link}')">
+                                        <div class="tmdb-result-card" onclick="TMDBContentModule.closeSearchModal(); TMDBContentModule.closeTMDBModal(); loadDetails('${result.provider}', '${post.link}')">
                                             <img src="${post.image}" alt="${post.title}" />
                                             <div class="tmdb-result-info">
                                                 <h4>${post.title}</h4>
@@ -298,7 +300,7 @@ const TMDBContentModule = {
                                 : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22300%22%3E%3Crect width=%22200%22 height=%22300%22 fill=%22%23333%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23666%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E';
                             
                             return `
-                                <div class="tmdb-similar-card" onclick='TMDBContentModule.showTMDBDetails(${JSON.stringify(item).replace(/'/g, "&apos;")}, "${type}", false)'>
+                                <div class="tmdb-similar-card" onclick='TMDBContentModule.closeSearchModal(); TMDBContentModule.closeTMDBModal(); TMDBContentModule.showTMDBDetails(${JSON.stringify(item).replace(/'/g, "&apos;")}, "${type}", false)'>
                                     <img src="${posterUrl}" alt="${itemTitle}" />
                                     <div class="tmdb-similar-info">
                                         <h4>${itemTitle}</h4>
@@ -326,7 +328,7 @@ const TMDBContentModule = {
                                 : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22300%22%3E%3Crect width=%22200%22 height=%22300%22 fill=%22%23333%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23666%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E';
                             
                             return `
-                                <div class="tmdb-similar-card" onclick='TMDBContentModule.showTMDBDetails(${JSON.stringify(item).replace(/'/g, "&apos;")}, "${type}", false)'>
+                                <div class="tmdb-similar-card" onclick='TMDBContentModule.closeSearchModal(); TMDBContentModule.closeTMDBModal(); TMDBContentModule.showTMDBDetails(${JSON.stringify(item).replace(/'/g, "&apos;")}, "${type}", false)'>
                                     <img src="${posterUrl}" alt="${itemTitle}" />
                                     <div class="tmdb-similar-info">
                                         <h4>${itemTitle}</h4>
@@ -417,8 +419,11 @@ const TMDBContentModule = {
                     link: item.id.toString()
                 }, 'tmdb');
                 
-                // Override click handler to search providers
-                card.onclick = () => this.showTMDBDetails(item, type);
+                // Override click handler to search providers and close modal
+                card.onclick = () => {
+                    this.closeTMDBModal();
+                    this.showTMDBDetails(item, type);
+                };
                 grid.appendChild(card);
             });
             
