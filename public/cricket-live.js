@@ -37,7 +37,87 @@ const CricketLive = {
             "group_title": "[CR] CRICKET",
             "channel_name": "",
             "url": "https://allinonereborn.online/lion.m3u8/live.php?id=741860"
-        }
+        },
+        {
+    "tvg_id": "689569",
+    "tvg_name": "P[SL] STAR SPORTS 1 HINDI HD",
+    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+    "group_title": "[CR] CRICKET",
+    "channel_name": "P",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=689569"
+  },
+  {
+    "tvg_id": "689568",
+    "tvg_name": "P[SL] STAR SPORTS HINDI 1",
+    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+    "group_title": "[CR] CRICKET",
+    "channel_name": "P",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=689568"
+  },
+  {
+    "tvg_id": "843537",
+    "tvg_name": "[INSPT] STAR SPORTS 1 FHD",
+    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HD.png",
+    "group_title": "[IN] SPORTS",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843537"
+  },
+  {
+    "tvg_id": "281630",
+    "tvg_name": "[INSPT] STAR SPORTS 1 ENGLISH UHD",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-1-HD.jpg",
+    "group_title": "[IN] SPORTS",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281630"
+  },
+  {
+    "tvg_id": "281631",
+    "tvg_name": "[INSPT] STAR SPORTS 1 HINDI UHD",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+    "group_title": "[IN] SPORTS",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281631"
+  },
+  {
+    "tvg_id": "843539",
+    "tvg_name": "[INSPT] STAR SPORTS HINDI 1 FHD",
+    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-1-HINDI-HD.jpg",
+    "group_title": "[IN] SPORTS",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843539"
+  },
+  {
+    "tvg_id": "843538",
+    "tvg_name": "[INSPT] STAR SPORTS 2 FHD",
+    "tvg_logo": "http://103.176.90.118/picons/logos/STAR-SPORTS-2-HD.jpeg",
+    "group_title": "[IN] SPORTS",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=843538"
+  },
+  {
+    "tvg_id": "281632",
+    "tvg_name": "[INSPT] STAR SPORTS 2 UHD",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-2-HD.jpeg",
+    "group_title": "[IN] SPORTS",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281632"
+  },
+  {
+    "tvg_id": "281633",
+    "tvg_name": "[INSPT] STAR SPORTS 3",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-3.jpeg",
+    "group_title": "[IN] SPORTS",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281633"
+  },
+  {
+    "tvg_id": "281637",
+    "tvg_name": "[INSPT] STAR SPORTS TAMIL",
+    "tvg_logo": "http://103.176.90.118/picons-dino/logos/STAR-SPORTS-TAMIL.jpg",
+    "group_title": "[IN] SPORTS",
+    "channel_name": "",
+    "url": "https://allinonereborn.online/lion.m3u8/live.php?id=281637"
+  },
     ],
 
     // Country code mapping for flags
