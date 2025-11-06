@@ -204,7 +204,7 @@ function generateDownloadFilename(stream, contentTitle) {
     }
 }
 
-// Main App State with Home Screen Caching
+// Main App State with Enhanced Caching and Navigation
 const state = {
     providers: [],
     selectedProvider: null,
@@ -217,15 +217,28 @@ const state = {
     retryCount: 0,
     maxRetries: 3,
     isVideoPlaying: false, // Track video playback state
-    // Home screen cache
+
+    // Enhanced caching system (no search caching)
     homeCache: new Map(),
-    homeCacheTimestamp: new Map()
+    homeCacheTimestamp: new Map(),
+    detailsCache: new Map(),
+    detailsCacheTimestamp: new Map(),
+
+    // Search state preservation (not caching)
+    searchPageState: null, // Stores the exact DOM state of search page
+
+    // Navigation history
+    navigationHistory: [],
+    currentHistoryIndex: -1
 };
 
-// Home screen cache configuration
-const HOME_CACHE_CONFIG = {
-    CACHE_DURATION: 10 * 60 * 1000, // 10 minutes
-    EXCLUDE_CRICKET: true // Don't cache cricket section
+// Session-based cache configuration (no search caching)
+const CACHE_CONFIG = {
+    SESSION_BASED: true, // Cache persists until app closes
+    EXCLUDE_CRICKET: true, // Don't cache cricket section (always fresh)
+    NO_SEARCH_CACHE: true, // Don't cache search data, only preserve state
+    MAX_HISTORY: 50, // Increased navigation history entries
+    PRESERVE_SEARCH_DOM: true // Keep exact DOM state of search page
 };
 
 // Expose state and API_BASE globally for modules
@@ -235,65 +248,330 @@ window.state = state;
 const API_BASE = window.location.origin;
 window.API_BASE = API_BASE;
 
-// Home Screen Cache Management
-const HomeCache = {
-    // Check if cached data is still valid
-    isValid(provider) {
-        if (!state.homeCache.has(provider) || !state.homeCacheTimestamp.has(provider)) {
+// Enhanced Cache Management System
+const CacheManager = {
+    // Home Cache
+    home: {
+        isValid(provider) {
+            return state.homeCache.has(provider);
+        },
+
+        get(provider) {
+            if (this.isValid(provider)) {
+                console.log('📋 Using cached home data for:', provider);
+                return state.homeCache.get(provider);
+            }
+            return null;
+        },
+
+        set(provider, data) {
+            console.log('💾 Caching home data for:', provider);
+            state.homeCache.set(provider, data);
+            state.homeCacheTimestamp.set(provider, Date.now());
+        },
+
+        clear(provider) {
+            state.homeCache.delete(provider);
+            state.homeCacheTimestamp.delete(provider);
+            console.log('🗑️ Cleared home cache for:', provider);
+        }
+    },
+
+    // Search State Preservation (No Caching - Just DOM State)
+    searchState: {
+        // Save the exact DOM state of search page
+        savePageState() {
+            if (state.currentView === 'search') {
+                const searchContainer = document.getElementById('searchResults');
+                const paginationContainer = document.getElementById('searchPagination');
+                const searchInput = document.getElementById('searchInput');
+                const searchTitle = document.getElementById('searchTitle');
+
+                if (searchContainer) {
+                    state.searchPageState = {
+                        query: state.searchQuery,
+                        page: state.currentPage,
+                        provider: state.selectedProvider,
+                        scrollPosition: window.scrollY || 0,
+                        searchInputValue: searchInput ? searchInput.value : '',
+                        searchTitleText: searchTitle ? searchTitle.textContent : '',
+                        resultsHTML: searchContainer.innerHTML,
+                        paginationHTML: paginationContainer ? paginationContainer.innerHTML : '',
+                        timestamp: Date.now()
+                    };
+                    console.log('💾 Saved search page state (no caching)');
+                }
+            }
+        },
+
+        // Restore the exact DOM state of search page
+        restorePageState() {
+            if (state.searchPageState && state.searchPageState.provider === state.selectedProvider) {
+                console.log('⚡ Restoring exact search page state');
+
+                const searchContainer = document.getElementById('searchResults');
+                const paginationContainer = document.getElementById('searchPagination');
+                const searchInput = document.getElementById('searchInput');
+                const searchTitle = document.getElementById('searchTitle');
+
+                // Restore all elements
+                if (searchContainer && state.searchPageState.resultsHTML) {
+                    searchContainer.innerHTML = state.searchPageState.resultsHTML;
+
+                    // Re-attach event listeners to movie cards
+                    this.reattachEventListeners(searchContainer);
+                }
+
+                if (paginationContainer && state.searchPageState.paginationHTML) {
+                    paginationContainer.innerHTML = state.searchPageState.paginationHTML;
+                }
+
+                if (searchInput) {
+                    searchInput.value = state.searchPageState.searchInputValue || '';
+                }
+
+                if (searchTitle) {
+                    searchTitle.textContent = state.searchPageState.searchTitleText || '';
+                }
+
+                // Restore state variables
+                state.searchQuery = state.searchPageState.query;
+                state.currentPage = state.searchPageState.page;
+
+                // Restore scroll position
+                setTimeout(() => {
+                    window.scrollTo(0, state.searchPageState.scrollPosition || 0);
+                }, 100);
+
+                showView('search');
+                return true;
+            }
             return false;
+        },
+
+        // Re-attach event listeners to restored DOM elements
+        reattachEventListeners(container) {
+            console.log('🔗 Re-attaching event listeners to restored search results');
+
+            // Find all movie/post cards and re-attach click events
+            const postCards = container.querySelectorAll('.post-card, .movie-card, .content-card, .post');
+
+            postCards.forEach(card => {
+                // Add click event listener
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+
+                    // Get the link and provider from data attributes
+                    const link = card.getAttribute('data-link');
+                    const provider = card.getAttribute('data-provider') || state.selectedProvider;
+                    const title = card.getAttribute('data-title') || 'Unknown';
+
+                    if (link && provider) {
+                        console.log('🎬 Opening movie details from restored card:', { provider, link, title });
+                        loadDetails(provider, link);
+                    } else {
+                        console.warn('⚠️ Missing link or provider for movie card', {
+                            link,
+                            provider,
+                            cardData: {
+                                dataLink: card.getAttribute('data-link'),
+                                dataProvider: card.getAttribute('data-provider'),
+                                selectedProvider: state.selectedProvider
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Re-attach pagination event listeners if any
+            const paginationBtns = document.querySelectorAll('#searchPagination button');
+            paginationBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = parseInt(btn.dataset.page) || parseInt(btn.textContent) || 1;
+                    if (page && state.searchQuery) {
+                        console.log('📄 Pagination click:', page);
+                        changePage(page);
+                    }
+                });
+            });
+        },
+
+        // Clear search state
+        clear() {
+            state.searchPageState = null;
+            console.log('🗑️ Cleared search page state');
+        },
+
+        // Check if we have saved state for current provider
+        hasState() {
+            return state.searchPageState &&
+                state.searchPageState.provider === state.selectedProvider;
         }
-
-        const timestamp = state.homeCacheTimestamp.get(provider);
-        const now = Date.now();
-        return (now - timestamp) < HOME_CACHE_CONFIG.CACHE_DURATION;
     },
 
-    // Get cached home data
-    get(provider) {
-        if (this.isValid(provider)) {
-            console.log('📋 Using cached home data for:', provider);
-            return state.homeCache.get(provider);
+    // Details Cache
+    details: {
+        generateKey(provider, link) {
+            return `${provider}:${btoa(link).substring(0, 50)}`;
+        },
+
+        isValid(key) {
+            return state.detailsCache.has(key);
+        },
+
+        get(provider, link) {
+            const key = this.generateKey(provider, link);
+            if (this.isValid(key)) {
+                console.log('📄 Using cached details data for:', key);
+                return state.detailsCache.get(key);
+            }
+            return null;
+        },
+
+        set(provider, link, data) {
+            const key = this.generateKey(provider, link);
+            console.log('💾 Caching details data for:', key);
+            state.detailsCache.set(key, data);
+            state.detailsCacheTimestamp.set(key, Date.now());
+        },
+
+        clear(provider) {
+            // Clear all details cache for a provider
+            const keysToDelete = [];
+            for (const key of state.detailsCache.keys()) {
+                if (key.startsWith(provider + ':')) {
+                    keysToDelete.push(key);
+                }
+            }
+            keysToDelete.forEach(key => {
+                state.detailsCache.delete(key);
+                state.detailsCacheTimestamp.delete(key);
+            });
+            console.log('🗑️ Cleared details cache for:', provider);
         }
-        return null;
     },
 
-    // Store home data in cache
-    set(provider, data) {
-        console.log('💾 Caching home data for:', provider);
-        state.homeCache.set(provider, data);
-        state.homeCacheTimestamp.set(provider, Date.now());
-    },
-
-    // Clear cache for a specific provider
-    clear(provider) {
-        state.homeCache.delete(provider);
-        state.homeCacheTimestamp.delete(provider);
-        console.log('🗑️ Cleared cache for:', provider);
-    },
-
-    // Clear all cache
+    // Clear all caches and search state
     clearAll() {
         state.homeCache.clear();
         state.homeCacheTimestamp.clear();
-        console.log('🗑️ Cleared all home cache');
+        state.detailsCache.clear();
+        state.detailsCacheTimestamp.clear();
+        state.searchPageState = null;
+        console.log('🗑️ Cleared all caches and search state');
     },
 
     // Get cache info for debugging
     getInfo() {
+        return {
+            home: this.getCacheInfo(state.homeCache, 'Session-based'),
+            searchState: state.searchPageState ? {
+                provider: state.searchPageState.provider,
+                query: state.searchPageState.query,
+                page: state.searchPageState.page,
+                hasState: 'DOM state preserved',
+                type: 'State preservation (no caching)'
+            } : { hasState: 'No saved state' },
+            details: this.getCacheInfo(state.detailsCache, 'Session-based')
+        };
+    },
+
+    getCacheInfo(cache, type) {
         const info = {};
-        for (const [provider, timestamp] of state.homeCacheTimestamp.entries()) {
-            const age = Date.now() - timestamp;
-            const isValid = age < HOME_CACHE_CONFIG.CACHE_DURATION;
-            info[provider] = {
+        for (const [key, data] of cache.entries()) {
+            info[key] = {
+                type: type,
+                size: JSON.stringify(data || {}).length,
                 cached: true,
-                age: Math.round(age / 1000) + 's',
-                valid: isValid,
-                size: JSON.stringify(state.homeCache.get(provider) || {}).length
+                persistent: 'Until app closes'
             };
         }
         return info;
     }
 };
+
+// Navigation History Management
+const NavigationManager = {
+    // Add a new navigation entry
+    push(view, data = {}) {
+        const entry = {
+            view,
+            data,
+            timestamp: Date.now(),
+            provider: state.selectedProvider
+        };
+
+        // Remove entries after current index (when navigating back then forward)
+        if (state.currentHistoryIndex < state.navigationHistory.length - 1) {
+            state.navigationHistory = state.navigationHistory.slice(0, state.currentHistoryIndex + 1);
+        }
+
+        // Add new entry
+        state.navigationHistory.push(entry);
+        state.currentHistoryIndex = state.navigationHistory.length - 1;
+
+        // Limit history size
+        if (state.navigationHistory.length > CACHE_CONFIG.MAX_HISTORY) {
+            state.navigationHistory.shift();
+            state.currentHistoryIndex--;
+        }
+
+        console.log('📍 Navigation pushed:', view, data);
+    },
+
+    // Get previous navigation entry
+    getPrevious() {
+        if (state.currentHistoryIndex > 0) {
+            return state.navigationHistory[state.currentHistoryIndex - 1];
+        }
+        return null;
+    },
+
+    // Navigate back
+    goBack() {
+        const previous = this.getPrevious();
+        if (previous) {
+            state.currentHistoryIndex--;
+            console.log('⬅️ Navigating back to:', previous.view, previous.data);
+            return previous;
+        }
+        return null;
+    },
+
+    // Get current navigation entry
+    getCurrent() {
+        if (state.currentHistoryIndex >= 0) {
+            return state.navigationHistory[state.currentHistoryIndex];
+        }
+        return null;
+    },
+
+    // Clear navigation history
+    clear() {
+        state.navigationHistory = [];
+        state.currentHistoryIndex = -1;
+        console.log('🗑️ Cleared navigation history');
+    },
+
+    // Get navigation info for debugging
+    getInfo() {
+        return {
+            current: state.currentHistoryIndex,
+            total: state.navigationHistory.length,
+            history: state.navigationHistory.map((entry, index) => ({
+                index,
+                view: entry.view,
+                data: entry.data,
+                provider: entry.provider,
+                isCurrent: index === state.currentHistoryIndex
+            }))
+        };
+    }
+};
+
+// Backward compatibility
+const HomeCache = CacheManager.home;
 
 // Utility Functions
 function showLoading(show = true, message = 'Loading...') {
@@ -526,6 +804,9 @@ async function fetchPosts(provider, filter = '', page = 1) {
 }
 
 async function searchPosts(provider, query, page = 1) {
+    // No caching - always fetch fresh data
+    console.log('🔍 Fetching fresh search results (no cache)');
+
     try {
         const response = await fetch(`${API_BASE}/api/${provider}/search?query=${encodeURIComponent(query)}&page=${page}`);
         if (!response.ok) {
@@ -540,27 +821,31 @@ async function searchPosts(provider, query, page = 1) {
         const data = await response.json();
 
         // Handle different response formats
+        let result;
         if (Array.isArray(data)) {
             // Direct array response - wrap it in an object with pagination info
-            return {
+            result = {
                 posts: data,
                 hasNextPage: false, // Default to false for array responses
                 provider: provider
             };
         } else if (data && typeof data === 'object') {
             // Already in the expected format
-            return {
+            result = {
                 ...data,
                 provider: provider
             };
         } else {
             // Unexpected format - return empty structure
-            return {
+            result = {
                 posts: [],
                 hasNextPage: false,
                 provider: provider
             };
         }
+
+        // No caching - just return the result
+        return result;
     } catch (error) {
         console.warn(`Search failed for provider ${provider}:`, error);
         // Return empty structure instead of throwing error
@@ -573,9 +858,22 @@ async function searchPosts(provider, query, page = 1) {
 }
 
 async function fetchMeta(provider, link) {
+    // Check cache first
+    const cachedData = CacheManager.details.get(provider, link);
+    if (cachedData) {
+        console.log('⚡ Loading details from cache');
+        return cachedData;
+    }
+
     const response = await fetch(`${API_BASE}/api/${provider}/meta?link=${encodeURIComponent(link)}`);
     if (!response.ok) throw new Error('Failed to fetch metadata');
-    return response.json();
+
+    const data = await response.json();
+
+    // Cache the result
+    CacheManager.details.set(provider, link, data);
+
+    return data;
 }
 
 async function fetchEpisodes(provider, url) {
@@ -623,6 +921,12 @@ function renderPostCard(post, provider) {
 
     // Use the provider from the post object if available (for search results)
     const displayProvider = post.provider || provider;
+    const targetProvider = post.provider || provider;
+
+    // Add data attributes for re-attaching event listeners
+    card.setAttribute('data-link', post.link);
+    card.setAttribute('data-provider', targetProvider);
+    card.setAttribute('data-title', post.title);
 
     card.innerHTML = `
         <img src="${post.image}" alt="${post.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22300%22%3E%3Crect width=%22200%22 height=%22300%22 fill=%22%23333%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23666%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E'" />
@@ -633,8 +937,7 @@ function renderPostCard(post, provider) {
     `;
 
     card.addEventListener('click', () => {
-        // Use the provider from the post object if available (for search results)
-        const targetProvider = post.provider || provider;
+        console.log('🎬 Movie card clicked:', { targetProvider, link: post.link, title: post.title });
         loadDetails(targetProvider, post.link);
     });
 
@@ -2936,7 +3239,7 @@ function initializeMobileNavigation() {
 }
 
 // Event Handlers
-async function loadHomePage() {
+async function loadHomePage(skipNavigation = false) {
     console.log('🏠 loadHomePage called, provider:', state.selectedProvider);
     const provider = state.selectedProvider;
     if (!provider) {
@@ -2944,16 +3247,21 @@ async function loadHomePage() {
         return;
     }
 
+    // Add to navigation history
+    if (!skipNavigation) {
+        NavigationManager.push('home', { provider });
+    }
+
     const catalogContainer = document.getElementById('catalogSections');
 
     // Check cache first
-    const cachedData = HomeCache.get(provider);
+    const cachedData = CacheManager.home.get(provider);
     if (cachedData) {
-        console.log('⚡ Loading from cache');
+        console.log('⚡ Loading home from cache');
         catalogContainer.innerHTML = cachedData.html;
 
         // Always refresh cricket section (live data)
-        if (HOME_CACHE_CONFIG.EXCLUDE_CRICKET && window.CricketLive) {
+        if (CACHE_CONFIG.EXCLUDE_CRICKET && window.CricketLive) {
             console.log('🏏 Refreshing cricket section (live data)');
             setTimeout(() => {
                 window.CricketLive.fetchMatches();
@@ -3067,7 +3375,7 @@ async function loadHomePage() {
         let htmlToCache = catalogContainer.innerHTML;
 
         // Remove cricket section from cache if configured
-        if (HOME_CACHE_CONFIG.EXCLUDE_CRICKET) {
+        if (CACHE_CONFIG.EXCLUDE_CRICKET) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlToCache;
             const cricketSection = tempDiv.querySelector('#cricketLiveSection');
@@ -3078,7 +3386,7 @@ async function loadHomePage() {
         }
 
         // Store in cache
-        HomeCache.set(provider, {
+        CacheManager.home.set(provider, {
             html: htmlToCache,
             catalogData: catalogData
         });
@@ -3119,6 +3427,16 @@ async function performSearch() {
         showError('Please enter a search query.');
         return;
     }
+
+    // Save current page state before new search
+    saveCurrentPageState();
+
+    // Add to navigation history
+    NavigationManager.push('search', {
+        query,
+        page: 1,
+        provider: state.selectedProvider
+    });
 
     showLoading();
     try {
@@ -3221,6 +3539,16 @@ async function changeCatalogPage(newPage) {
 }
 
 async function loadDetails(provider, link) {
+    // Save current page state before navigating to details
+    saveCurrentPageState();
+
+    // Add to navigation history
+    NavigationManager.push('details', {
+        provider,
+        link,
+        title: state.currentMeta?.meta?.title || 'Details'
+    });
+
     showLoading();
     try {
         const meta = await fetchMeta(provider, link);
@@ -3396,9 +3724,12 @@ async function init() {
     document.getElementById('providerSelect').addEventListener('change', (e) => {
         const newProvider = e.target.value;
 
-        // Clear cache for old provider if switching
+        // Clear cache and navigation for old provider if switching
         if (state.selectedProvider && state.selectedProvider !== newProvider) {
-            HomeCache.clear(state.selectedProvider);
+            CacheManager.home.clear(state.selectedProvider);
+            CacheManager.details.clear(state.selectedProvider);
+            CacheManager.searchState.clear(); // Clear search state
+            NavigationManager.clear(); // Clear navigation when switching providers
         }
 
         state.selectedProvider = newProvider;
@@ -3431,7 +3762,18 @@ async function init() {
     if (backBtn) {
         backBtn.addEventListener('click', () => {
             if (state.selectedProvider) {
-                loadHomePage();
+                smartBack();
+                updateNavLinks('home');
+            }
+        });
+    }
+
+    // Search back button
+    const searchBackBtn = document.getElementById('searchBackBtn');
+    if (searchBackBtn) {
+        searchBackBtn.addEventListener('click', () => {
+            if (state.selectedProvider) {
+                smartBack();
                 updateNavLinks('home');
             }
         });
@@ -4879,23 +5221,170 @@ async function tryCopyDownloadUrl(url) {
     }
 }
 
-console.log('🎬 PolyMovies Enhanced Download System Loaded');
+console.log('🎬 PolyMovies Enhanced System Loaded');
+console.log('💾 Session Cache: Persists until app closes (no time limits)');
+console.log('📍 Smart Navigation: Back button remembers your exact path');
+console.log('� Sebarch State: Preserves exact search results and scroll position');
+console.log('🔧 Debug: showCacheInfo(), showNavigationInfo(), clearHomeCache(), debugSearchState()');
 
 // Debug functions for cache management
 window.showCacheInfo = function () {
-    const info = HomeCache.getInfo();
-    console.log('📋 Home Cache Info:', info);
+    const info = CacheManager.getInfo();
+    console.log('📋 Cache Info:', info);
     return info;
 };
 
 window.clearHomeCache = function (provider) {
     if (provider) {
-        HomeCache.clear(provider);
-        console.log(`🗑️ Cleared cache for: ${provider}`);
+        CacheManager.home.clear(provider);
+        CacheManager.details.clear(provider);
+        CacheManager.searchState.clear();
+        console.log(`🗑️ Cleared all cache and search state for: ${provider}`);
     } else {
-        HomeCache.clearAll();
-        console.log('🗑️ Cleared all home cache');
+        CacheManager.clearAll();
+        console.log('🗑️ Cleared all cache and search state');
     }
+};
+
+// Smart back navigation function
+// Save current page state before navigation
+function saveCurrentPageState() {
+    if (state.currentView === 'search') {
+        // Save the exact DOM state of search page (including loading states)
+        CacheManager.searchState.savePageState();
+    }
+}
+
+function smartBack() {
+    // Save current state before navigating
+    saveCurrentPageState();
+
+    const previous = NavigationManager.goBack();
+
+    if (previous) {
+        console.log('⬅️ Smart back to:', previous.view, previous.data);
+
+        switch (previous.view) {
+            case 'home':
+                loadHomePage(true); // Skip navigation tracking
+                break;
+
+            case 'search':
+                // Restore search state
+                const searchData = previous.data;
+                if (searchData.query) {
+                    // Load cached search results if available
+                    restoreSearchResults(searchData);
+                } else {
+                    loadHomePage(true);
+                }
+                break;
+
+            case 'details':
+                // Restore details page
+                const detailsData = previous.data;
+                if (detailsData.provider && detailsData.link) {
+                    loadDetails(detailsData.provider, detailsData.link);
+                } else {
+                    loadHomePage(true);
+                }
+                break;
+
+            default:
+                loadHomePage(true);
+                break;
+        }
+    } else {
+        // No navigation history, go to home
+        loadHomePage(true);
+    }
+}
+
+// Restore search page state (no caching, just DOM state)
+async function restoreSearchResults(searchData) {
+    const { query, page = 1, provider } = searchData;
+
+    console.log('🔄 Restoring search state:', { query, page, provider });
+
+    try {
+        // Try to restore exact DOM state first (including loading states)
+        if (CacheManager.searchState.restorePageState()) {
+            console.log('⚡ Restored exact search page state (including any loading states)');
+            return;
+        }
+
+        // If no saved state, perform fresh search
+        console.log('🔍 No saved state, performing fresh search');
+
+        // Set up search input
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.value = query;
+        }
+
+        // Update state
+        state.searchQuery = query;
+        state.currentPage = page;
+
+        // Perform fresh search
+        showLoading();
+        const results = await searchPosts(provider, query, page);
+
+        // Display results
+        document.getElementById('searchTitle').textContent = `Search Results for "${query}"`;
+        renderPosts(results.posts || [], 'searchResults', provider);
+
+        // Add pagination if available
+        if (results.hasNextPage !== undefined) {
+            renderPagination('searchPagination', page, results.hasNextPage, 'changePage(');
+        }
+
+        showView('search');
+        showLoading(false);
+
+    } catch (error) {
+        console.error('Failed to restore search:', error);
+        showLoading(false);
+        loadHomePage(true);
+    }
+}
+
+// Debug functions for navigation and cache
+window.showNavigationInfo = function () {
+    const info = NavigationManager.getInfo();
+    console.log('📍 Navigation Info:', info);
+    return info;
+};
+
+window.clearNavigation = function () {
+    NavigationManager.clear();
+    console.log('🗑️ Cleared navigation history');
+};
+
+// Debug function for search state
+window.debugSearchState = function () {
+    console.log('🔍 Search State Debug:', {
+        currentView: state.currentView,
+        searchQuery: state.searchQuery,
+        currentPage: state.currentPage,
+        selectedProvider: state.selectedProvider,
+        hasSearchPageState: !!state.searchPageState,
+        searchPageState: state.searchPageState
+    });
+
+    const searchContainer = document.getElementById('searchResults');
+    const postCards = searchContainer ? searchContainer.querySelectorAll('.post-card') : [];
+
+    console.log('🎬 Search Results Debug:', {
+        searchContainer: !!searchContainer,
+        postCardsCount: postCards.length,
+        postCardsWithData: Array.from(postCards).map(card => ({
+            hasDataLink: !!card.getAttribute('data-link'),
+            hasDataProvider: !!card.getAttribute('data-provider'),
+            dataLink: card.getAttribute('data-link'),
+            dataProvider: card.getAttribute('data-provider')
+        }))
+    });
 };
 
 // Enhanced Download Manager with Visual Progress
