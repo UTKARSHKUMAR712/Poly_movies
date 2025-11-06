@@ -5558,21 +5558,21 @@ window.testDownloadPanel = function () {
 
     console.log('✅ Panel visibility test started - watch for 6 seconds');
 };// Test function for the new download button and progress tracking
-window.testNewDownloadSystem = function() {
+window.testNewDownloadSystem = function () {
     console.log('🧪 Testing New Download System with Progress...');
-    
+
     // Test the header button
     const downloadBtn = document.getElementById('downloadsBtn');
     console.log('📊 Download button found:', !!downloadBtn);
-    
+
     // Test a download with progress tracking
     if (window.DownloadManager) {
         console.log('📥 Starting test download with progress tracking...');
-        
+
         // Use a larger file to see progress
         const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_5mb.mp4';
         const testFilename = 'progress_test_video.mp4';
-        
+
         DownloadManager.startDownload(testUrl, testFilename, {
             source: 'progress_test',
             description: 'Testing progress tracking'
@@ -5585,4 +5585,41 @@ window.testNewDownloadSystem = function() {
     } else {
         console.error('❌ DownloadManager not available');
     }
+};// Test function for all the download fixes
+window.testDownloadFixes = function () {
+    console.log('🧪 Testing Download System Fixes...');
+
+    // Test 1: Panel hiding behavior
+    console.log('📥 Test 1: Panel hiding behavior');
+    showDownloadsPanel();
+    setTimeout(() => {
+        console.log('📥 Hiding panel manually...');
+        hideDownloadsPanel();
+    }, 2000);
+
+    // Test 2: Start a download to test speed and cancellation
+    setTimeout(() => {
+        console.log('📥 Test 2: Starting download for speed/cancel test...');
+        if (window.DownloadManager) {
+            // Use a larger file to test speed calculation
+            const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_10mb.mp4';
+            const testFilename = 'speed_cancel_test.mp4';
+
+            DownloadManager.startDownload(testUrl, testFilename, {
+                source: 'fix_test',
+                description: 'Testing fixes for speed and cancellation'
+            }).then(downloadId => {
+                console.log('✅ Test download started:', downloadId);
+                console.log('📊 Watch for: 1) Real speed updates, 2) Panel stays hidden if manually closed');
+
+                // Test cancellation after 10 seconds
+                setTimeout(() => {
+                    console.log('🚫 Testing download cancellation...');
+                    DownloadManager.cancelDownload(downloadId);
+                }, 10000);
+            });
+        }
+    }, 4000);
+
+    return 'Tests started - watch console and download panel for 15 seconds';
 };

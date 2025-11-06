@@ -3,6 +3,7 @@ const DownloadManager = {
     downloads: new Map(), // Store active downloads
     downloadHistory: [],
     maxConcurrentDownloads: 3,
+    panelManuallyClosed: false, // Track if user manually closed the panel
 
     // Initialize download manager
     init() {
@@ -267,8 +268,8 @@ const DownloadManager = {
         if (panel) {
             if (activeDownloads.some(d => d.status === 'downloading')) {
                 panel.classList.add('has-active-downloads');
-                // Auto-show panel when there are active downloads
-                if (panel.style.display === 'none') {
+                // Only auto-show panel if user hasn't manually closed it
+                if (panel.style.display === 'none' && !this.panelManuallyClosed) {
                     panel.style.display = 'block';
                 }
             } else {
@@ -396,6 +397,17 @@ const DownloadManager = {
     cancelDownload(downloadId) {
         const download = this.downloads.get(downloadId);
         if (download) {
+            console.log(`🚫 Cancelling download: ${download.filename}`);
+            
+            // Cancel via Electron API if available
+            if (window.electronAPI?.cancelDownload) {
+                window.electronAPI.cancelDownload(downloadId).then(result => {
+                    console.log('📊 Electron cancel result:', result);
+                }).catch(error => {
+                    console.error('❌ Electron cancel failed:', error);
+                });
+            }
+            
             download.status = 'cancelled';
             this.updateDownloadUI();
             this.showDownloadNotification(`Download cancelled: ${download.filename}`, 'info');
@@ -552,7 +564,8 @@ const DownloadManager = {
         const panel = document.getElementById('downloadPanel');
         if (panel) {
             panel.style.display = 'none';
-            console.log('📥 Download panel hidden');
+            this.panelManuallyClosed = true; // User manually closed it
+            console.log('📥 Download panel hidden by user');
         }
     },
 
@@ -561,10 +574,12 @@ const DownloadManager = {
         const panel = document.getElementById('downloadPanel');
         if (panel) {
             panel.style.display = 'block';
+            this.panelManuallyClosed = false; // Reset the flag when manually shown
             console.log('📥 Download panel shown');
         } else {
             // Create panel if it doesn't exist
             this.createDownloadUI();
+            this.panelManuallyClosed = false; // Reset the flag
         }
     },
 

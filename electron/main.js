@@ -126,27 +126,8 @@ app.whenReady().then(createWindow).catch((error) => {
 function configureMenu() {
   const template = [
     {
-      label: "File",
-      submenu: [
-        {
-          label: "Download Stream",
-          click() {
-            if (mainWindow) mainWindow.webContents.send("show-download-dialog");
-          }
-        },
-        { type: "separator" },
-        { role: "quit" } // Standard Quit option
-      ]
-    },
-    {
       label: "View",
       submenu: [
-        {
-          label: "Downloads",
-          click() {
-            if (mainWindow) mainWindow.webContents.send("show-download-dialog");
-          }
-        },
         {
           role: "reload",
           label: "Refresh"
@@ -155,10 +136,10 @@ function configureMenu() {
           role: "togglefullscreen",
           label: "Full Screen"
         },
-        {
-          role: "toggledevtools",
-          label: "Developer Tools"
-        },
+        // {
+        //   role: "toggledevtools",
+        //   label: "Developer Tools"
+        // },
         { type: "separator" },
         {
           role: "resetzoom",
@@ -186,7 +167,7 @@ function configureMenu() {
         {
           label: "Report Issue",
           click() {
-            require("electron").shell.openExternal("https://github.com/your-username/poly-tv/issues");
+            require("electron").shell.openExternal("https://github.com/UTKARSHKUMAR712/Poly_movies/issues");
           }
         }
       ]
@@ -201,6 +182,11 @@ function registerDownloadHandler() {
   const { download } = require('electron');
   const path = require('path');
   const os = require('os');
+  
+  // Track active download items
+  const activeDownloads = new Map();
+  // Track download progress for speed calculation
+  const downloadProgress = new Map();
 
   // Handle download requests from renderer
   ipcMain.handle('start-download', async (event, options) => {
@@ -230,6 +216,12 @@ function registerDownloadHandler() {
 
           console.log(`📥 Download started: ${item.getFilename()}`);
           console.log(`📁 Save path: ${downloadPath}`);
+          
+          // Store download item for cancellation
+          if (options.downloadId) {
+            activeDownloads.set(options.downloadId, item);
+            console.log(`📊 Tracking download: ${options.downloadId}`);
+          }
 
           // Track download progress
           item.on('updated', (event, state) => {
@@ -242,7 +234,30 @@ function registerDownloadHandler() {
                 const receivedBytes = item.getReceivedBytes();
                 const totalBytes = item.getTotalBytes();
                 const progress = totalBytes > 0 ? (receivedBytes / totalBytes) * 100 : 0;
-                const speed = calculateDownloadSpeed(receivedBytes, item.getStartTime());
+                
+                // Improved speed calculation
+                const now = Date.now();
+                const downloadId = options.downloadId;
+                let speed = 0;
+                
+                if (downloadId && downloadProgress.has(downloadId)) {
+                  const lastProgress = downloadProgress.get(downloadId);
+                  const timeDiff = (now - lastProgress.timestamp) / 1000; // seconds
+                  const bytesDiff = receivedBytes - lastProgress.bytes;
+                  
+                  if (timeDiff > 0) {
+                    speed = bytesDiff / timeDiff; // bytes per second
+                  }
+                }
+                
+                // Store current progress for next calculation
+                if (downloadId) {
+                  downloadProgress.set(downloadId, {
+                    bytes: receivedBytes,
+                    timestamp: now
+                  });
+                }
+                
                 const eta = calculateETA(receivedBytes, totalBytes, speed);
 
                 // Send progress to renderer
@@ -263,6 +278,13 @@ function registerDownloadHandler() {
           });
 
           item.once('done', (event, state) => {
+            // Clean up tracking
+            if (options.downloadId) {
+              activeDownloads.delete(options.downloadId);
+              downloadProgress.delete(options.downloadId);
+              console.log(`📊 Removed from tracking: ${options.downloadId}`);
+            }
+            
             if (state === 'completed') {
               console.log('✅ Download completed successfully');
               resolve({ 
@@ -305,9 +327,23 @@ function registerDownloadHandler() {
 
   // Handle download cancellation
   ipcMain.handle('cancel-download', async (event, downloadId) => {
-    // Implementation for canceling downloads
     console.log(`🚫 Cancel download requested: ${downloadId}`);
-    return { success: true };
+    
+    const downloadItem = activeDownloads.get(downloadId);
+    if (downloadItem && !downloadItem.isDone()) {
+      try {
+        downloadItem.cancel();
+        activeDownloads.delete(downloadId);
+        console.log(`✅ Download cancelled successfully: ${downloadId}`);
+        return { success: true, message: 'Download cancelled' };
+      } catch (error) {
+        console.error(`❌ Failed to cancel download: ${error.message}`);
+        return { success: false, error: error.message };
+      }
+    } else {
+      console.log(`⚠️ Download not found or already completed: ${downloadId}`);
+      return { success: false, error: 'Download not found or already completed' };
+    }
   });
 
   // Handle download pause
