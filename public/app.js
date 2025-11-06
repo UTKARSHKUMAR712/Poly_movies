@@ -2,15 +2,20 @@
 if (typeof require !== 'undefined') {
     try {
         const { ipcRenderer } = require("electron");
-        
+
         ipcRenderer.on("show-download-dialog", () => {
             // Open download UI
             showDownloadDialog();
         });
-        
+
         ipcRenderer.on("show-about-dialog", () => {
             // Show about info popup
             showAboutDialog();
+        });
+
+        ipcRenderer.on("show-downloads-panel", () => {
+            // Show downloads panel
+            showDownloadsPanel();
         });
     } catch (error) {
         console.log('Running in browser mode, IPC not available');
@@ -77,25 +82,126 @@ function showAboutDialog() {
     document.body.appendChild(modal);
 }
 
-// Download function
-function startDownload() {
+// Simple fallback download function
+async function trySimpleDownload(url, filename) {
+    try {
+        // Create download link
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        console.log('✅ Simple download started:', filename);
+        return true;
+    } catch (error) {
+        console.error('❌ Simple download failed:', error);
+        return false;
+    }
+}
+
+// Enhanced download function with progress tracking
+async function startDownload() {
     const url = document.getElementById('downloadUrl').value;
     if (!url) {
         alert('Please enter a valid URL');
         return;
     }
-    
-    // Create download link
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'stream.m3u8';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    // Close modal
-    document.querySelector('.modal-overlay').remove();
-    showToast('Download started', 'success');
+
+    // Extract filename from URL or use default
+    const filename = extractFilenameFromUrl(url) || 'stream.m3u8';
+
+    try {
+        // Start download with progress tracking if available
+        if (window.DownloadManager && typeof window.DownloadManager.startDownload === 'function') {
+            const downloadId = await DownloadManager.startDownload(url, filename, {
+                source: 'manual_download',
+                userInitiated: true
+            });
+
+            showToast(`Download started: ${filename}`, 'success');
+            console.log(`📥 Started download with ID: ${downloadId}`);
+        } else {
+            // Fallback to simple download
+            const success = await trySimpleDownload(url, filename);
+            if (success) {
+                showToast(`Download started: ${filename}`, 'success');
+            } else {
+                showToast('Download may have started. Check your downloads folder.', 'info');
+            }
+        }
+
+        // Close modal
+        const modal = document.querySelector('.modal-overlay');
+        if (modal) {
+            modal.remove();
+        }
+
+    } catch (error) {
+        console.error('❌ Download failed:', error);
+        showToast(`Download failed: ${error.message}`, 'error');
+    }
+}
+
+// Helper function to extract filename from URL
+function extractFilenameFromUrl(url) {
+    try {
+        const urlObj = new URL(url);
+        const pathname = urlObj.pathname;
+        const filename = pathname.split('/').pop();
+
+        if (filename && filename.includes('.')) {
+            return filename;
+        }
+
+        // Generate filename based on content type or default
+        const extension = url.includes('.m3u8') ? '.m3u8' :
+            url.includes('.mp4') ? '.mp4' :
+                url.includes('.mkv') ? '.mkv' : '.mp4';
+
+        return `download_${Date.now()}${extension}`;
+    } catch (error) {
+        return `download_${Date.now()}.mp4`;
+    }
+}
+
+// Generate smart download filename based on stream and content info
+function generateDownloadFilename(stream, contentTitle) {
+    try {
+        // Clean content title for filename
+        let title = contentTitle || 'Video';
+        title = title.replace(/[<>:"/\\|?*]/g, ''); // Remove invalid filename characters
+        title = title.substring(0, 50); // Limit length
+
+        // Determine file extension
+        let extension = '.mp4'; // default
+        if (stream.type === 'm3u8' || stream.link.includes('.m3u8')) {
+            extension = '.m3u8';
+        } else if (stream.link.includes('.mkv')) {
+            extension = '.mkv';
+        } else if (stream.link.includes('.avi')) {
+            extension = '.avi';
+        } else if (stream.link.includes('.mov')) {
+            extension = '.mov';
+        }
+
+        // Add quality info if available
+        const quality = stream.quality ? `_${stream.quality}p` : '';
+
+        // Add server info for identification
+        const server = stream.server ? `_${stream.server.replace(/[<>:"/\\|?*]/g, '')}` : '';
+
+        // Construct filename
+        const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const filename = `${title}${quality}${server}_${timestamp}${extension}`;
+
+        return filename;
+    } catch (error) {
+        console.error('Error generating filename:', error);
+        return `download_${Date.now()}.mp4`;
+    }
 }
 
 // Main App State.
@@ -986,11 +1092,12 @@ function renderStreamSelector(streams, provider, preferredStream = null) {
             downloadBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
 
-                console.log('🔽 Download button clicked for stream:', stream.server);
+                console.log('🔽 Enhanced download button clicked for stream:', stream.server);
                 showLoading(true, 'Preparing download...');
 
                 try {
                     let downloadUrl = stream.link;
+                    let filename = generateDownloadFilename(stream, state.currentMeta?.meta?.title);
 
                     // Extract if needed
                     if (stream.requiresExtraction) {
@@ -1016,17 +1123,32 @@ function renderStreamSelector(streams, provider, preferredStream = null) {
                         downloadUrl = `${API_BASE}/api/proxy/video?url=${encodeURIComponent(downloadUrl)}&headers=${headersParam}`;
                     }
 
-                    // Try multiple download methods
-                    const success = await tryDownloadMethods(downloadUrl, stream, state.currentMeta?.meta?.title);
+                    // Start enhanced download with progress tracking
+                    if (window.DownloadManager && typeof window.DownloadManager.startDownload === 'function') {
+                        const downloadId = await DownloadManager.startDownload(downloadUrl, filename, {
+                            source: 'stream_download',
+                            streamServer: stream.server,
+                            quality: stream.quality,
+                            contentTitle: state.currentMeta?.meta?.title,
+                            provider: state.selectedProvider,
+                            streamType: stream.type
+                        });
 
-                    if (success) {
-                        showToast('Download started successfully!', 'success', 3000);
+                        showToast(`Download started: ${filename}`, 'success', 3000);
+                        console.log(`📥 Started enhanced download with ID: ${downloadId}`);
                     } else {
-                        showToast('Download may have started. Check your downloads folder.', 'info', 4000);
+                        // Fallback to simple download with progress indicator
+                        console.log('📥 DownloadManager not available, using fallback download');
+                        const success = await trySimpleDownloadWithProgress(downloadUrl, filename);
+                        if (success) {
+                            showToast(`Download started: ${filename}`, 'success', 3000);
+                        } else {
+                            showToast('Download may have started. Check your downloads folder.', 'info', 4000);
+                        }
                     }
 
                 } catch (error) {
-                    console.error('❌ Download failed:', error);
+                    console.error('❌ Enhanced download failed:', error);
                     showError('Download failed: ' + error.message);
                 } finally {
                     showLoading(false);
@@ -4640,4 +4762,827 @@ async function tryCopyDownloadUrl(url) {
         console.warn('❌ Clipboard copy failed:', error);
         return false;
     }
+}// Demo function to test download system (can be called from browser console)
+window.testDownloadSystem = async function () {
+    console.log('🧪 Testing Download System...');
+
+    // Check if DownloadManager is available
+    console.log('📊 DownloadManager available:', !!window.DownloadManager);
+    console.log('📊 DownloadManager type:', typeof window.DownloadManager);
+
+    if (window.DownloadManager) {
+        console.log('📊 DownloadManager methods:', Object.keys(window.DownloadManager));
+    }
+
+    // Test with a sample video URL
+    const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4';
+    const testFilename = 'test_video_sample.mp4';
+
+    try {
+        if (window.DownloadManager && typeof window.DownloadManager.startDownload === 'function') {
+            const downloadId = await window.DownloadManager.startDownload(testUrl, testFilename, {
+                source: 'test_system',
+                description: 'Test download to verify system functionality'
+            });
+
+            console.log('✅ Test download started successfully:', downloadId);
+            showToast('Test download started! Check the download panel.', 'success', 3000);
+            return downloadId;
+        } else {
+            console.log('⚠️ DownloadManager not available, testing fallback...');
+
+            // Test fallback system
+            if (window.trySimpleDownloadWithProgress) {
+                const success = await trySimpleDownloadWithProgress(testUrl, testFilename);
+                if (success) {
+                    console.log('✅ Fallback download test successful');
+                    showToast('Fallback download test started!', 'success', 3000);
+                    return 'fallback_success';
+                }
+            }
+
+            console.error('❌ No download system available');
+            showToast('No download system available', 'error');
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Test download failed:', error);
+        showToast(`Test download failed: ${error.message}`, 'error');
+        return null;
+    }
+};
+
+// Demo function to show download statistics
+window.showDownloadStats = function () {
+    if (window.DownloadManager) {
+        const stats = window.DownloadManager.getDownloadStats();
+        console.log('📊 Download Statistics:', stats);
+
+        const message = `Downloads: ${stats.total} total, ${stats.downloading} active, ${stats.completed} completed, ${stats.failed} failed`;
+        showToast(message, 'info', 4000);
+
+        return stats;
+    } else {
+        console.error('❌ DownloadManager not available');
+        return null;
+    }
+};
+
+console.log('🎬 PolyMovies Enhanced Download System Loaded');
+console.log('💡 Try: testDownloadSystem() or showDownloadStats() in console');
+console.log('💡 Or try: testSimpleDownload() to test the enhanced download panel');
+console.log('💡 Or try: testDownloadPanel() to test the download panel UI');
+
+// Enhanced Download Manager with Visual Progress
+const SimpleDownloadManager = {
+    downloads: new Map(),
+    downloadCounter: 0,
+
+    // Initialize the download manager
+    init() {
+        this.createDownloadPanel();
+        console.log('📥 Simple Download Manager initialized');
+    },
+
+    // Create the download panel UI
+    createDownloadPanel() {
+        if (document.getElementById('simpleDownloadPanel')) return;
+
+        const panel = document.createElement('div');
+        panel.id = 'simpleDownloadPanel';
+        panel.className = 'simple-download-panel';
+        panel.innerHTML = `
+            <div class="download-panel-header">
+                <h3>📥 Downloads</h3>
+                <div class="download-panel-controls">
+                    <button onclick="SimpleDownloadManager.togglePanel()" class="panel-toggle-btn">−</button>
+                    <button onclick="SimpleDownloadManager.clearCompleted()" class="panel-clear-btn">Clear</button>
+                </div>
+            </div>
+            <div class="download-panel-content" id="simpleDownloadContent">
+                <div class="no-downloads">No active downloads</div>
+            </div>
+        `;
+
+        document.body.appendChild(panel);
+    },
+
+    // Start a new download with progress tracking
+    startDownload(url, filename) {
+        const downloadId = ++this.downloadCounter;
+        const download = {
+            id: downloadId,
+            url: url,
+            filename: filename,
+            status: 'starting',
+            progress: 0,
+            downloadedBytes: 0,
+            totalBytes: 0,
+            speed: 0,
+            startTime: Date.now(),
+            lastUpdate: Date.now()
+        };
+
+        this.downloads.set(downloadId, download);
+        this.updateUI();
+        this.showPanel();
+
+        // Start the download process
+        this.performDownload(download);
+
+        return downloadId;
+    },
+
+    // Perform the actual download with progress simulation
+    async performDownload(download) {
+        try {
+            download.status = 'downloading';
+            this.updateUI();
+
+            // Try to get file size first
+            try {
+                const headResponse = await fetch(download.url, { method: 'HEAD' });
+                if (headResponse.ok) {
+                    const contentLength = headResponse.headers.get('content-length');
+                    if (contentLength) {
+                        download.totalBytes = parseInt(contentLength);
+                    }
+                }
+            } catch (e) {
+                console.log('Could not get file size, continuing...');
+            }
+
+            // Start actual download
+            const response = await fetch(download.url);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const reader = response.body.getReader();
+            const chunks = [];
+            let receivedLength = 0;
+
+            // Read the stream with progress updates
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) break;
+
+                chunks.push(value);
+                receivedLength += value.length;
+
+                // Update progress
+                download.downloadedBytes = receivedLength;
+                if (download.totalBytes > 0) {
+                    download.progress = (receivedLength / download.totalBytes) * 100;
+                } else {
+                    // Simulate progress if we don't know total size
+                    download.progress = Math.min(90, (receivedLength / (1024 * 1024)) * 10); // 10% per MB
+                }
+
+                // Calculate speed
+                const now = Date.now();
+                const timeDiff = (now - download.lastUpdate) / 1000;
+                if (timeDiff > 0.5) { // Update every 500ms
+                    const bytesDiff = receivedLength - (download.lastBytes || 0);
+                    download.speed = bytesDiff / timeDiff;
+                    download.lastBytes = receivedLength;
+                    download.lastUpdate = now;
+                    this.updateUI();
+                }
+
+                // Small delay to prevent UI blocking
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
+
+            // Create blob and download
+            const blob = new Blob(chunks);
+            const downloadUrl = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = download.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            URL.revokeObjectURL(downloadUrl);
+
+            // Mark as completed
+            download.status = 'completed';
+            download.progress = 100;
+            this.updateUI();
+
+            // Show success notification
+            showToast(`Download completed: ${download.filename}`, 'success', 3000);
+
+        } catch (error) {
+            console.error('❌ Download failed:', error);
+            download.status = 'failed';
+            download.error = error.message;
+            this.updateUI();
+            showToast(`Download failed: ${download.filename}`, 'error', 3000);
+        }
+    },
+
+    // Update the UI
+    updateUI() {
+        const content = document.getElementById('simpleDownloadContent');
+        if (!content) return;
+
+        const downloads = Array.from(this.downloads.values());
+
+        if (downloads.length === 0) {
+            content.innerHTML = '<div class="no-downloads">No active downloads</div>';
+            return;
+        }
+
+        content.innerHTML = downloads.map(download => this.createDownloadItem(download)).join('');
+
+        // Show panel if there are active downloads
+        const panel = document.getElementById('simpleDownloadPanel');
+        if (panel && downloads.some(d => d.status === 'downloading')) {
+            panel.classList.add('has-active');
+        }
+    },
+
+    // Create download item HTML
+    createDownloadItem(download) {
+        const progressPercent = Math.round(download.progress);
+        const downloadedMB = (download.downloadedBytes / (1024 * 1024)).toFixed(1);
+        const totalMB = download.totalBytes > 0 ? (download.totalBytes / (1024 * 1024)).toFixed(1) : '?';
+        const speedText = this.formatSpeed(download.speed);
+        const statusIcon = this.getStatusIcon(download.status);
+
+        return `
+            <div class="download-item ${download.status}" data-id="${download.id}">
+                <div class="download-header">
+                    <span class="status-icon">${statusIcon}</span>
+                    <span class="filename" title="${download.filename}">${download.filename}</span>
+                    <button onclick="SimpleDownloadManager.removeDownload(${download.id})" class="remove-btn">×</button>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                    </div>
+                    <span class="progress-text">${progressPercent}%</span>
+                </div>
+                
+                <div class="download-stats">
+                    <span class="size-info">${downloadedMB} MB / ${totalMB} MB</span>
+                    ${download.status === 'downloading' ? `<span class="speed-info">${speedText}</span>` : ''}
+                    ${download.error ? `<span class="error-info">Error: ${download.error}</span>` : ''}
+                </div>
+            </div>
+        `;
+    },
+
+    // Get status icon
+    getStatusIcon(status) {
+        const icons = {
+            starting: '🔄',
+            downloading: '📥',
+            completed: '✅',
+            failed: '❌'
+        };
+        return icons[status] || '📄';
+    },
+
+    // Format download speed
+    formatSpeed(bytesPerSecond) {
+        if (!bytesPerSecond || bytesPerSecond === 0) return '0 B/s';
+
+        const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+        let size = bytesPerSecond;
+        let unitIndex = 0;
+
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+
+        return `${size.toFixed(1)} ${units[unitIndex]}`;
+    },
+
+    // Toggle panel visibility
+    togglePanel() {
+        const panel = document.getElementById('simpleDownloadPanel');
+        if (panel) {
+            panel.classList.toggle('collapsed');
+            const toggleBtn = panel.querySelector('.panel-toggle-btn');
+            if (toggleBtn) {
+                toggleBtn.textContent = panel.classList.contains('collapsed') ? '+' : '−';
+            }
+        }
+    },
+
+    // Show panel
+    showPanel() {
+        const panel = document.getElementById('simpleDownloadPanel');
+        if (panel) {
+            panel.classList.remove('collapsed');
+            panel.style.display = 'block';
+            const toggleBtn = panel.querySelector('.panel-toggle-btn');
+            if (toggleBtn) {
+                toggleBtn.textContent = '−';
+            }
+        }
+    },
+
+    // Remove a download
+    removeDownload(downloadId) {
+        this.downloads.delete(downloadId);
+        this.updateUI();
+    },
+
+    // Clear completed downloads
+    clearCompleted() {
+        const toRemove = [];
+        this.downloads.forEach((download, id) => {
+            if (download.status === 'completed' || download.status === 'failed') {
+                toRemove.push(id);
+            }
+        });
+
+        toRemove.forEach(id => this.downloads.delete(id));
+        this.updateUI();
+
+        if (toRemove.length > 0) {
+            showToast(`Cleared ${toRemove.length} completed downloads`, 'info', 2000);
+        }
+    }
+};
+
+// Initialize the download manager when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    SimpleDownloadManager.init();
+});
+
+// Enhanced download progress function
+function showSimpleDownloadProgress(filename) {
+    // Use the enhanced download manager instead
+    return SimpleDownloadManager.startDownload('', filename);
 }
+
+// Update the trySimpleDownload function to show progress
+async function trySimpleDownloadWithProgress(url, filename) {
+    try {
+        // Use the enhanced download manager
+        const downloadId = SimpleDownloadManager.startDownload(url, filename);
+        console.log('✅ Enhanced download started:', filename, 'ID:', downloadId);
+        return true;
+    } catch (error) {
+        console.error('❌ Enhanced download failed:', error);
+        return false;
+    }
+}
+
+// Add CSS for enhanced download panel
+const style = document.createElement('style');
+style.textContent = `
+    .simple-download-panel {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 400px;
+        max-height: 500px;
+        background: rgba(0, 0, 0, 0.95);
+        border: 2px solid #e50914;
+        border-radius: 12px;
+        z-index: 10000;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        display: none;
+    }
+    
+    .simple-download-panel.has-active {
+        display: block;
+        border-color: #4CAF50;
+        box-shadow: 0 8px 32px rgba(76, 175, 80, 0.3);
+    }
+    
+    .simple-download-panel.collapsed {
+        transform: translateY(calc(100% - 60px));
+    }
+    
+    .download-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(229, 9, 20, 0.1);
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .download-panel-header h3 {
+        margin: 0;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    
+    .download-panel-controls {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .panel-toggle-btn,
+    .panel-clear-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s ease;
+    }
+    
+    .panel-toggle-btn:hover,
+    .panel-clear-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.05);
+    }
+    
+    .download-panel-content {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 10px;
+    }
+    
+    .download-panel-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .download-panel-content::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+    
+    .download-panel-content::-webkit-scrollbar-thumb {
+        background: #e50914;
+        border-radius: 3px;
+    }
+    
+    .no-downloads {
+        text-align: center;
+        color: #999;
+        padding: 40px 20px;
+        font-style: italic;
+    }
+    
+    .download-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    .download-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .download-item.downloading {
+        border-color: #4CAF50;
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+    }
+    
+    .download-item.completed {
+        border-color: #2196F3;
+        background: rgba(33, 150, 243, 0.1);
+    }
+    
+    .download-item.failed {
+        border-color: #f44336;
+        background: rgba(244, 67, 54, 0.1);
+    }
+    
+    .download-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .status-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+    
+    .filename {
+        color: #fff;
+        font-weight: 500;
+        font-size: 14px;
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .remove-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #fff;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        transition: all 0.2s ease;
+    }
+    
+    .remove-btn:hover {
+        background: rgba(255, 0, 0, 0.3);
+        transform: scale(1.1);
+    }
+    
+    .progress-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    
+    .progress-bar {
+        flex: 1;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+        position: relative;
+    }
+    
+    .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    
+    .progress-text {
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        min-width: 35px;
+        text-align: right;
+    }
+    
+    .download-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: #ccc;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .size-info {
+        font-weight: 500;
+    }
+    
+    .speed-info {
+        color: #4CAF50;
+        font-weight: 600;
+    }
+    
+    .error-info {
+        color: #f44336;
+        font-weight: 500;
+        flex: 1 1 100%;
+        margin-top: 5px;
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .simple-download-panel {
+            width: calc(100vw - 40px);
+            right: 20px;
+            left: 20px;
+            bottom: 10px;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// Enhanced download function with progress tracking
+async function startDownload() {
+    const url = document.getElementById('downloadUrl').value;
+    if (!url) {
+        alert('Please enter a valid URL');
+        return;
+    }
+
+    // Extract filename from URL or use default
+    const filename = extractFilenameFromUrl(url) || 'stream.m3u8';
+
+    try {
+        // Start download with progress tracking if available
+        if (window.DownloadManager && typeof window.DownloadManager.startDownload === 'function') {
+            const downloadId = await DownloadManager.startDownload(url, filename, {
+                source: 'manual_download',
+                userInitiated: true
+            });
+
+            showToast(`Download started: ${filename}`, 'success');
+            console.log(`📥 Started download with ID: ${downloadId}`);
+        } else {
+            // Fallback to simple download with progress indicator
+            const success = await trySimpleDownloadWithProgress(url, filename);
+            if (success) {
+                showToast(`Download started: ${filename}`, 'success');
+            } else {
+                showToast('Download may have started. Check your downloads folder.', 'info');
+            }
+        }
+
+        // Close modal
+        const modal = document.querySelector('.modal-overlay');
+        if (modal) {
+            modal.remove();
+        }
+
+    } catch (error) {
+        console.error('❌ Download failed:', error);
+        showToast(`Download failed: ${error.message}`, 'error');
+    }
+}
+
+// Test function for simple download system
+window.testSimpleDownload = function () {
+    console.log('🧪 Testing Simple Download System...');
+
+    // Test with a small sample file
+    const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4';
+    const testFilename = 'test_sample_video.mp4';
+
+    if (window.trySimpleDownloadWithProgress) {
+        trySimpleDownloadWithProgress(testUrl, testFilename);
+        console.log('✅ Simple download test started');
+        showToast('Simple download test started! Check your downloads.', 'success', 3000);
+        return true;
+    } else {
+        console.error('❌ Simple download function not available');
+        showToast('Simple download function not loaded', 'error');
+        return false;
+    }
+};
+
+// Test function for download notification
+window.testDownloadNotification = function () {
+    console.log('🧪 Testing Download Notification...');
+
+    if (window.showSimpleDownloadProgress) {
+        showSimpleDownloadProgress('test_notification_file.mp4');
+        console.log('✅ Download notification test completed');
+        return true;
+    } else {
+        console.error('❌ Download notification function not available');
+        return false;
+    }
+};
+
+// Test function for enhanced download system
+window.testSimpleDownload = function () {
+    console.log('🧪 Testing Enhanced Download System...');
+
+    // Test with a small sample file
+    const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4';
+    const testFilename = 'test_sample_video.mp4';
+
+    if (window.SimpleDownloadManager) {
+        const downloadId = SimpleDownloadManager.startDownload(testUrl, testFilename);
+        console.log('✅ Enhanced download test started, ID:', downloadId);
+        showToast('Enhanced download test started! Check the download panel.', 'success', 3000);
+        return downloadId;
+    } else {
+        console.error('❌ Enhanced download manager not available');
+        showToast('Enhanced download manager not loaded', 'error');
+        return false;
+    }
+};
+
+// Test function for download panel
+window.testDownloadPanel = function () {
+    console.log('🧪 Testing Download Panel...');
+
+    if (window.SimpleDownloadManager) {
+        // Show the panel
+        SimpleDownloadManager.showPanel();
+
+        // Add a test download
+        const downloadId = SimpleDownloadManager.startDownload(
+            'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
+            'panel_test_video.mp4'
+        );
+
+        console.log('✅ Download panel test completed, ID:', downloadId);
+        showToast('Download panel opened with test download!', 'success', 3000);
+        return downloadId;
+    } else {
+        console.error('❌ Download panel not available');
+        return false;
+    }
+};
+
+// Make SimpleDownloadManager globally accessible
+window.SimpleDownloadManager = SimpleDownloadManager;
+
+// Function to show downloads panel (called from Electron menu or manually)
+window.showDownloadsPanel = function () {
+    console.log('📥 Showing downloads panel from menu');
+
+    if (window.DownloadManager && typeof window.DownloadManager.showPanel === 'function') {
+        window.DownloadManager.showPanel();
+        showToast('Downloads panel opened', 'info', 2000);
+    } else {
+        console.error('❌ DownloadManager not available');
+        showToast('Download system not loaded', 'error');
+    }
+};
+
+// Function to hide downloads panel
+window.hideDownloadsPanel = function () {
+    console.log('📥 Hiding downloads panel');
+
+    if (window.DownloadManager && typeof window.DownloadManager.hidePanel === 'function') {
+        window.DownloadManager.hidePanel();
+        showToast('Downloads panel closed', 'info', 1500);
+    }
+};
+
+// Test function for download panel visibility
+window.testDownloadPanel = function () {
+    console.log('🧪 Testing Download Panel Show/Hide...');
+
+    // Show panel
+    console.log('📥 Showing panel...');
+    showDownloadsPanel();
+
+    // Hide panel after 3 seconds
+    setTimeout(() => {
+        console.log('📥 Hiding panel...');
+        hideDownloadsPanel();
+    }, 3000);
+
+    // Show panel again after 6 seconds
+    setTimeout(() => {
+        console.log('📥 Showing panel again...');
+        showDownloadsPanel();
+    }, 6000);
+
+    console.log('✅ Panel visibility test started - watch for 6 seconds');
+};// Test function for the new download button and progress tracking
+window.testNewDownloadSystem = function() {
+    console.log('🧪 Testing New Download System with Progress...');
+    
+    // Test the header button
+    const downloadBtn = document.getElementById('downloadsBtn');
+    console.log('📊 Download button found:', !!downloadBtn);
+    
+    // Test a download with progress tracking
+    if (window.DownloadManager) {
+        console.log('📥 Starting test download with progress tracking...');
+        
+        // Use a larger file to see progress
+        const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_5mb.mp4';
+        const testFilename = 'progress_test_video.mp4';
+        
+        DownloadManager.startDownload(testUrl, testFilename, {
+            source: 'progress_test',
+            description: 'Testing progress tracking'
+        }).then(downloadId => {
+            console.log('✅ Test download started with ID:', downloadId);
+            console.log('📊 Watch the download panel and header button for progress updates');
+        }).catch(error => {
+            console.error('❌ Test download failed:', error);
+        });
+    } else {
+        console.error('❌ DownloadManager not available');
+    }
+};

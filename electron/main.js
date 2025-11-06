@@ -19,6 +19,7 @@ if (!singleInstanceLock) {
 }
 
 registerExternalPlayerHandler();
+registerDownloadHandler();
 
 app.on("second-instance", () => {
   if (mainWindow) {
@@ -194,6 +195,134 @@ function configureMenu() {
 
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
+}
+
+function registerDownloadHandler() {
+  const { download } = require('electron');
+  const path = require('path');
+  const os = require('os');
+
+  // Handle download requests from renderer
+  ipcMain.handle('start-download', async (event, options) => {
+    const { url, filename } = options;
+    
+    if (!url) {
+      return { success: false, error: 'No URL provided' };
+    }
+
+    try {
+      console.log(`📥 Starting download: ${filename || 'Unknown file'}`);
+      
+      return new Promise((resolve) => {
+        if (!mainWindow) {
+          resolve({ success: false, error: 'Main window not available' });
+          return;
+        }
+
+        mainWindow.webContents.downloadURL(url);
+
+        // Handle download events
+        mainWindow.webContents.session.on('will-download', (event, item, webContents) => {
+          // Set download path
+          const downloadsPath = path.join(os.homedir(), 'Downloads');
+          const downloadPath = path.join(downloadsPath, filename || item.getFilename());
+          item.setSavePath(downloadPath);
+
+          console.log(`📥 Download started: ${item.getFilename()}`);
+          console.log(`📁 Save path: ${downloadPath}`);
+
+          // Track download progress
+          item.on('updated', (event, state) => {
+            if (state === 'interrupted') {
+              console.log('📥 Download interrupted');
+            } else if (state === 'progressing') {
+              if (item.isPaused()) {
+                console.log('📥 Download paused');
+              } else {
+                const receivedBytes = item.getReceivedBytes();
+                const totalBytes = item.getTotalBytes();
+                const progress = totalBytes > 0 ? (receivedBytes / totalBytes) * 100 : 0;
+                const speed = calculateDownloadSpeed(receivedBytes, item.getStartTime());
+                const eta = calculateETA(receivedBytes, totalBytes, speed);
+
+                // Send progress to renderer
+                webContents.send('download-progress', {
+                  downloadId: options.downloadId,
+                  progress: progress,
+                  downloadedBytes: receivedBytes,
+                  totalBytes: totalBytes,
+                  speed: speed,
+                  eta: eta,
+                  state: state,
+                  filename: item.getFilename()
+                });
+
+                console.log(`📥 Download progress: ${progress.toFixed(1)}% (${receivedBytes}/${totalBytes} bytes)`);
+              }
+            }
+          });
+
+          item.once('done', (event, state) => {
+            if (state === 'completed') {
+              console.log('✅ Download completed successfully');
+              resolve({ 
+                success: true, 
+                path: downloadPath,
+                filename: item.getFilename(),
+                size: item.getReceivedBytes()
+              });
+            } else {
+              console.log(`❌ Download failed: ${state}`);
+              resolve({ 
+                success: false, 
+                error: `Download ${state}`,
+                state: state
+              });
+            }
+          });
+        });
+      });
+
+    } catch (error) {
+      console.error('❌ Download error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Helper function to calculate download speed
+  function calculateDownloadSpeed(receivedBytes, startTime) {
+    const currentTime = Date.now();
+    const elapsedSeconds = (currentTime - startTime) / 1000;
+    return elapsedSeconds > 0 ? receivedBytes / elapsedSeconds : 0;
+  }
+
+  // Helper function to calculate ETA
+  function calculateETA(receivedBytes, totalBytes, speed) {
+    if (speed <= 0 || totalBytes <= 0) return 0;
+    const remainingBytes = totalBytes - receivedBytes;
+    return remainingBytes / speed;
+  }
+
+  // Handle download cancellation
+  ipcMain.handle('cancel-download', async (event, downloadId) => {
+    // Implementation for canceling downloads
+    console.log(`🚫 Cancel download requested: ${downloadId}`);
+    return { success: true };
+  });
+
+  // Handle download pause
+  ipcMain.handle('pause-download', async (event, downloadId) => {
+    // Implementation for pausing downloads
+    console.log(`⏸️ Pause download requested: ${downloadId}`);
+    return { success: true };
+  });
+
+  // Handle download resume
+  ipcMain.handle('resume-download', async (event, downloadId) => {
+    // Implementation for resuming downloads
+    console.log(`▶️ Resume download requested: ${downloadId}`);
+    return { success: true };
+  });
 }
 
 function registerExternalPlayerHandler() {
