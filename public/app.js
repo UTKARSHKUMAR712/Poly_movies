@@ -990,7 +990,7 @@ function renderStreamSelector(streams, provider, preferredStream = null) {
         }
 
         if (isPreferred) {
-            indicator += '<span style="font-size: 11px; color: #FFD700; margin-left: 5px;">⭐ Preferred</span>';
+            indicator += '<span style="font-size: 11px; color: #FFD700; margin-left: 5px;">Not Preferred Cf worker not working</span>';
         }
 
         if (hasDolbyAtmos) {
