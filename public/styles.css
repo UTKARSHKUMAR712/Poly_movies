@@ -7886,7 +7886,7 @@ et Video Overlay Controls */
     pointer-events: none;
     text-align: center;
 }
-/
+
 * Enhanced Cricket Channel Selector Styles */
 .cricket-channel-selector {
     background: rgba(0, 0, 0, 0.95);
@@ -8113,4 +8113,1037 @@ et Video Overlay Controls */
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}/* 
+Enhanced Download Manager Styles */
+.download-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 400px;
+    max-height: 500px;
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid #e50914;
+    border-radius: 12px;
+    z-index: 10000;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    transform: translateY(0);
+}
+
+.download-panel.collapsed {
+    transform: translateY(calc(100% - 60px));
+}
+
+.download-panel.has-active-downloads {
+    border-color: #4CAF50;
+    box-shadow: 0 8px 32px rgba(76, 175, 80, 0.3);
+}
+
+.download-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(229, 9, 20, 0.1);
+    border-radius: 10px 10px 0 0;
+}
+
+.download-panel-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.download-panel-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.download-close-btn,
+.download-clear-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.download-close-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.download-close-btn:hover {
+    background: rgba(229, 9, 20, 0.3);
+    border-color: #e50914;
+    transform: scale(1.1);
+}
+
+.download-clear-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.download-panel-content {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.download-panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.download-panel-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.download-panel-content::-webkit-scrollbar-thumb {
+    background: #e50914;
+    border-radius: 3px;
+}
+
+.no-downloads {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+    font-style: italic;
+}
+
+.download-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+}
+
+.download-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.download-item.downloading {
+    border-color: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+}
+
+.download-item.completed {
+    border-color: #2196F3;
+    background: rgba(33, 150, 243, 0.1);
+}
+
+.download-item.failed {
+    border-color: #f44336;
+    background: rgba(244, 67, 54, 0.1);
+}
+
+.download-item.paused {
+    border-color: #ff9800;
+    background: rgba(255, 152, 0, 0.1);
+}
+
+.download-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.download-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.download-status-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.download-filename {
+    color: #fff;
+    font-weight: 500;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.download-controls {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.download-control-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.download-control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.download-progress-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.download-progress-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.download-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.download-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.download-progress-text {
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 35px;
+    text-align: right;
+}
+
+.download-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #ccc;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.download-size {
+    font-weight: 500;
+}
+
+.download-speed {
+    color: #4CAF50;
+    font-weight: 600;
+}
+
+.download-eta {
+    color: #2196F3;
+}
+
+.download-error {
+    color: #f44336;
+    font-weight: 500;
+    flex: 1 1 100%;
+    margin-top: 5px;
+}
+
+/* Download Notifications */
+.download-notifications {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 350px;
+}
+
+.download-notification {
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    animation: slideInRight 0.3s ease;
+}
+
+.download-notification.success {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.download-notification.error {
+    border-color: #f44336;
+    background: rgba(244, 67, 54, 0.1);
+}
+
+.download-notification.info {
+    border-color: #2196F3;
+    background: rgba(33, 150, 243, 0.1);
+}
+
+.notification-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.notification-message {
+    color: #fff;
+    font-size: 13px;
+    flex: 1;
+    line-height: 1.4;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s ease;
+}
+
+.notification-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .download-panel {
+        width: calc(100vw - 40px);
+        right: 20px;
+        left: 20px;
+        bottom: 10px;
+    }
+    
+    .download-notifications {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .download-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .download-controls {
+        align-self: flex-end;
+    }
+    
+    .download-stats {
+        font-size: 10px;
+        justify-content: flex-start;
+    }
+}
+
+/* Enhanced download button styles */
+.stream-download-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.stream-download-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.stream-download-btn:hover::after {
+    left: 100%;
+}
+
+/* Download progress overlay for video player */
+.download-progress-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 8px;
+    padding: 10px;
+    color: white;
+    font-size: 12px;
+    z-index: 1000;
+    min-width: 200px;
+}
+
+.download-progress-overlay .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    margin: 5px 0;
+    overflow: hidden;
+}
+
+.download-progress-overlay .progress-fill {
+    height: 100%;
+    background: #4CAF50;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}/*
+ Downloads Button in Header */
+.downloads-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 36px;
+}
+
+.downloads-btn:hover {
+    background: rgba(255, 107, 53, 0.3);
+    border-color: #ff6b35;
+    transform: scale(1.05);
+}
+
+.downloads-btn.has-downloads {
+    background: rgba(76, 175, 80, 0.3);
+    border-color: #4CAF50;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .downloads-btn {
+        padding: 6px 10px;
+        font-size: 14px;
+        min-width: 36px;
+        height: 32px;
+        margin-left: 8px;
+    }
+}/* 
+Enhanced Cricket Match Cards with Detailed Information */
+.match-card {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(20, 20, 20, 0.95));
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 15px;
+    min-width: 400px;
+    max-width: 450px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.match-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ff6b35, #f7931e);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.match-card:hover {
+    transform: translateY(-5px);
+    border-color: #ff6b35;
+    box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+}
+
+.match-card:hover::before {
+    opacity: 1;
+}
+
+.match-card.live {
+    border-color: #4CAF50;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.4);
+}
+
+.match-card.live::before {
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    opacity: 1;
+}
+
+.match-card.upcoming {
+    border-color: #2196F3;
+}
+
+.match-card.upcoming::before {
+    background: linear-gradient(90deg, #2196F3, #03DAC6);
+}
+
+.match-card.completed {
+    border-color: #9E9E9E;
+    opacity: 0.8;
+}
+
+/* Status Indicators */
+.match-status-indicator {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 2;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.live {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+    border: 1px solid #4CAF50;
+    animation: pulse 2s infinite;
+}
+
+.status-badge.upcoming {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196F3;
+    border: 1px solid #2196F3;
+}
+
+.status-badge.completed {
+    background: rgba(158, 158, 158, 0.2);
+    color: #9E9E9E;
+    border: 1px solid #9E9E9E;
+}
+
+/* Match Header */
+.match-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.series-info {
+    flex: 1;
+}
+
+.series-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ff6b35;
+    margin-bottom: 5px;
+    line-height: 1.3;
+}
+
+.match-details {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.match-desc, .match-format, .match-type {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ccc;
+}
+
+.match-id {
+    font-size: 10px;
+    color: #666;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+
+/* Teams Container */
+.teams-container {
+    margin: 20px 0;
+}
+
+.team {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.team.batting {
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.team-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.flag {
+    width: 24px;
+    height: 18px;
+    border-radius: 3px;
+    object-fit: cover;
+}
+
+.team-names {
+    display: flex;
+    flex-direction: column;
+}
+
+.team-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.team-full-name {
+    font-size: 11px;
+    color: #ccc;
+    margin-top: 2px;
+}
+
+.team-score {
+    text-align: right;
+}
+
+.score {
+    font-size: 18px;
+    font-weight: 700;
+    color: #4CAF50;
+}
+
+.no-score {
+    font-size: 16px;
+    color: #666;
+}
+
+/* VS Divider */
+.vs-divider {
+    text-align: center;
+    margin: 10px 0;
+    position: relative;
+}
+
+.vs-text {
+    background: rgba(255, 107, 53, 0.2);
+    color: #ff6b35;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #ff6b35;
+}
+
+.batting-info {
+    font-size: 10px;
+    color: #4CAF50;
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+/* Match Status */
+.match-status {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.current-status {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.short-status {
+    font-size: 11px;
+    color: #ccc;
+}
+
+/* Timing Information */
+.match-timing {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 10px;
+    margin: 15px 0;
+}
+
+.timing-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.timing-label {
+    font-size: 11px;
+    color: #ccc;
+}
+
+.timing-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.time-confirmed {
+    font-size: 10px;
+    color: #4CAF50;
+}
+
+.time-tentative {
+    font-size: 10px;
+    color: #ff9800;
+}
+
+/* Venue Information */
+.venue-info {
+    margin: 15px 0;
+}
+
+.venue-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.venue-label {
+    font-size: 11px;
+    color: #ccc;
+}
+
+.venue-name {
+    font-size: 12px;
+    color: #fff;
+    text-align: right;
+    flex: 1;
+    margin-left: 10px;
+}
+
+.timezone-info {
+    font-size: 10px;
+    color: #666;
+    text-align: right;
+}
+
+/* Series Info Footer */
+.series-info-footer {
+    margin: 15px 0;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.series-duration {
+    font-size: 10px;
+    color: #666;
+    text-align: center;
+}
+
+/* Match Actions */
+.match-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.watch-btn, .details-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.watch-btn {
+    background: linear-gradient(135deg, #4CAF50, #8BC34A);
+    color: white;
+}
+
+.watch-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+.details-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.details-btn:hover {
+    background: rgba(255, 107, 53, 0.2);
+    border-color: #ff6b35;
+}
+
+/* Match Details Modal */
+.match-details-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.match-details-modal .modal-content {
+    background: rgba(20, 20, 20, 0.95);
+    border: 2px solid #ff6b35;
+    border-radius: 16px;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.match-details-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.match-details-modal .modal-header h3 {
+    margin: 0;
+    color: #ff6b35;
+}
+
+.match-details-modal .close-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s ease;
+}
+
+.match-details-modal .close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.match-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.info-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.info-section h4 {
+    margin: 0 0 10px 0;
+    color: #ff6b35;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255, 107, 53, 0.3);
+    padding-bottom: 5px;
+}
+
+.info-section h5 {
+    margin: 10px 0 5px 0;
+    color: #4CAF50;
+    font-size: 12px;
+}
+
+.info-section p {
+    margin: 5px 0;
+    font-size: 12px;
+    color: #ccc;
+}
+
+.team-score-details {
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .match-card {
+        min-width: 300px;
+        max-width: 350px;
+        padding: 15px;
+        margin: 10px;
+    }
+    
+    .match-info-grid {
+        grid-template-columns: 1fr;
+        padding: 15px;
+    }
+    
+    .timing-info, .venue-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .venue-name {
+        text-align: left;
+        margin-left: 0;
+    }
+}/* Cr
+icket Matches Container - Ensure All Matches Are Visible */
+.cricket-matches-horizontal {
+    width: 100%;
+    overflow-x: auto;
+    padding: 10px 0;
+}
+
+.cricket-matches-scroll {
+    display: flex;
+    gap: 15px;
+    padding: 0 10px;
+    min-height: 300px;
+    align-items: stretch;
+}
+
+/* Ensure match cards are properly sized and visible */
+.cricket-section .match-card {
+    flex: 0 0 auto;
+    min-width: 350px;
+    max-width: 400px;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Debug: Add border to see all match cards */
+.cricket-matches-scroll .match-card {
+    border: 1px solid rgba(255, 107, 53, 0.3) !important;
+}
+
+/* Horizontal scrolling for cricket matches */
+.cricket-matches-horizontal::-webkit-scrollbar {
+    height: 8px;
+}
+
+.cricket-matches-horizontal::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.cricket-matches-horizontal::-webkit-scrollbar-thumb {
+    background: #ff6b35;
+    border-radius: 4px;
+}
+
+.cricket-matches-horizontal::-webkit-scrollbar-thumb:hover {
+    background: #ff8c42;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .cricket-section .match-card {
+        min-width: 280px;
+        max-width: 320px;
+    }
+    
+    .cricket-matches-scroll {
+        gap: 10px;
+        padding: 0 5px;
+    }
 }
