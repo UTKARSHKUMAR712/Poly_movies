@@ -51,12 +51,27 @@ const LiveTVModule = {
         }
     },
 
-    // Load JSON playlist
+    // Load JSON playlist from GitHub
     async loadPlaylist() {
         try {
-            console.log('📺 Loading JSON playlist...');
+            console.log('📺 Loading JSON playlist from GitHub...');
 
-            const response = await fetch('/Tv/playlist-fixed.json');
+            const playlistUrl = 'https://raw.githubusercontent.com/UTKARSHKUMAR712/polyjson/main/playlist.json';
+            
+            // Add timeout for GitHub fetch
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
+            const response = await fetch(playlistUrl, {
+                signal: controller.signal,
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
+            
+            clearTimeout(timeoutId);
+            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
@@ -66,7 +81,7 @@ const LiveTVModule = {
                 throw new Error('Invalid JSON playlist format');
             }
 
-            console.log(`📺 Playlist loaded, processing ${channelsData.length} channels...`);
+            console.log(`📺 Playlist loaded from GitHub, processing ${channelsData.length} channels...`);
 
             this.channels = this.processChannelsData(channelsData);
 
@@ -74,11 +89,30 @@ const LiveTVModule = {
                 throw new Error('No valid channels found in playlist');
             }
 
-            console.log(`📺 Successfully loaded ${this.channels.length} channels`);
+            console.log(`📺 Successfully loaded ${this.channels.length} channels from GitHub`);
             this.saveChannelsToStorage();
 
         } catch (error) {
-            console.error('❌ Failed to load playlist:', error);
+            console.error('❌ Failed to load playlist from GitHub:', error);
+            
+            // Try fallback to local file if GitHub fails
+            try {
+                console.log('📺 Trying fallback to local playlist...');
+                const fallbackResponse = await fetch('/Tv/playlist-fixed.json');
+                
+                if (fallbackResponse.ok) {
+                    const fallbackData = await fallbackResponse.json();
+                    if (Array.isArray(fallbackData)) {
+                        console.log('📺 Using local fallback playlist');
+                        this.channels = this.processChannelsData(fallbackData);
+                        this.saveChannelsToStorage();
+                        return;
+                    }
+                }
+            } catch (fallbackError) {
+                console.error('❌ Fallback also failed:', fallbackError);
+            }
+            
             throw error;
         }
     },
@@ -766,7 +800,7 @@ const LiveTVModule = {
     // Refresh channels
     async refreshChannels() {
         try {
-            this.showLoading(true, 'Refreshing channels...');
+            this.showLoading(true, 'Refreshing channels from GitHub...');
 
             // Clear stored channels to force fresh load
             localStorage.removeItem('liveTVChannels');
@@ -777,10 +811,10 @@ const LiveTVModule = {
             this.categorizeChannels();
             this.renderCategories();
             this.renderAllChannels();
-            this.showToast(`🔄 Refreshed ${this.channels.length.toLocaleString()} channels`, 'success');
+            this.showToast(`🔄 Refreshed ${this.channels.length.toLocaleString()} channels from GitHub`, 'success');
         } catch (error) {
             console.error('❌ Failed to refresh channels:', error);
-            this.showToast('❌ Failed to refresh channels', 'error');
+            this.showToast('❌ Failed to refresh channels. Check your internet connection.', 'error');
         } finally {
             this.showLoading(false);
         }
@@ -843,7 +877,14 @@ const LiveTVModule = {
                 logo: channel.logo
             }));
 
-            localStorage.setItem('liveTVChannels', JSON.stringify(essentialData));
+            // Save with timestamp for cache management
+            const cacheData = {
+                channels: essentialData,
+                timestamp: Date.now(),
+                source: 'github'
+            };
+
+            localStorage.setItem('liveTVChannels', JSON.stringify(cacheData));
         } catch (error) {
             console.error('❌ Failed to save channels to storage:', error);
         }
@@ -854,11 +895,31 @@ const LiveTVModule = {
         try {
             const stored = localStorage.getItem('liveTVChannels');
             if (stored) {
-                this.channels = JSON.parse(stored);
-                return true;
+                const cacheData = JSON.parse(stored);
+                
+                // Check if it's new format with timestamp
+                if (cacheData.channels && cacheData.timestamp) {
+                    // Check if cache is less than 1 hour old
+                    const cacheAge = Date.now() - cacheData.timestamp;
+                    const maxCacheAge = 60 * 60 * 1000; // 1 hour
+                    
+                    if (cacheAge < maxCacheAge) {
+                        this.channels = cacheData.channels;
+                        console.log(`📺 Using cached channels (${Math.round(cacheAge / 60000)} minutes old)`);
+                        return true;
+                    } else {
+                        console.log('📺 Cache expired, will fetch fresh data');
+                        localStorage.removeItem('liveTVChannels');
+                    }
+                } else {
+                    // Old format, treat as channels array
+                    this.channels = Array.isArray(cacheData) ? cacheData : cacheData.channels || [];
+                    return this.channels.length > 0;
+                }
             }
         } catch (error) {
             console.error('❌ Failed to load channels from storage:', error);
+            localStorage.removeItem('liveTVChannels');
         }
         return false;
     },
