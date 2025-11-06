@@ -56,7 +56,7 @@ const LiveTVModule = {
         try {
             console.log('📺 Loading JSON playlist...');
 
-            const response = await fetch('/Tv/playlist-fixed.json');
+            const response = await fetch('playlist-fixed.json');
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
