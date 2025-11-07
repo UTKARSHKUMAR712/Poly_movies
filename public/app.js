@@ -49,38 +49,7 @@ function showDownloadDialog() {
     document.body.appendChild(modal);
 }
 
-// About dialog function
-function showAboutDialog() {
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-info-circle"></i> About PolyMovies</h3>
-                <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
-            </div>
-            <div class="modal-body">
-                <div style="text-align: center; padding: 20px;">
-                    <h2>PolyMovies</h2>
-                    <p>Version 1.0.0</p>
-                    <p>Stream movies, TV shows, and live TV channels</p>
-                    <br>
-                    <p><strong>Features:</strong></p>
-                    <ul style="text-align: left; max-width: 300px; margin: 0 auto;">
-                        <li>📺 Live TV streaming</li>
-                        <li>🎬 Movies & TV shows</li>
-                        <li>🇮🇳 Bollywood content</li>
-                        <li>🔍 Search & explore</li>
-                        <li>📱 Responsive design</li>
-                    </ul>
-                    <br>
-                    <p>Made with ❤️ by Utkarsh Kumar</p>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-}
+
 
 // Simple fallback download function
 async function trySimpleDownload(url, filename) {
@@ -250,24 +219,31 @@ window.API_BASE = API_BASE;
 
 // Enhanced Cache Management System
 const CacheManager = {
-    // Home Cache
+    // Home Cache - Disabled for now to fix event listener issues
     home: {
         isValid(provider) {
-            return state.homeCache.has(provider);
+            return false; // Temporarily disabled
+            // return state.homeCache.has(provider);
         },
 
         get(provider) {
+            return null; // Temporarily disabled
+            /*
             if (this.isValid(provider)) {
                 console.log('📋 Using cached home data for:', provider);
                 return state.homeCache.get(provider);
             }
             return null;
+            */
         },
 
         set(provider, data) {
+            // Temporarily disabled
+            /*
             console.log('💾 Caching home data for:', provider);
             state.homeCache.set(provider, data);
             state.homeCacheTimestamp.set(provider, Date.now());
+            */
         },
 
         clear(provider) {
@@ -688,35 +664,7 @@ window.showErrorLoading = function (show = true, message = 'Processing...') {
     showLoading(show, message, 'error');
 };
 
-// Demo function to test different loading contexts (for development)
-window.testLoadingSystem = function () {
-    console.log('🧪 Testing Modern Loading System...');
 
-    // Test default loading
-    showLoading(true, 'Testing default loading...');
-    setTimeout(() => {
-        showLoading(false);
-
-        // Test search loading
-        showSearchLoading(true, 'Testing search loading...');
-        setTimeout(() => {
-            showSearchLoading(false);
-
-            // Test download loading
-            showDownloadLoading(true, 'Testing download loading...');
-            setTimeout(() => {
-                showDownloadLoading(false);
-
-                // Test TMDB loading
-                showTMDBLoading(true, 'Testing TMDB loading...');
-                setTimeout(() => {
-                    showTMDBLoading(false);
-                    console.log('✅ Loading system test completed!');
-                }, 2000);
-            }, 2000);
-        }, 2000);
-    }, 2000);
-};
 
 function createSearchProviderSection(provider) {
     const section = document.createElement('div');
@@ -3388,11 +3336,13 @@ async function loadHomePage(skipNavigation = false) {
 
     const catalogContainer = document.getElementById('catalogSections');
 
-    // Check cache first
-    const cachedData = CacheManager.home.get(provider);
+    // Check cache first - but disable caching for now to fix the issue
+    const cachedData = null; // CacheManager.home.get(provider); // Temporarily disabled
     if (cachedData) {
         console.log('⚡ Loading home from cache');
-        catalogContainer.innerHTML = cachedData.html;
+        
+        // Instead of just setting innerHTML, rebuild the sections with proper event listeners
+        await rebuildHomeFromCache(catalogContainer, cachedData, provider);
 
         // Always refresh cricket section (live data)
         if (CACHE_CONFIG.EXCLUDE_CRICKET && window.CricketLive) {
@@ -3422,11 +3372,7 @@ async function loadHomePage(skipNavigation = false) {
             }
         }
 
-        // Render TMDB content sections
-        if (window.TMDBContentModule) {
-            await window.TMDBContentModule.renderAllSections(catalogContainer);
-        }
-
+        
         // Separate Movies and TV Shows sections
         const moviesSections = [];
         const tvShowsSections = [];
@@ -3445,11 +3391,11 @@ async function loadHomePage(skipNavigation = false) {
             });
         }
 
-        // Render Movies Section
+        // Render Movies Section FIRST (right after continue watching)
         if (moviesSections.length > 0) {
             const moviesHeader = document.createElement('div');
             moviesHeader.className = 'category-header';
-            moviesHeader.innerHTML = '<h2 class="category-title">🎬 Movies</h2>';
+            moviesHeader.innerHTML = '<h2 class="category-title">🎬 Movies from ' + provider.charAt(0).toUpperCase() + provider.slice(1) + '</h2>';
             catalogContainer.appendChild(moviesHeader);
 
             for (const item of moviesSections) {
@@ -3458,11 +3404,19 @@ async function loadHomePage(skipNavigation = false) {
             }
         }
 
+
+  // Render Other Sections
+        for (const item of otherSections) {
+            const section = await renderNetflixSection(provider, item);
+            if (section) catalogContainer.appendChild(section);
+        }
+
+
         // Render TV Shows Section
         if (tvShowsSections.length > 0) {
             const tvHeader = document.createElement('div');
             tvHeader.className = 'category-header';
-            tvHeader.innerHTML = '<h2 class="category-title">📺 TV Shows</h2>';
+            tvHeader.innerHTML = '<h2 class="category-title">📺 TV Shows from ' + provider.charAt(0).toUpperCase() + provider.slice(1) + '</h2>';
             catalogContainer.appendChild(tvHeader);
 
             for (const item of tvShowsSections) {
@@ -3471,11 +3425,12 @@ async function loadHomePage(skipNavigation = false) {
             }
         }
 
-        // Render Other Sections
-        for (const item of otherSections) {
-            const section = await renderNetflixSection(provider, item);
-            if (section) catalogContainer.appendChild(section);
+        // Render TMDB content sections (after provider content)
+        if (window.TMDBContentModule) {
+            await window.TMDBContentModule.renderAllSections(catalogContainer);
         }
+
+      
 
         // Render Popular Stars section at the end
         if (window.PopularStarsModule) {
@@ -3505,6 +3460,9 @@ async function loadHomePage(skipNavigation = false) {
             catalogContainer.appendChild(genresSection);
         }
 
+        // Cache disabled temporarily to fix event listener issues
+        // TODO: Implement proper state-based caching instead of HTML caching
+        /*
         // Cache the rendered content (excluding cricket section if configured)
         let htmlToCache = catalogContainer.innerHTML;
 
@@ -3519,11 +3477,16 @@ async function loadHomePage(skipNavigation = false) {
             }
         }
 
-        // Store in cache
+        // Store in cache with additional data for event listener reconstruction
         CacheManager.home.set(provider, {
             html: htmlToCache,
-            catalogData: catalogData
+            catalogData: catalogData,
+            moviesSections: moviesSections,
+            tvShowsSections: tvShowsSections,
+            otherSections: otherSections,
+            provider: provider
         });
+        */
 
         showView('home');
     } catch (error) {
@@ -4581,11 +4544,29 @@ async function renderHeroBanner(provider, catalogData) {
                 <div class="hero-content">
                     <h1 class="hero-title">${featuredPost.title}</h1>
                     <div class="hero-buttons">
-                        <button class="hero-btn hero-btn-play" onclick="loadDetails('${provider}', '${featuredPost.link.replace(/'/g, "\\'")}')">▶ Play</button>
-                        <button class="hero-btn hero-btn-info" onclick="loadDetails('${provider}', '${featuredPost.link.replace(/'/g, "\\'")}')">ℹ More Info</button>
+                        <button class="hero-btn hero-btn-play">▶ Play</button>
+                        <button class="hero-btn hero-btn-info">ℹ More Info</button>
                     </div>
                 </div>
             `;
+
+            // Add event listeners to hero buttons
+            const playBtn = heroBanner.querySelector('.hero-btn-play');
+            const infoBtn = heroBanner.querySelector('.hero-btn-info');
+            
+            if (playBtn) {
+                playBtn.addEventListener('click', () => {
+                    console.log('🎬 Hero play button clicked:', { provider, link: featuredPost.link });
+                    loadDetails(provider, featuredPost.link);
+                });
+            }
+            
+            if (infoBtn) {
+                infoBtn.addEventListener('click', () => {
+                    console.log('🎬 Hero info button clicked:', { provider, link: featuredPost.link });
+                    loadDetails(provider, featuredPost.link);
+                });
+            }
 
             container.appendChild(heroBanner);
 
@@ -4714,8 +4695,16 @@ async function renderNetflixSection(provider, catalogItem) {
         header.className = 'netflix-section-header';
         header.innerHTML = `
             <h3 class="netflix-section-title">${catalogItem.title}</h3>
-            <button class="netflix-view-all" onclick="loadFullCatalog('${provider}', '${catalogItem.filter}', '${catalogItem.title}')">View All ›</button>
+            <button class="netflix-view-all">View All ›</button>
         `;
+        
+        // Add event listener to view all button
+        const viewAllBtn = header.querySelector('.netflix-view-all');
+        viewAllBtn.addEventListener('click', () => {
+            console.log('📋 View all clicked:', { provider, filter: catalogItem.filter, title: catalogItem.title });
+            loadFullCatalog(provider, catalogItem.filter, catalogItem.title);
+        });
+        
         section.appendChild(header);
 
         const scrollContainer = document.createElement('div');
@@ -4733,7 +4722,13 @@ async function renderNetflixSection(provider, catalogItem) {
                     <h4>${post.title}</h4>
                 </div>
             `;
-            card.addEventListener('click', () => loadDetails(provider, post.link));
+            
+            // Add event listener instead of onclick attribute
+            card.addEventListener('click', () => {
+                console.log('🎬 Netflix card clicked:', { provider, link: post.link, title: post.title });
+                loadDetails(provider, post.link);
+            });
+            
             row.appendChild(card);
         });
 
@@ -4747,6 +4742,281 @@ async function renderNetflixSection(provider, catalogItem) {
     }
 }
 
+// Rebuild home page from cached data with proper event listeners
+async function rebuildHomeFromCache(catalogContainer, cachedData, provider) {
+    console.log('🔄 Rebuilding home from cached data');
+    
+    catalogContainer.innerHTML = '';
+
+    // Render Hero Banner (if it was cached)
+    if (cachedData.html.includes('hero-banner')) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = cachedData.html;
+        const heroBanner = tempDiv.querySelector('.hero-banner');
+        if (heroBanner) {
+            catalogContainer.appendChild(heroBanner);
+            
+            // Re-attach hero button events
+            const heroButtons = heroBanner.querySelectorAll('.hero-btn');
+            heroButtons.forEach(button => {
+                const onclickAttr = button.getAttribute('onclick');
+                if (onclickAttr) {
+                    const linkMatch = onclickAttr.match(/loadDetails\('([^']+)',\s*'([^']+)'\)/);
+                    if (linkMatch) {
+                        const cardProvider = linkMatch[1];
+                        const cardLink = linkMatch[2];
+                        
+                        button.removeAttribute('onclick');
+                        button.addEventListener('click', () => {
+                            console.log('🎬 Hero button clicked from cache:', { cardProvider, cardLink });
+                            loadDetails(cardProvider, cardLink);
+                        });
+                    }
+                }
+            });
+        }
+    }
+
+    // Render Continue Watching section from history
+    if (window.HistoryModule) {
+        const historySection = window.HistoryModule.renderHistorySection();
+        if (historySection) {
+            catalogContainer.appendChild(historySection);
+        }
+    }
+
+    // Rebuild cached sections with proper event listeners
+    if (cachedData.moviesSections && cachedData.moviesSections.length > 0) {
+        const moviesHeader = document.createElement('div');
+        moviesHeader.className = 'category-header';
+        moviesHeader.innerHTML = '<h2 class="category-title">🎬 Movies from ' + provider.charAt(0).toUpperCase() + provider.slice(1) + '</h2>';
+        catalogContainer.appendChild(moviesHeader);
+
+        // Get cached sections and rebuild them
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = cachedData.html;
+        const movieSections = tempDiv.querySelectorAll('.netflix-section');
+        
+        movieSections.forEach(section => {
+            const sectionTitle = section.querySelector('.netflix-section-title')?.textContent;
+            const matchingCatalogItem = cachedData.moviesSections.find(item => item.title === sectionTitle);
+            
+            if (matchingCatalogItem) {
+                const newSection = section.cloneNode(true);
+                
+                // Re-attach view all button
+                const viewAllBtn = newSection.querySelector('.netflix-view-all');
+                if (viewAllBtn) {
+                    viewAllBtn.removeAttribute('onclick');
+                    viewAllBtn.addEventListener('click', () => {
+                        console.log('📋 View all clicked from cache:', { provider, filter: matchingCatalogItem.filter, title: matchingCatalogItem.title });
+                        loadFullCatalog(provider, matchingCatalogItem.filter, matchingCatalogItem.title);
+                    });
+                }
+                
+                // Re-attach card click events (we'll need to get the post data from the cached HTML)
+                const cards = newSection.querySelectorAll('.netflix-card');
+                cards.forEach(card => {
+                    // Extract post link from the card's onclick if available
+                    const onclickAttr = card.getAttribute('onclick');
+                    if (onclickAttr) {
+                        const linkMatch = onclickAttr.match(/loadDetails\('([^']+)',\s*'([^']+)'\)/);
+                        if (linkMatch) {
+                            const cardProvider = linkMatch[1];
+                            const cardLink = linkMatch[2];
+                            
+                            card.removeAttribute('onclick');
+                            card.addEventListener('click', () => {
+                                console.log('🎬 Netflix card clicked from cache:', { cardProvider, cardLink });
+                                loadDetails(cardProvider, cardLink);
+                            });
+                        }
+                    }
+                });
+                
+                catalogContainer.appendChild(newSection);
+            }
+        });
+    }
+
+    // Add other cached sections similarly
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = cachedData.html;
+    const allSections = tempDiv.querySelectorAll('.netflix-section, .catalog-section, .details-section');
+    
+    allSections.forEach(section => {
+        // Skip sections we've already handled
+        const sectionTitle = section.querySelector('.netflix-section-title, .section-title, h2')?.textContent;
+        if (sectionTitle && !sectionTitle.includes('Movies from')) {
+            const newSection = section.cloneNode(true);
+            
+            // Re-attach any event listeners in this section
+            reattachSectionEventListeners(newSection, provider);
+            catalogContainer.appendChild(newSection);
+        }
+    });
+
+    console.log('✅ Home page rebuilt from cache with proper event listeners');
+}
+
+// Re-attach event listeners to a specific section
+function reattachSectionEventListeners(section, provider) {
+    // Re-attach view all buttons
+    const viewAllButtons = section.querySelectorAll('.netflix-view-all, .view-all-btn');
+    viewAllButtons.forEach(button => {
+        const onclickAttr = button.getAttribute('onclick');
+        if (onclickAttr) {
+            const match = onclickAttr.match(/loadFullCatalog\('([^']+)',\s*'([^']+)',\s*'([^']+)'\)/);
+            if (match) {
+                const btnProvider = match[1];
+                const filter = match[2];
+                const title = match[3];
+                
+                button.removeAttribute('onclick');
+                button.addEventListener('click', () => {
+                    console.log('📋 View all button clicked from cache:', { btnProvider, filter, title });
+                    loadFullCatalog(btnProvider, filter, title);
+                });
+            }
+        }
+    });
+
+    // Re-attach card click events
+    const cards = section.querySelectorAll('.netflix-card, .post-card, .tmdb-rec-card');
+    cards.forEach(card => {
+        const onclickAttr = card.getAttribute('onclick');
+        if (onclickAttr) {
+            const linkMatch = onclickAttr.match(/loadDetails\('([^']+)',\s*'([^']+)'\)/);
+            if (linkMatch) {
+                const cardProvider = linkMatch[1];
+                const cardLink = linkMatch[2];
+                
+                card.removeAttribute('onclick');
+                card.addEventListener('click', () => {
+                    console.log('🎬 Card clicked from cache:', { cardProvider, cardLink });
+                    loadDetails(cardProvider, cardLink);
+                });
+            }
+        }
+    });
+}
+
+// Re-attach event listeners to cached home content
+function reattachHomeEventListeners(container, provider) {
+    console.log('🔗 Re-attaching event listeners to cached home content');
+
+    // Re-attach Netflix card click events
+    const netflixCards = container.querySelectorAll('.netflix-card');
+    netflixCards.forEach((card, index) => {
+        // Remove any existing event listeners by cloning the element
+        const newCard = card.cloneNode(true);
+        card.parentNode.replaceChild(newCard, card);
+        
+        // Try to get data from various sources
+        let cardLink = null;
+        let cardProvider = provider; // Default to current provider
+        
+        // Check for onclick attribute first
+        const onclickAttr = newCard.getAttribute('onclick');
+        if (onclickAttr) {
+            const linkMatch = onclickAttr.match(/loadDetails\('([^']+)',\s*'([^']+)'\)/);
+            if (linkMatch) {
+                cardProvider = linkMatch[1];
+                cardLink = linkMatch[2];
+                newCard.removeAttribute('onclick');
+            }
+        }
+        
+        // If no onclick, try to find the link from the section context
+        if (!cardLink) {
+            const section = newCard.closest('.netflix-section');
+            if (section) {
+                const sectionTitle = section.querySelector('.netflix-section-title');
+                if (sectionTitle) {
+                    // This is a fallback - we'll need the actual post data
+                    console.warn('⚠️ Could not find specific link for cached Netflix card, using section context');
+                }
+            }
+        }
+        
+        if (cardLink) {
+            newCard.addEventListener('click', () => {
+                console.log('🎬 Netflix card clicked from cache:', { cardProvider, cardLink });
+                loadDetails(cardProvider, cardLink);
+            });
+        }
+    });
+
+    // Re-attach post card click events
+    const postCards = container.querySelectorAll('.post-card');
+    postCards.forEach(card => {
+        const newCard = card.cloneNode(true);
+        card.parentNode.replaceChild(newCard, card);
+        
+        const onclickAttr = newCard.getAttribute('onclick');
+        if (onclickAttr) {
+            const linkMatch = onclickAttr.match(/loadDetails\('([^']+)',\s*'([^']+)'\)/);
+            if (linkMatch) {
+                const cardProvider = linkMatch[1];
+                const cardLink = linkMatch[2];
+                
+                newCard.removeAttribute('onclick');
+                newCard.addEventListener('click', () => {
+                    console.log('🎬 Post card clicked from cache:', { cardProvider, cardLink });
+                    loadDetails(cardProvider, cardLink);
+                });
+            }
+        }
+    });
+
+    // Re-attach hero button events
+    const heroButtons = container.querySelectorAll('.hero-btn');
+    heroButtons.forEach(button => {
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        const onclickAttr = newButton.getAttribute('onclick');
+        if (onclickAttr) {
+            const linkMatch = onclickAttr.match(/loadDetails\('([^']+)',\s*'([^']+)'\)/);
+            if (linkMatch) {
+                const cardProvider = linkMatch[1];
+                const cardLink = linkMatch[2];
+                
+                newButton.removeAttribute('onclick');
+                newButton.addEventListener('click', () => {
+                    console.log('🎬 Hero button clicked from cache:', { cardProvider, cardLink });
+                    loadDetails(cardProvider, cardLink);
+                });
+            }
+        }
+    });
+
+    // Re-attach view all button events
+    const viewAllButtons = container.querySelectorAll('.netflix-view-all, .view-all-btn');
+    viewAllButtons.forEach(button => {
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        const onclickAttr = newButton.getAttribute('onclick');
+        if (onclickAttr) {
+            const match = onclickAttr.match(/loadFullCatalog\('([^']+)',\s*'([^']+)',\s*'([^']+)'\)/);
+            if (match) {
+                const btnProvider = match[1];
+                const filter = match[2];
+                const title = match[3];
+                
+                newButton.removeAttribute('onclick');
+                newButton.addEventListener('click', () => {
+                    console.log('📋 View all button clicked from cache:', { btnProvider, filter, title });
+                    loadFullCatalog(btnProvider, filter, title);
+                });
+            }
+        }
+    });
+
+    console.log('✅ Event listeners re-attached to cached content');
+}
+
 // Make functions global for pagination buttons
 window.changePage = changePage;
 window.changeCatalogPage = changeCatalogPage;
@@ -4756,6 +5026,7 @@ window.loadExplorePage = loadExplorePage;
 window.reloadCatalogSection = reloadCatalogSection;
 window.renderHeroBanner = renderHeroBanner;
 window.renderNetflixSection = renderNetflixSection;
+window.reattachHomeEventListeners = reattachHomeEventListeners;
 
 // Enhanced VLC helper functions for Windows PC
 
@@ -5377,6 +5648,107 @@ window.clearHomeCache = function (provider) {
     } else {
         CacheManager.clearAll();
         console.log('🗑️ Cleared all cache and search state');
+    }
+};
+
+window.testCacheEventListeners = function () {
+    console.log('🧪 Testing cached event listeners...');
+    const container = document.getElementById('catalogSections');
+    if (container) {
+        const cards = container.querySelectorAll('.netflix-card, .post-card');
+        console.log(`Found ${cards.length} cards in cached content`);
+        
+        cards.forEach((card, index) => {
+            const hasEventListener = card.onclick || card.getAttribute('onclick');
+            console.log(`Card ${index}: ${hasEventListener ? 'Has event handler' : 'No event handler'}`);
+        });
+    }
+};
+
+window.testLoadMoreButtons = function () {
+    console.log('🧪 Testing load more buttons...');
+    
+    // Test Movies Module
+    if (window.MoviesModule) {
+        console.log('✅ MoviesModule is available');
+        console.log('Movies state:', window.MoviesModule.state);
+        
+        const moviesBtn = document.querySelector('#moviesPagination .load-more-btn');
+        if (moviesBtn) {
+            console.log('✅ Movies load more button found');
+            console.log('Button onclick:', moviesBtn.onclick);
+            console.log('Button getAttribute onclick:', moviesBtn.getAttribute('onclick'));
+        } else {
+            console.log('❌ Movies load more button not found');
+        }
+    } else {
+        console.log('❌ MoviesModule not available');
+    }
+    
+    // Test TV Shows Module
+    if (window.TVShowsModule) {
+        console.log('✅ TVShowsModule is available');
+        console.log('TV Shows state:', window.TVShowsModule.state);
+        
+        const tvBtn = document.querySelector('#tvShowsPagination .load-more-btn');
+        if (tvBtn) {
+            console.log('✅ TV Shows load more button found');
+            console.log('Button onclick:', tvBtn.onclick);
+            console.log('Button getAttribute onclick:', tvBtn.getAttribute('onclick'));
+        } else {
+            console.log('❌ TV Shows load more button not found');
+        }
+    } else {
+        console.log('❌ TVShowsModule not available');
+    }
+};
+
+window.forceLoadMoreMovies = function () {
+    console.log('🎬 Forcing load more movies...');
+    if (window.MoviesModule) {
+        window.MoviesModule.loadMoreMovies();
+    } else {
+        console.log('❌ MoviesModule not available');
+    }
+};
+
+window.forceLoadMoreTVShows = function () {
+    console.log('📺 Forcing load more TV shows...');
+    if (window.TVShowsModule) {
+        window.TVShowsModule.loadMoreTVShows();
+    } else {
+        console.log('❌ TVShowsModule not available');
+    }
+};
+
+window.enableHomeCaching = function () {
+    console.log('✅ Enabling home caching (experimental)');
+    // This would re-enable caching - for future implementation
+    showToast('Home caching will be re-enabled in future update', 'info', 3000);
+};
+
+window.testHomeScreenCards = function () {
+    console.log('🧪 Testing home screen cards...');
+    const container = document.getElementById('catalogSections');
+    if (container) {
+        const cards = container.querySelectorAll('.netflix-card');
+        console.log(`Found ${cards.length} Netflix cards`);
+        
+        cards.forEach((card, index) => {
+            if (index < 3) { // Test first 3 cards
+                console.log(`Card ${index}:`, {
+                    hasClick: !!card.onclick,
+                    hasOnclickAttr: !!card.getAttribute('onclick'),
+                    hasEventListeners: !!card._listeners || 'unknown'
+                });
+            }
+        });
+        
+        // Try clicking the first card programmatically
+        if (cards.length > 0) {
+            console.log('🖱️ Simulating click on first card...');
+            cards[0].click();
+        }
     }
 };
 
