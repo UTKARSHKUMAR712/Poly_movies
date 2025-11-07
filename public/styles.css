@@ -11414,30 +11414,39 @@ icket Player - Full Screen Overlay */
     }
 }
 
-/* Bottom Navigation Bar - Mobile First - Always Sticky */
+/* Bottom Navigation Bar - Instagram Style with Horizontal Scroll */
 .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(180deg, rgba(20, 20, 20, 0.98) 0%, rgba(20, 20, 20, 1) 100%);
-    backdrop-filter: blur(20px);
-    border-top: 2px solid rgba(229, 9, 20, 0.3);
-    padding: 12px 0;
-    z-index: 9999;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: rgba(0, 0, 0, 0.95) !important;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 0.5px solid rgba(255, 255, 255, 0.15);
+    padding: 0 !important;
+    z-index: 999999 !important;
     display: none;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
-    transform: translateZ(0);
-    will-change: transform;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+    height: 65px;
+    width: 100vw !important;
 }
 
 .bottom-nav-container {
     display: flex;
-    justify-content: space-around;
     align-items: center;
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 0 8px;
+    height: 65px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0 4px;
+    gap: 0;
+}
+
+.bottom-nav-container::-webkit-scrollbar {
+    display: none;
 }
 
 .bottom-nav-item {
@@ -11445,62 +11454,61 @@ icket Player - Full Screen Overlay */
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 8px 6px;
-    border-radius: 10px;
+    padding: 8px 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 52px;
-    min-height: 52px;
+    transition: all 0.2s ease;
+    min-width: 70px;
+    max-width: 70px;
+    height: 65px;
     position: relative;
     background: none;
     border: none;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.6);
     text-decoration: none;
+    flex-shrink: 0;
 }
 
-.bottom-nav-item:hover,
+.bottom-nav-item:active {
+    transform: scale(0.95);
+}
+
 .bottom-nav-item.active {
-    color: var(--primary-color);
-    background: rgba(229, 9, 20, 0.15);
-    transform: translateY(-3px);
+    color: #ffffff;
 }
 
-.bottom-nav-item.active::before {
+.bottom-nav-item.active::after {
     content: '';
     position: absolute;
-    top: -2px;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 24px;
-    height: 4px;
+    width: 40px;
+    height: 2px;
     background: var(--primary-color);
-    border-radius: 0 0 4px 4px;
-    box-shadow: 0 2px 8px rgba(229, 9, 20, 0.5);
+    border-radius: 0 0 2px 2px;
 }
 
 .bottom-nav-icon {
-    font-size: 22px;
-    margin-bottom: 3px;
-    transition: transform 0.3s ease;
-}
-
-.bottom-nav-item:hover .bottom-nav-icon {
-    transform: scale(1.15);
+    font-size: 24px;
+    margin-bottom: 4px;
+    transition: transform 0.2s ease;
+    line-height: 1;
 }
 
 .bottom-nav-item.active .bottom-nav-icon {
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .bottom-nav-label {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 10px;
+    font-weight: 500;
     text-align: center;
-    line-height: 1.1;
-    max-width: 55px;
+    line-height: 1;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 65px;
+    letter-spacing: 0.3px;
 }
 
 /* Show bottom nav on mobile, hide hamburger */
@@ -11509,6 +11517,8 @@ icket Player - Full Screen Overlay */
         display: block !important;
         position: fixed !important;
         bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
     }
 
     .mobile-nav-toggle {
@@ -11519,46 +11529,48 @@ icket Player - Full Screen Overlay */
         display: none !important;
     }
 
-    /* Add bottom padding to main content to account for bottom nav */
+    /* Add bottom padding to main content */
     .main-content {
-        padding-bottom: 85px;
+        padding-bottom: 75px;
     }
 
-    /* Adjust container for bottom nav */
+    /* Adjust container */
     .container {
         padding-bottom: 0;
     }
 
-    /* Hide footer on mobile to save space */
+    /* Footer spacing */
     .footer {
-        padding-bottom: 85px;
+        padding-bottom: 75px;
     }
 }
 
 /* Ultra mobile optimizations */
 @media (max-width: 480px) {
     .bottom-nav {
-        padding: 10px 0;
+        height: 60px;
     }
 
     .bottom-nav-container {
-        padding: 0 4px;
+        height: 60px;
+        padding: 0 2px;
     }
 
     .bottom-nav-item {
-        padding: 6px 3px;
-        min-width: 48px;
-        min-height: 48px;
+        padding: 6px 10px;
+        min-width: 65px;
+        max-width: 65px;
+        height: 60px;
     }
 
     .bottom-nav-icon {
-        font-size: 20px;
-        margin-bottom: 2px;
+        font-size: 22px;
+        margin-bottom: 3px;
     }
 
     .bottom-nav-label {
-        font-size: 10px;
-        max-width: 48px;
+        font-size: 9px;
+        max-width: 60px;
     }
 
     .main-content {
@@ -12339,5 +12351,80 @@ body.livetv-active .footer {
     main,
     .main-content {
         overflow-x: hidden;
+    }
+}
+/* CRIT
+ICAL: Force bottom nav to stay fixed - Instagram Style */
+@media (max-width: 768px) {
+    /* Ensure body doesn't interfere */
+    body {
+        position: relative;
+        overflow-x: hidden;
+    }
+    
+    /* Force bottom nav positioning */
+    nav#bottomNav,
+    .bottom-nav {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100vw !important;
+        z-index: 999999 !important;
+        display: block !important;
+        margin: 0 !important;
+        transform: none !important;
+    }
+    
+    /* Ensure container scrolls horizontally */
+    .bottom-nav-container {
+        display: flex !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        scroll-behavior: smooth;
+    }
+    
+    /* Smooth scrolling for touch devices */
+    .bottom-nav-container {
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+    }
+    
+    .bottom-nav-item {
+        scroll-snap-align: center;
+    }
+}
+
+/* Safe area support for notched devices */
+@supports (padding: max(0px)) {
+    @media (max-width: 768px) {
+        .bottom-nav {
+            padding-bottom: max(0px, env(safe-area-inset-bottom)) !important;
+            height: calc(65px + env(safe-area-inset-bottom)) !important;
+        }
+        
+        .main-content {
+            padding-bottom: calc(75px + env(safe-area-inset-bottom));
+        }
+        
+        .footer {
+            padding-bottom: calc(75px + env(safe-area-inset-bottom));
+        }
+    }
+}
+
+/* Prevent any parent from affecting bottom nav */
+@media (max-width: 768px) {
+    #app {
+        position: relative;
+        overflow-x: hidden;
+    }
+    
+    /* Ensure bottom nav is always visible */
+    body > nav.bottom-nav,
+    body > #bottomNav {
+        position: fixed !important;
+        bottom: 0 !important;
+        display: block !important;
     }
 }

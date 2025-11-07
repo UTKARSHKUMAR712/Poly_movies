@@ -3804,15 +3804,30 @@ function initializeBottomNavigation() {
     
     // Ensure bottom nav is always fixed and visible on mobile
     if (window.innerWidth <= 768 && bottomNav) {
-        // Apply fixed positioning once
-        bottomNav.style.position = 'fixed';
-        bottomNav.style.bottom = '0';
-        bottomNav.style.left = '0';
-        bottomNav.style.right = '0';
-        bottomNav.style.zIndex = '99999';
-        bottomNav.style.display = 'block';
+        // Apply Instagram-style fixed positioning
+        bottomNav.style.cssText = `
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 999999 !important;
+            display: block !important;
+            width: 100vw !important;
+            height: 65px !important;
+        `;
         
-        console.log('✅ Bottom nav fixed positioning applied');
+        console.log('✅ Bottom nav Instagram-style positioning applied');
+        
+        // Enable smooth horizontal scrolling
+        const container = bottomNav.querySelector('.bottom-nav-container');
+        if (container) {
+            container.style.cssText = `
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
+                scrollbar-width: none !important;
+            `;
+        }
     }
     
     // Navigation mapping
