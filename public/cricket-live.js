@@ -399,7 +399,7 @@ const CricketLive = {
 
         // Show ALL matches from API (no filtering to ensure all 6 matches are displayed)
         const liveMatches = this.matches.slice(0, 10); // Show up to 10 matches to ensure we get all
-        
+
         console.log(`🏏 API returned ${this.matches.length} total matches`);
         console.log('🏏 Match details:', this.matches.map(m => ({
             id: m.match?.matchInfo?.matchId,
@@ -408,7 +408,7 @@ const CricketLive = {
             state: m.match?.matchInfo?.state,
             teams: `${m.match?.matchInfo?.team1?.teamSName} vs ${m.match?.matchInfo?.team2?.teamSName}`
         })));
-        
+
         // If still showing fewer matches, let's debug the filtering
         if (liveMatches.length < this.matches.length) {
             console.log('🏏 Some matches were filtered out. Showing all matches instead.');
@@ -582,7 +582,7 @@ const CricketLive = {
                             <span class="match-type">${matchType}</span>
                         </div>
                     </div>
-                    <div class="match-id">Match #${info.matchId}</div>
+                    
                 </div>
                 
                 <div class="teams-container">
@@ -628,7 +628,6 @@ const CricketLive = {
                         <span class="timing-label">🕐 Time (IST):</span>
                         <span class="timing-value">${matchTiming}</span>
                     </div>
-                    ${info.isTimeAnnounced ? '<span class="time-confirmed">✅ Confirmed</span>' : '<span class="time-tentative">⏳ Tentative</span>'}
                 </div>
                 
                 <div class="venue-info">
@@ -636,7 +635,7 @@ const CricketLive = {
                         <span class="venue-label">🏟️ Venue:</span>
                         <span class="venue-name">${venueText}</span>
                     </div>
-                    <div class="timezone-info">Timezone: ${timezone}</div>
+                    
                 </div>
                 
                 <div class="series-info-footer">
@@ -1112,14 +1111,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Test function for debugging cricket matches
-window.testCricketMatches = function() {
+window.testCricketMatches = function () {
     console.log('🏏 Testing Cricket Matches Display');
     console.log('🏏 Total matches from API:', CricketLive.matches.length);
-    
+
     CricketLive.matches.forEach((match, index) => {
         const info = match.match?.matchInfo;
         const score = match.match?.matchScore;
-        
+
         console.log(`🏏 Match ${index + 1}:`, {
             id: info?.matchId,
             teams: `${info?.team1?.teamSName} vs ${info?.team2?.teamSName}`,
@@ -1129,7 +1128,7 @@ window.testCricketMatches = function() {
             team2Score: score?.team2Score,
             series: info?.seriesName
         });
-        
+
         // Check for undefined values in scores
         if (score?.team1Score?.inngs1) {
             const inngs1 = score.team1Score.inngs1;
@@ -1140,16 +1139,16 @@ window.testCricketMatches = function() {
             console.log(`  Team2 Inngs1: runs=${inngs1.runs}, wickets=${inngs1.wickets}, overs=${inngs1.overs}`);
         }
     });
-    
+
     const matchCards = document.querySelectorAll('.match-card');
     console.log(`🏏 Match cards in DOM: ${matchCards.length}`);
-    
+
     // Force refresh if needed
     if (matchCards.length !== CricketLive.matches.length) {
         console.log('🏏 Mismatch detected, refreshing display...');
         CricketLive.renderMatches();
     }
-    
+
     return {
         totalMatches: CricketLive.matches.length,
         displayedCards: matchCards.length,

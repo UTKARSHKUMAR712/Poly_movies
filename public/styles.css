@@ -5,6 +5,18 @@
     box-sizing: border-box;
 }
 
+/* Mobile-first touch optimizations */
+html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Smooth scrolling for all devices */
+* {
+    -webkit-overflow-scrolling: touch;
+}
+
 :root {
     --primary-color: #e50914;
     --secondary-color: #141414;
@@ -21,6 +33,9 @@ body {
     background-color: var(--secondary-color);
     color: var(--text-color);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
 }
 
 .container {
@@ -218,63 +233,133 @@ body {
 
 .mobile-nav-menu {
     display: none;
-    position: absolute;
-    top: 100%;
+    position: fixed;
+    top: 56px;
     left: 0;
     right: 0;
+    bottom: 0;
     background: rgba(20, 20, 20, 0.98);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid #333;
-    padding: 20px;
+    backdrop-filter: blur(15px);
     z-index: 999;
+    overflow-y: auto;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .mobile-nav-menu.show {
     display: block;
 }
 
+.mobile-nav-content {
+    padding: 20px 16px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
 .mobile-nav-links {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 0;
+    margin-bottom: 20px;
 }
 
 .mobile-nav-links .nav-link {
-    padding: 12px 0;
-    font-size: 16px;
-    border-bottom: 1px solid #333;
+    padding: 16px 20px;
+    font-size: 18px;
+    font-weight: 500;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+    text-align: center;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mobile-nav-links .nav-link:hover,
+.mobile-nav-links .nav-link.active {
+    background: var(--primary-color);
+    color: white;
+    transform: translateX(4px);
 }
 
 .mobile-nav-links .nav-link:last-child {
-    border-bottom: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .mobile-search-container {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #333;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobile-search-container input {
+    width: 100%;
+    padding: 16px 20px;
+    font-size: 16px;
+    border-radius: 25px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    min-height: 56px;
+}
+
+.mobile-search-container input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.mobile-search-container input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .mobile-provider-select {
     width: 100%;
-    margin-top: 15px;
-    padding: 12px;
+    margin-top: 16px;
+    padding: 16px 20px;
     font-size: 16px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    min-height: 56px;
+}
+
+.mobile-provider-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
 }
 
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
     .header-container {
-        padding: 0 16px;
-        height: 60px;
+        padding: 0 12px;
+        height: 56px;
+        flex-wrap: wrap;
     }
 
     .header-left {
-        gap: 15px;
+        gap: 12px;
+        flex: 1;
     }
 
     .logo-text {
-        font-size: 20px;
+        font-size: 18px;
     }
 
     .main-nav {
@@ -283,55 +368,96 @@ body {
 
     .mobile-nav-toggle {
         display: block;
+        padding: 6px;
+        margin-left: 8px;
     }
 
     .header-right {
-        gap: 10px;
+        gap: 8px;
+        flex-shrink: 0;
     }
 
     .search-input-header {
-        width: 180px;
+        width: 160px;
         font-size: 14px;
+        padding: 6px 32px 6px 10px;
     }
 
     .search-input-header:focus {
-        width: 200px;
+        width: 180px;
     }
 
     .provider-select-compact {
         font-size: 12px;
         padding: 6px 8px;
+        min-width: 80px;
+    }
+
+    /* Mobile-first container adjustments */
+    .container {
+        padding: 0 8px;
+        max-width: 100%;
+    }
+
+    /* Touch-friendly buttons */
+    button,
+    .nav-link,
+    .genre-btn {
+        min-height: 44px;
+        min-width: 44px;
     }
 }
 
 @media (max-width: 480px) {
     .header-container {
-        padding: 0 12px;
-        height: 56px;
+        padding: 0 8px;
+        height: 52px;
+        gap: 8px;
     }
 
     .logo-text {
-        font-size: 18px;
+        font-size: 16px;
     }
 
     .search-input-header {
-        width: 120px;
-        padding: 6px 30px 6px 8px;
-        font-size: 13px;
+        width: 100px;
+        padding: 8px 28px 8px 8px;
+        font-size: 14px;
+        border-radius: 20px;
     }
 
     .search-input-header:focus {
-        width: 140px;
+        width: 120px;
     }
 
     .search-icon-btn {
-        right: 6px;
+        right: 4px;
+        padding: 6px;
     }
 
     .provider-select-compact {
         font-size: 11px;
-        padding: 5px 6px;
-        min-width: 80px;
+        padding: 8px 6px;
+        min-width: 70px;
+        border-radius: 16px;
+    }
+
+    /* Ultra mobile optimizations */
+    .mobile-nav-toggle {
+        padding: 8px;
+        font-size: 20px;
+    }
+
+    .header-right {
+        gap: 6px;
+    }
+
+    /* Ensure touch targets are adequate */
+    .nav-link,
+    button,
+    select,
+    input {
+        min-height: 44px;
     }
 }
 
@@ -458,6 +584,11 @@ body {
 .loading {
     text-align: center;
     padding: 50px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .spinner {
@@ -468,6 +599,44 @@ body {
     height: 50px;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
+}
+
+/* Mobile loading improvements */
+@media (max-width: 768px) {
+    .loading {
+        padding: 40px 20px;
+        min-height: 150px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border-width: 3px;
+        margin-bottom: 16px;
+    }
+
+    .loading p {
+        font-size: 16px;
+        margin-top: 12px;
+        color: var(--text-muted);
+    }
+}
+
+@media (max-width: 480px) {
+    .loading {
+        padding: 30px 16px;
+        min-height: 120px;
+    }
+
+    .spinner {
+        width: 35px;
+        height: 35px;
+        border-width: 3px;
+    }
+
+    .loading p {
+        font-size: 15px;
+    }
 }
 
 @keyframes spin {
@@ -621,11 +790,25 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .post-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Mobile touch feedback */
+@media (max-width: 768px) {
+    .post-card:active {
+        transform: scale(0.98);
+        transition: transform 0.1s;
+    }
+
+    .post-card:hover {
+        transform: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
 }
 
 .post-card img {
@@ -699,6 +882,7 @@ body {
     justify-content: center;
     gap: 10px;
     margin-top: 30px;
+    flex-wrap: wrap;
 }
 
 .pagination button {
@@ -709,6 +893,7 @@ body {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s;
+    min-height: 44px;
 }
 
 .pagination button:hover:not(:disabled) {
@@ -724,6 +909,45 @@ body {
     padding: 8px 15px;
     color: var(--text-muted);
     align-self: center;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+/* Mobile pagination improvements */
+@media (max-width: 768px) {
+    .pagination {
+        gap: 8px;
+        margin-top: 20px;
+        padding: 0 8px;
+    }
+
+    .pagination button {
+        padding: 12px 16px;
+        font-size: 16px;
+        min-width: 48px;
+        min-height: 48px;
+        border-radius: 8px;
+    }
+
+    .pagination .page-info {
+        padding: 12px 16px;
+        font-size: 16px;
+        min-height: 48px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pagination {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .pagination button {
+        width: 100%;
+        max-width: 200px;
+    }
 }
 
 /* Details View */
@@ -855,6 +1079,24 @@ body {
     background-color: var(--bg-dark);
     border-radius: 8px;
     margin-bottom: 20px;
+}
+
+/* Mobile video player optimizations */
+@media (max-width: 768px) {
+    .video-player {
+        border-radius: 0;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        width: 100vw;
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .video-player {
+        aspect-ratio: 16 / 9;
+        min-height: 200px;
+    }
 }
 
 .stream-selector {
@@ -993,250 +1235,530 @@ body {
 
     .details-content {
         grid-template-columns: 250px 1fr;
+        gap: 25px;
     }
 
     .details-info h1 {
         font-size: 28px;
     }
-}
 
-@media (max-width: 768px) {
-    .header-container {
-        padding: 0 20px;
-        height: auto;
-        flex-direction: column;
-        gap: 15px;
-        padding-top: 15px;
-        padding-bottom: 15px;
-    }
-
-    .header-left {
-        width: 100%;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .header-right {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .logo-container {
-        justify-content: center;
-    }
-
-    .logo-text {
-        font-size: 22px;
-    }
-
-    .main-nav {
-        width: 100%;
-        justify-content: space-around;
-        gap: 10px;
-    }
-
-    .nav-link {
-        font-size: 13px;
-    }
-
-    .nav-link.active::after {
-        bottom: -15px;
-    }
-
-    .provider-select-compact {
-        flex: 1;
-    }
-
-    .search-bar .container {
-        padding: 0 20px;
-    }
-
-    .content-header h1 {
-        font-size: 32px;
-    }
-
-    .content-subtitle {
-        font-size: 16px;
-    }
-
-    .search-input-header {
-        width: 180px;
-    }
-
-    .search-input-header:focus {
-        width: 220px;
-    }
-
-    .explore-header h1 {
-        font-size: 32px;
-    }
-
-    .explore-subtitle {
-        font-size: 16px;
-    }
-
-    .explore-section {
-        padding: 20px;
-    }
-
-    .explore-section h2 {
-        font-size: 24px;
-    }
-
-    /* Netflix-style responsive */
-    .hero-banner {
-        height: 45vh;
-        min-height: 350px;
-        background-size: 100% auto;
-        background-position: center top;
-    }
-
-    .hero-content {
-        padding: 0 30px;
-    }
-
-    .hero-title {
-        font-size: 32px;
-    }
-
-    .hero-buttons {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .hero-btn {
-        justify-content: center;
-    }
-
-    .category-title {
-        font-size: 24px;
-        padding: 0 20px;
+    /* Tablet optimizations */
+    .container {
+        padding: 0 16px;
     }
 
     .netflix-card {
-        min-width: 150px;
-        width: 150px;
-        height: 225px;
+        min-width: 180px;
+        width: 180px;
+        height: 270px;
     }
 
-    .netflix-scroll-container {
-        padding: 10px;
-    }
-
-    .posts-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 12px;
-    }
-
-    .post-card img {
-        height: 210px;
-    }
-
-    .details-content {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-
-    .details-poster {
-        max-width: 300px;
-        margin: 0 auto;
-    }
-
-    .stream-options {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    }
-
-    .episodes-list {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    .hero-banner {
+        height: 60vh;
+        min-height: 400px;
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+
+    /* Enhanced mobile header */
+    .header-container {
+        padding: 0 12px;
+        height: 56px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .logo-container {
+        justify-content: flex-start;
+    }
+
+    .logo-text {
+        font-size: 18px;
+    }
+
+    .main-nav {
+        display: none;
+    }
+
+    .mobile-nav-toggle {
+        display: block;
+    }
+
+    .provider-select-compact {
+        font-size: 12px;
+        padding: 6px 8px;
+        min-width: 80px;
+    }
+
+    /* Mobile content optimizations */
     .container {
-        padding: 0 15px;
+        padding: 0 8px;
     }
 
-    .posts-grid {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 10px;
+    .content-header h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
     }
 
-    .post-card img {
-        height: 190px;
+    .content-subtitle {
+        font-size: 15px;
     }
 
-    .post-card h3 {
-        font-size: 14px;
+    .explore-header h1 {
+        font-size: 28px;
     }
 
-    .section-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
+    .explore-subtitle {
+        font-size: 15px;
     }
 
-    .view-all-btn {
-        align-self: flex-start;
+    .explore-section {
+        padding: 16px;
+        margin-bottom: 20px;
     }
 
-    .stream-options {
-        grid-template-columns: 1fr;
+    .explore-section h2 {
+        font-size: 20px;
     }
 
-    .episodes-list {
-        grid-template-columns: 1fr;
-    }
-
-    .details-info h1 {
-        font-size: 24px;
-    }
-
-    .search-box input {
-        min-width: auto;
-    }
-
-    /* Netflix-style mobile */
+    /* Enhanced Netflix-style responsive */
     .hero-banner {
         height: 40vh;
-        min-height: 300px;
-        background-size: 100% auto;
-        background-position: center top;
+        min-height: 280px;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
     }
 
     .hero-content {
-        padding: 0 20px;
+        padding: 0 16px;
+        max-width: 90%;
     }
 
     .hero-title {
         font-size: 24px;
+        margin-bottom: 8px;
+        line-height: 1.2;
+    }
+
+    .hero-buttons {
+        flex-direction: row;
+        gap: 8px;
+        flex-wrap: wrap;
     }
 
     .hero-btn {
-        padding: 10px 20px;
+        padding: 10px 16px;
         font-size: 14px;
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
     }
 
     .category-title {
         font-size: 20px;
+        padding: 0 8px;
+        margin: 16px 0 12px 0;
     }
 
     .netflix-card {
-        min-width: 130px;
-        width: 130px;
-        height: 195px;
+        min-width: 140px;
+        width: 140px;
+        height: 210px;
+    }
+
+    .netflix-scroll-container {
+        padding: 8px;
     }
 
     .netflix-section-title {
         font-size: 18px;
+        padding: 0 8px;
     }
 
-    .search-input-header {
-        width: 140px;
+    /* Enhanced posts grid */
+    .posts-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 10px;
+        padding: 0 4px;
+    }
+
+    .post-card {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .post-card img {
+        height: 195px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .post-card-content {
+        padding: 8px;
+    }
+
+    .post-card h3 {
         font-size: 13px;
+        line-height: 1.3;
+        margin-bottom: 6px;
     }
 
-    .search-input-header:focus {
-        width: 180px;
+    .provider-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    /* Enhanced details view */
+    .details-content {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .details-poster {
+        max-width: 250px;
+        margin: 0 auto;
+        border-radius: 12px;
+    }
+
+    .details-info {
+        text-align: left;
+    }
+
+    .details-info h1 {
+        font-size: 24px;
+        text-align: center;
+        margin-bottom: 12px;
+    }
+
+    .details-meta {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .meta-item {
+        font-size: 13px;
+        padding: 4px 10px;
+    }
+
+    .details-synopsis {
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 16px;
+    }
+
+    /* Enhanced stream options */
+    .stream-options {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .stream-option {
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .stream-option-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .stream-option-button {
+        padding: 12px;
+        font-size: 14px;
+        min-height: 44px;
+        justify-content: center;
+    }
+
+    /* Enhanced episodes list */
+    .episodes-list {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .episode-card {
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .episode-card h4 {
+        font-size: 15px;
+        margin-bottom: 6px;
+    }
+
+    /* Section headers */
+    .section-header {
+        padding: 0 4px;
+        margin-bottom: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .section-header h2 {
+        font-size: 18px;
+    }
+
+    .view-all-btn {
+        font-size: 12px;
+        padding: 6px 12px;
+        align-self: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+
+    /* Ultra mobile container */
+    .container {
+        padding: 0 6px;
+    }
+
+    /* Ultra mobile posts grid */
+    .posts-grid {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 8px;
+        padding: 0 2px;
+    }
+
+    .post-card {
+        border-radius: 6px;
+    }
+
+    .post-card img {
+        height: 165px;
+        border-radius: 6px 6px 0 0;
+    }
+
+    .post-card-content {
+        padding: 6px;
+    }
+
+    .post-card h3 {
+        font-size: 12px;
+        line-height: 1.2;
+        margin-bottom: 4px;
+    }
+
+    .provider-badge {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+
+    /* Ultra mobile section headers */
+    .section-header {
+        padding: 0 2px;
+        margin-bottom: 10px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .section-header h2 {
+        font-size: 16px;
+    }
+
+    .view-all-btn {
+        font-size: 11px;
+        padding: 5px 10px;
+        align-self: flex-start;
+    }
+
+    /* Ultra mobile stream options */
+    .stream-options {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .stream-option {
+        padding: 10px;
+    }
+
+    .stream-option-buttons {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .stream-option-button {
+        padding: 14px;
+        font-size: 15px;
+        min-height: 48px;
+        border-radius: 8px;
+    }
+
+    /* Ultra mobile episodes */
+    .episodes-list {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .episode-card {
+        padding: 10px;
+    }
+
+    .episode-card h4 {
+        font-size: 14px;
+    }
+
+    /* Ultra mobile details */
+    .details-info h1 {
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+
+    .details-poster {
+        max-width: 200px;
+    }
+
+    .meta-item {
+        font-size: 12px;
+        padding: 3px 8px;
+    }
+
+    .details-synopsis {
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    /* Ultra mobile search */
+    .search-box {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .search-box input {
+        min-width: auto;
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    .search-box button {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    .provider-select {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    /* Ultra mobile Netflix-style */
+    .hero-banner {
+        height: 35vh;
+        min-height: 250px;
+    }
+
+    .hero-content {
+        padding: 0 12px;
+        max-width: 95%;
+    }
+
+    .hero-title {
+        font-size: 20px;
+        margin-bottom: 6px;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+    }
+
+    .hero-btn {
+        padding: 12px 16px;
+        font-size: 15px;
+        min-height: 48px;
+        border-radius: 8px;
+    }
+
+    .category-title {
+        font-size: 18px;
+        padding: 0 6px;
+        margin: 12px 0 8px 0;
+    }
+
+    .netflix-card {
+        min-width: 120px;
+        width: 120px;
+        height: 180px;
+    }
+
+    .netflix-section-title {
+        font-size: 16px;
+        padding: 0 6px;
+    }
+
+    .netflix-scroll-container {
+        padding: 6px;
+    }
+
+    /* Ultra mobile modals and overlays */
+    .modal-content {
+        width: 95vw;
+        margin: 10px;
+        max-height: 85vh;
+    }
+
+    .modal-header {
+        padding: 12px 16px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    /* Ultra mobile forms */
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 12px;
+        font-size: 16px;
+        border-radius: 8px;
+    }
+
+    /* Ultra mobile buttons */
+    button,
+    .btn {
+        min-height: 48px;
+        padding: 12px 16px;
+        font-size: 15px;
+        border-radius: 8px;
+    }
+
+    /* Ultra mobile loading */
+    .loading {
+        padding: 30px 12px;
+    }
+
+    .loading .spinner {
+        width: 35px;
+        height: 35px;
+    }
+
+    /* Ultra mobile error messages */
+    .error-message {
+        padding: 12px;
+        margin: 12px 2px;
+        font-size: 14px;
+        border-radius: 8px;
     }
 }
 
@@ -1364,6 +1886,40 @@ input:focus,
 select:focus {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
+}
+
+/* Mobile-specific touch states */
+@media (max-width: 768px) {
+
+    button,
+    .btn,
+    .nav-link,
+    .genre-btn {
+        min-height: 44px;
+        min-width: 44px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(229, 9, 20, 0.2);
+    }
+
+    button:active,
+    .btn:active {
+        transform: scale(0.98);
+        transition: transform 0.1s;
+    }
+
+    .genre-btn:active {
+        transform: scale(0.96);
+        background-color: var(--primary-color);
+    }
+
+    /* Larger touch targets for small elements */
+    .search-icon-btn,
+    .close-btn,
+    .history-remove {
+        min-width: 48px;
+        min-height: 48px;
+        padding: 12px;
+    }
 }
 
 /* Hover effects */
@@ -7596,7 +8152,9 @@ ode Symbol Styling */
         flex-direction: column;
         gap: 8px;
     }
-}/* ==
+}
+
+/* ==
 === CRICKET PLAYER OVERLAY ===== */
 .cricket-player-overlay {
     position: fixed;
@@ -7659,7 +8217,9 @@ ode Symbol Styling */
     gap: 10px;
 }
 
-.fullscreen-btn, .channel-switch-btn, .close-player-btn {
+.fullscreen-btn,
+.channel-switch-btn,
+.close-player-btn {
     padding: 8px 16px;
     border: none;
     border-radius: 20px;
@@ -7775,22 +8335,22 @@ ode Symbol Styling */
         height: 100vh;
         border-radius: 0;
     }
-    
+
     .cricket-player-header {
         padding: 10px 15px;
     }
-    
+
     .cricket-player-info h3 {
         font-size: 16px;
     }
-    
+
     .cricket-channel-selector {
         top: 60px;
         right: 10px;
         left: 10px;
         min-width: auto;
     }
-    
+
     .cricket-channels-list {
         max-height: 300px;
         overflow-y: auto;
@@ -7807,7 +8367,9 @@ ode Symbol Styling */
     color: rgba(255, 255, 255, 0.6);
     font-size: 12px;
     pointer-events: none;
-}/* Crick
+}
+
+/* Crick
 et Video Overlay Controls */
 .cricket-video-container {
     position: relative;
@@ -7887,8 +8449,7 @@ et Video Overlay Controls */
     text-align: center;
 }
 
-* Enhanced Cricket Channel Selector Styles */
-.cricket-channel-selector {
+* Enhanced Cricket Channel Selector Styles */ .cricket-channel-selector {
     background: rgba(0, 0, 0, 0.95);
     border-radius: 12px;
     padding: 0;
@@ -8066,29 +8627,29 @@ et Video Overlay Controls */
     .cricket-channel-selector {
         max-height: 300px;
     }
-    
+
     .cricket-channels-list {
         max-height: 220px;
     }
-    
+
     .cricket-channel-btn {
         padding: 10px 12px;
         gap: 10px;
     }
-    
+
     .cricket-channel-btn img {
         width: 28px;
         height: 20px;
     }
-    
+
     .cricket-channel-btn span {
         font-size: 13px;
     }
-    
+
     .cricket-selector-header {
         padding: 12px 15px;
     }
-    
+
     .cricket-selector-header h4 {
         font-size: 14px;
     }
@@ -8111,9 +8672,16 @@ et Video Overlay Controls */
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}/* 
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 
 Enhanced Download Manager Styles */
 .download-panel {
     position: fixed;
@@ -8348,8 +8916,13 @@ Enhanced Download Manager Styles */
 }
 
 @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
 }
 
 .download-progress-text {
@@ -8467,6 +9040,7 @@ Enhanced Download Manager Styles */
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -8481,23 +9055,23 @@ Enhanced Download Manager Styles */
         left: 20px;
         bottom: 10px;
     }
-    
+
     .download-notifications {
         right: 10px;
         left: 10px;
         max-width: none;
     }
-    
+
     .download-item-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
     }
-    
+
     .download-controls {
         align-self: flex-end;
     }
-    
+
     .download-stats {
         font-size: 10px;
         justify-content: flex-start;
@@ -8553,7 +9127,9 @@ Enhanced Download Manager Styles */
     background: #4CAF50;
     border-radius: 2px;
     transition: width 0.3s ease;
-}/*
+}
+
+/*
  Downloads Button in Header */
 .downloads-btn {
     background: rgba(255, 255, 255, 0.1);
@@ -8585,9 +9161,17 @@ Enhanced Download Manager Styles */
 }
 
 @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    }
 }
 
 /* Mobile responsive */
@@ -8599,7 +9183,9 @@ Enhanced Download Manager Styles */
         height: 32px;
         margin-left: 8px;
     }
-}/* 
+}
+
+/* 
 Enhanced Cricket Match Cards with Detailed Information */
 .match-card {
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(20, 20, 20, 0.95));
@@ -8720,7 +9306,9 @@ Enhanced Cricket Match Cards with Detailed Information */
     flex-wrap: wrap;
 }
 
-.match-desc, .match-format, .match-type {
+.match-desc,
+.match-format,
+.match-type {
     font-size: 11px;
     padding: 2px 6px;
     border-radius: 8px;
@@ -8931,7 +9519,8 @@ Enhanced Cricket Match Cards with Detailed Information */
     margin-top: 15px;
 }
 
-.watch-btn, .details-btn {
+.watch-btn,
+.details-btn {
     flex: 1;
     padding: 10px;
     border: none;
@@ -9069,23 +9658,26 @@ Enhanced Cricket Match Cards with Detailed Information */
         padding: 15px;
         margin: 10px;
     }
-    
+
     .match-info-grid {
         grid-template-columns: 1fr;
         padding: 15px;
     }
-    
-    .timing-info, .venue-details {
+
+    .timing-info,
+    .venue-details {
         flex-direction: column;
         align-items: flex-start;
         gap: 5px;
     }
-    
+
     .venue-name {
         text-align: left;
         margin-left: 0;
     }
-}/* Cr
+}
+
+/* Cr
 icket Matches Container - Ensure All Matches Are Visible */
 .cricket-matches-horizontal {
     width: 100%;
@@ -9141,12 +9733,13 @@ icket Matches Container - Ensure All Matches Are Visible */
         min-width: 280px;
         max-width: 320px;
     }
-    
+
     .cricket-matches-scroll {
         gap: 10px;
         padding: 0 5px;
     }
 }
+
 /* Modern
  Loading Popup - Left Side Non-Intrusive */
 .modern-loading-popup {
@@ -9172,7 +9765,7 @@ icket Matches Container - Ensure All Matches Are Visible */
     border: 2px solid #e50914;
     border-radius: 16px;
     padding: 24px;
-    box-shadow: 
+    box-shadow:
         0 20px 40px rgba(0, 0, 0, 0.8),
         0 0 0 1px rgba(229, 9, 20, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -9197,8 +9790,13 @@ icket Matches Container - Ensure All Matches Are Visible */
 }
 
 @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }
 
 /* Loading Spinner */
@@ -9241,8 +9839,13 @@ icket Matches Container - Ensure All Matches Are Visible */
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Loading Text */
@@ -9275,15 +9878,27 @@ icket Matches Container - Ensure All Matches Are Visible */
     animation: bounce 1.4s infinite ease-in-out;
 }
 
-.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
-.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
-.loading-dots span:nth-child(3) { animation-delay: 0s; }
+.loading-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.loading-dots span:nth-child(3) {
+    animation-delay: 0s;
+}
 
 @keyframes bounce {
-    0%, 80%, 100% {
+
+    0%,
+    80%,
+    100% {
         transform: scale(0.8);
         opacity: 0.5;
     }
+
     40% {
         transform: scale(1.2);
         opacity: 1;
@@ -9296,22 +9911,22 @@ icket Matches Container - Ensure All Matches Are Visible */
         left: 10px;
         transform: translateY(-50%) translateX(-110%);
     }
-    
+
     .modern-loading-popup.show {
         transform: translateY(-50%) translateX(0);
     }
-    
+
     .loading-popup-content {
         padding: 20px;
         min-width: 180px;
         border-radius: 12px;
     }
-    
+
     .loading-spinner {
         width: 50px;
         height: 50px;
     }
-    
+
     .loading-message {
         font-size: 14px;
     }
@@ -9322,7 +9937,7 @@ icket Matches Container - Ensure All Matches Are Visible */
     .modern-loading-popup {
         left: 15px;
     }
-    
+
     .loading-popup-content {
         padding: 22px;
         min-width: 190px;
@@ -9330,7 +9945,8 @@ icket Matches Container - Ensure All Matches Are Visible */
 }
 
 /* High DPI Displays */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
     .loading-popup-content {
         border-width: 1px;
     }
@@ -9341,18 +9957,18 @@ icket Matches Container - Ensure All Matches Are Visible */
     .modern-loading-popup {
         transition: opacity 0.2s ease;
     }
-    
+
     .spinner-ring {
         animation: none;
         border: 3px solid #e50914;
         border-top-color: transparent;
     }
-    
+
     .loading-dots span {
         animation: none;
         opacity: 0.7;
     }
-    
+
     .loading-popup-content::before {
         animation: none;
     }
@@ -9363,7 +9979,7 @@ icket Matches Container - Ensure All Matches Are Visible */
     .loading-popup-content {
         background: rgba(10, 10, 10, 0.98);
         border-color: #e50914;
-        box-shadow: 
+        box-shadow:
             0 25px 50px rgba(0, 0, 0, 0.9),
             0 0 0 1px rgba(229, 9, 20, 0.3),
             inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -9373,7 +9989,7 @@ icket Matches Container - Ensure All Matches Are Visible */
 /* Loading Popup Hover Effects (for accessibility) */
 .loading-popup-content:hover {
     border-color: #ff1e2d;
-    box-shadow: 
+    box-shadow:
         0 25px 50px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(229, 9, 20, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -9420,6 +10036,7 @@ icket Matches Container - Ensure All Matches Are Visible */
 .modern-loading-popup[data-context="tmdb"] .spinner-ring:nth-child(1) {
     border-top-color: #FFD700;
 }
+
 /* Loa
 ding System Enhancements */
 
@@ -9443,7 +10060,7 @@ ding System Enhancements */
 /* Enhanced visual feedback for different contexts */
 .modern-loading-popup[data-context="search"] .loading-popup-content {
     border-color: #4CAF50;
-    box-shadow: 
+    box-shadow:
         0 20px 40px rgba(0, 0, 0, 0.8),
         0 0 20px rgba(76, 175, 80, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -9451,7 +10068,7 @@ ding System Enhancements */
 
 .modern-loading-popup[data-context="download"] .loading-popup-content {
     border-color: #2196F3;
-    box-shadow: 
+    box-shadow:
         0 20px 40px rgba(0, 0, 0, 0.8),
         0 0 20px rgba(33, 150, 243, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -9459,7 +10076,7 @@ ding System Enhancements */
 
 .modern-loading-popup[data-context="tmdb"] .loading-popup-content {
     border-color: #FFD700;
-    box-shadow: 
+    box-shadow:
         0 20px 40px rgba(0, 0, 0, 0.8),
         0 0 20px rgba(255, 215, 0, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -9467,7 +10084,7 @@ ding System Enhancements */
 
 .modern-loading-popup[data-context="error"] .loading-popup-content {
     border-color: #f44336;
-    box-shadow: 
+    box-shadow:
         0 20px 40px rgba(0, 0, 0, 0.8),
         0 0 20px rgba(244, 67, 54, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -9512,6 +10129,7 @@ body.loading-active {
         transform: translateY(-50%) translateX(-120%);
         opacity: 0;
     }
+
     100% {
         transform: translateY(-50%) translateX(0);
         opacity: 1;
@@ -9528,6 +10146,7 @@ body.loading-active {
         transform: translateY(-50%) translateX(0);
         opacity: 1;
     }
+
     100% {
         transform: translateY(-50%) translateX(-120%);
         opacity: 0;
@@ -9544,7 +10163,7 @@ body.loading-active {
         border-width: 3px;
         background: rgba(0, 0, 0, 1);
     }
-    
+
     .loading-message {
         font-weight: 700;
         text-shadow: none;
@@ -9555,5 +10174,2170 @@ body.loading-active {
 @media print {
     .modern-loading-popup {
         display: none !important;
+    }
+}
+
+/* 
+Mobile-First Form Improvements */
+@media (max-width: 768px) {
+
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+        /* Prevents zoom on iOS */
+        padding: 12px 16px;
+        border-radius: 8px;
+        min-height: 48px;
+    }
+
+    input[type="search"] {
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        padding-right: 40px;
+    }
+}
+
+/* Mobile Scroll Improvements */
+@media (max-width: 768px) {
+
+    .netflix-scroll-container,
+    .search-provider-carousel,
+    .genre-cards-wrapper {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .netflix-scroll-container::-webkit-scrollbar,
+    .search-provider-carousel::-webkit-scrollbar,
+    .genre-cards-wrapper::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* Mobile Modal Improvements */
+@media (max-width: 768px) {
+    .modal-overlay {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .modal-content {
+        width: 100%;
+        max-width: none;
+        border-radius: 16px 16px 0 0;
+        max-height: 90vh;
+        margin: 0;
+    }
+
+    .modal-header {
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-header h3 {
+        font-size: 20px;
+    }
+
+    .modal-body {
+        padding: 24px;
+        max-height: calc(90vh - 80px);
+        overflow-y: auto;
+    }
+}
+
+/* Mobile Toast Improvements */
+@media (max-width: 768px) {
+    .toast {
+        position: fixed !important;
+        top: auto !important;
+        bottom: 20px !important;
+        left: 16px !important;
+        right: 16px !important;
+        width: auto !important;
+        max-width: none !important;
+        border-radius: 12px !important;
+        padding: 16px 20px !important;
+        font-size: 16px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+    }
+}
+
+/* Mobile Safe Area Support */
+@supports (padding: max(0px)) {
+    @media (max-width: 768px) {
+        .header-container {
+            padding-left: max(12px, env(safe-area-inset-left));
+            padding-right: max(12px, env(safe-area-inset-right));
+            padding-top: env(safe-area-inset-top);
+        }
+
+        .mobile-nav-menu {
+            top: calc(56px + env(safe-area-inset-top));
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .container {
+            padding-left: max(8px, env(safe-area-inset-left));
+            padding-right: max(8px, env(safe-area-inset-right));
+        }
+
+        .modal-content {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .toast {
+            bottom: max(20px, env(safe-area-inset-bottom)) !important;
+            left: max(16px, env(safe-area-inset-left)) !important;
+            right: max(16px, env(safe-area-inset-right)) !important;
+        }
+    }
+}
+
+/* Mobile Performance Optimizations */
+@media (max-width: 768px) {
+    * {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+
+    .post-card,
+    .netflix-card,
+    .episode-card,
+    .stream-option {
+        will-change: transform;
+    }
+
+    .hero-banner {
+        will-change: transform;
+        transform: translateZ(0);
+    }
+}
+
+/* Mobile Accessibility Improvements */
+@media (max-width: 768px) {
+
+    /* Larger focus indicators for mobile */
+    button:focus,
+    input:focus,
+    select:focus,
+    .nav-link:focus {
+        outline: 3px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+
+    /* Better contrast for mobile */
+    .post-card-content h3,
+    .episode-card h4,
+    .stream-option h4 {
+        color: var(--text-color);
+        font-weight: 600;
+    }
+
+    /* Improved readability */
+    .details-synopsis,
+    .error-message,
+    .loading p {
+        line-height: 1.6;
+        font-size: 16px;
+    }
+}
+
+/* Mobile Dark Mode Optimizations */
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+
+    .modal-content,
+    .mobile-nav-menu {
+        background: rgba(10, 10, 10, 0.98);
+    }
+
+    .post-card,
+    .episode-card,
+    .stream-option {
+        background-color: rgba(24, 24, 24, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Mobile Reduced Motion Support */
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .post-card:hover,
+    .netflix-card:hover,
+    .episode-card:hover {
+        transform: none;
+    }
+}
+
+/* 
+Cricket Live Section - Mobile First */
+.cricket-section {
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid rgba(229, 9, 20, 0.2);
+}
+
+.cricket-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 0;
+}
+
+.cricket-section .section-header h2 {
+    font-size: 20px;
+    margin: 0;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cricket-header-actions,
+.header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.cricket-refresh-btn,
+.refresh-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-color);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    min-height: 36px;
+}
+
+.cricket-watch-live-btn,
+.watch-live-btn {
+    background: var(--primary-color);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s;
+    min-height: 36px;
+}
+
+.cricket-refresh-btn:hover,
+.refresh-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.cricket-watch-live-btn:hover,
+.watch-live-btn:hover {
+    background: #f40612;
+    transform: translateY(-1px);
+}
+
+/* Cricket Matches Horizontal Scroll */
+.cricket-matches-horizontal {
+    overflow: hidden;
+}
+
+.cricket-matches-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.cricket-matches-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* Compact Match Cards */
+.match-card {
+    flex: 0 0 280px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    transition: all 0.3s;
+    scroll-snap-align: start;
+}
+
+.match-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: var(--primary-color);
+}
+
+.match-card.live {
+    border-color: #4CAF50;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, var(--bg-card) 50%);
+}
+
+.match-card.upcoming {
+    border-color: #FF9800;
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, var(--bg-card) 50%);
+}
+
+.match-card.completed {
+    border-color: #9E9E9E;
+    opacity: 0.8;
+}
+
+.match-status-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-badge.live {
+    background: #4CAF50;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.status-badge.upcoming {
+    background: #FF9800;
+    color: white;
+}
+
+.status-badge.completed {
+    background: #9E9E9E;
+    color: white;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.match-header {
+    margin-bottom: 12px;
+}
+
+.series-info .series-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.match-details {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.match-details span {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.match-id {
+    font-size: 10px;
+    color: var(--text-muted);
+    position: absolute;
+    top: 8px;
+    left: 8px;
+}
+
+.teams-container {
+    margin-bottom: 12px;
+}
+
+.team {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.team:last-child {
+    border-bottom: none;
+}
+
+.team.batting {
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 4px;
+    padding: 6px 8px;
+    border-bottom: none;
+    margin-bottom: 4px;
+}
+
+.team-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.flag {
+    width: 20px;
+    height: 15px;
+    border-radius: 2px;
+    object-fit: cover;
+}
+
+.team-names {
+    display: flex;
+    flex-direction: column;
+}
+
+.team-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+    line-height: 1;
+}
+
+.team-full-name {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1;
+    margin-top: 2px;
+}
+
+.team-score .score {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.team-score .no-score {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.vs-divider {
+    text-align: center;
+    margin: 8px 0;
+    position: relative;
+}
+
+.vs-text {
+    background: var(--bg-card);
+    padding: 0 8px;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--text-muted);
+}
+
+.batting-info {
+    font-size: 10px;
+    color: #4CAF50;
+    margin-top: 2px;
+}
+
+.match-status {
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.current-status {
+    font-size: 12px;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.short-status {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.match-timing,
+.venue-info {
+    margin-bottom: 8px;
+}
+
+.timing-info,
+.venue-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+}
+
+.timing-label,
+.venue-label {
+    color: var(--text-muted);
+}
+
+.timing-value,
+.venue-name {
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.time-confirmed {
+    color: #4CAF50;
+    font-size: 10px;
+}
+
+.time-tentative {
+    color: #FF9800;
+    font-size: 10px;
+}
+
+.timezone-info {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 2px;
+}
+
+.series-info-footer {
+    margin-bottom: 8px;
+}
+
+.series-duration {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.match-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.watch-btn,
+.details-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.watch-btn {
+    background: var(--primary-color);
+    color: white;
+}
+
+.details-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.watch-btn:hover {
+    background: #f40612;
+    transform: translateY(-1px);
+}
+
+.details-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+/* Cricket Fallback */
+.cricket-fallback {
+    text-align: center;
+    padding: 20px;
+}
+
+.cricket-fallback-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.cricket-fallback-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.cricket-fallback-card h3 {
+    color: var(--text-color);
+    margin-bottom: 8px;
+    font-size: 18px;
+}
+
+.cricket-fallback-card p {
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.cricket-watch-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.cricket-watch-btn:hover {
+    background: #f40612;
+    transform: translateY(-2px);
+}
+
+/* No Matches State */
+.no-matches {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+}
+
+.no-matches p {
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.watch-cricket-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.watch-cricket-btn:hover {
+    background: #f40612;
+}
+
+/* Mobile Optimizations for Cricket */
+@media (max-width: 768px) {
+    .cricket-section {
+        margin-bottom: 16px;
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .cricket-section .section-header h2 {
+        font-size: 18px;
+    }
+
+    .cricket-matches-scroll {
+        gap: 10px;
+        padding-bottom: 6px;
+    }
+
+    .match-card {
+        flex: 0 0 260px;
+        padding: 10px;
+    }
+
+    .series-info .series-name {
+        font-size: 13px;
+    }
+
+    .team-name {
+        font-size: 13px;
+    }
+
+    .team-score .score {
+        font-size: 13px;
+    }
+
+    .cricket-fallback-card {
+        padding: 20px;
+        max-width: 280px;
+    }
+
+    .cricket-fallback-icon {
+        font-size: 40px;
+        margin-bottom: 12px;
+    }
+
+    .cricket-fallback-card h3 {
+        font-size: 16px;
+    }
+
+    .cricket-fallback-card p {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cricket-section {
+        padding: 10px;
+        margin-bottom: 12px;
+    }
+
+    .cricket-section .section-header h2 {
+        font-size: 16px;
+    }
+
+    .cricket-header-actions,
+    .header-actions {
+        gap: 6px;
+    }
+
+    .cricket-refresh-btn,
+    .refresh-btn,
+    .cricket-watch-live-btn,
+    .watch-live-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-height: 32px;
+    }
+
+    .cricket-matches-scroll {
+        gap: 8px;
+    }
+
+    .match-card {
+        flex: 0 0 240px;
+        padding: 8px;
+    }
+
+    .series-info .series-name {
+        font-size: 12px;
+    }
+
+    .match-details span {
+        font-size: 10px;
+        padding: 1px 4px;
+    }
+
+    .team-name {
+        font-size: 12px;
+    }
+
+    .team-full-name {
+        font-size: 10px;
+    }
+
+    .team-score .score {
+        font-size: 12px;
+    }
+
+    .flag {
+        width: 16px;
+        height: 12px;
+    }
+
+    .watch-btn,
+    .details-btn {
+        padding: 6px 8px;
+        font-size: 11px;
+    }
+
+    .cricket-fallback-card {
+        padding: 16px;
+        max-width: 260px;
+    }
+
+    .cricket-fallback-icon {
+        font-size: 36px;
+        margin-bottom: 10px;
+    }
+
+    .cricket-fallback-card h3 {
+        font-size: 15px;
+    }
+
+    .cricket-fallback-card p {
+        font-size: 12px;
+    }
+
+    .cricket-watch-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+}
+
+/* Cr
+icket Player - Full Screen Overlay */
+.cricket-player-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.3s ease;
+}
+
+.cricket-player-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+}
+
+.cricket-player-header {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.7) 100%);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.cricket-player-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cricket-player-info h3 {
+    color: white;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.live-badge {
+    background: #4CAF50;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+.cricket-player-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.cricket-player-controls button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s;
+    min-height: 36px;
+}
+
+.cricket-player-controls button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.close-player-btn {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.close-player-btn:hover {
+    background: #f40612 !important;
+}
+
+.cricket-video-container {
+    flex: 1;
+    position: relative;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cricket-video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.cricket-video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.cricket-video-controls {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: auto;
+}
+
+.cricket-video-container:hover .cricket-video-controls {
+    opacity: 1;
+}
+
+.video-fullscreen-btn {
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    color: white;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.video-fullscreen-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+}
+
+/* Cricket Channel Selector */
+.cricket-channel-selector {
+    background: rgba(20, 20, 20, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    max-height: 40vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.cricket-selector-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.cricket-selector-header h4 {
+    color: white;
+    margin: 0;
+    font-size: 14px;
+}
+
+.cricket-selector-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.channel-count {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.close-selector-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.close-selector-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.cricket-channels-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    max-height: calc(40vh - 60px);
+}
+
+.cricket-channel-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    color: white;
+    min-height: 50px;
+}
+
+.cricket-channel-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.cricket-channel-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.cricket-channel-btn img {
+    width: 32px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.cricket-channel-btn span {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.channel-group {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 2px;
+}
+
+.load-more-channels {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 8px;
+}
+
+.load-more-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s;
+}
+
+.load-more-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+/* Mobile Cricket Player Optimizations */
+@media (max-width: 768px) {
+    .cricket-player-header {
+        padding: 10px 12px;
+    }
+
+    .cricket-player-info h3 {
+        font-size: 14px;
+    }
+
+    .cricket-player-controls {
+        gap: 6px;
+    }
+
+    .cricket-player-controls button {
+        padding: 6px 10px;
+        font-size: 11px;
+        min-height: 32px;
+    }
+
+    .cricket-channel-selector {
+        max-height: 50vh;
+    }
+
+    .cricket-channels-list {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        padding: 6px;
+        max-height: calc(50vh - 60px);
+    }
+
+    .cricket-channel-btn {
+        padding: 10px;
+        min-height: 60px;
+    }
+
+    .cricket-channel-btn img {
+        width: 40px;
+        height: 30px;
+    }
+
+    .cricket-channel-btn span {
+        font-size: 13px;
+    }
+
+    .cricket-video-controls {
+        top: 12px;
+        right: 12px;
+    }
+
+    .video-fullscreen-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cricket-player-header {
+        padding: 8px 10px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .cricket-player-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .cricket-player-info h3 {
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cricket-player-controls {
+        gap: 4px;
+    }
+
+    .cricket-player-controls button {
+        padding: 6px 8px;
+        font-size: 10px;
+        min-height: 30px;
+    }
+
+    .cricket-channel-selector {
+        max-height: 60vh;
+    }
+
+    .cricket-selector-header {
+        padding: 10px 12px;
+    }
+
+    .cricket-selector-header h4 {
+        font-size: 13px;
+    }
+
+    .channel-count {
+        font-size: 11px;
+    }
+
+    .cricket-channels-list {
+        max-height: calc(60vh - 50px);
+    }
+
+    .cricket-channel-btn {
+        padding: 8px;
+        min-height: 56px;
+    }
+
+    .cricket-channel-btn span {
+        font-size: 12px;
+    }
+
+    .channel-group {
+        font-size: 9px;
+    }
+}
+
+/* Bottom Navigation Bar - Mobile First - Always Sticky */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(20, 20, 20, 0.98) 0%, rgba(20, 20, 20, 1) 100%);
+    backdrop-filter: blur(20px);
+    border-top: 2px solid rgba(229, 9, 20, 0.3);
+    padding: 12px 0;
+    z-index: 9999;
+    display: none;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+.bottom-nav-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 8px;
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 6px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 52px;
+    min-height: 52px;
+    position: relative;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.bottom-nav-item:hover,
+.bottom-nav-item.active {
+    color: var(--primary-color);
+    background: rgba(229, 9, 20, 0.15);
+    transform: translateY(-3px);
+}
+
+.bottom-nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 4px;
+    background: var(--primary-color);
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 2px 8px rgba(229, 9, 20, 0.5);
+}
+
+.bottom-nav-icon {
+    font-size: 22px;
+    margin-bottom: 3px;
+    transition: transform 0.3s ease;
+}
+
+.bottom-nav-item:hover .bottom-nav-icon {
+    transform: scale(1.15);
+}
+
+.bottom-nav-item.active .bottom-nav-icon {
+    transform: scale(1.1);
+}
+
+.bottom-nav-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.1;
+    max-width: 55px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Show bottom nav on mobile, hide hamburger */
+@media (max-width: 768px) {
+    .bottom-nav {
+        display: block !important;
+        position: fixed !important;
+        bottom: 0 !important;
+    }
+
+    .mobile-nav-toggle {
+        display: none !important;
+    }
+
+    .mobile-nav-menu {
+        display: none !important;
+    }
+
+    /* Add bottom padding to main content to account for bottom nav */
+    .main-content {
+        padding-bottom: 85px;
+    }
+
+    /* Adjust container for bottom nav */
+    .container {
+        padding-bottom: 0;
+    }
+
+    /* Hide footer on mobile to save space */
+    .footer {
+        padding-bottom: 85px;
+    }
+}
+
+/* Ultra mobile optimizations */
+@media (max-width: 480px) {
+    .bottom-nav {
+        padding: 10px 0;
+    }
+
+    .bottom-nav-container {
+        padding: 0 4px;
+    }
+
+    .bottom-nav-item {
+        padding: 6px 3px;
+        min-width: 48px;
+        min-height: 48px;
+    }
+
+    .bottom-nav-icon {
+        font-size: 20px;
+        margin-bottom: 2px;
+    }
+
+    .bottom-nav-label {
+        font-size: 10px;
+        max-width: 48px;
+    }
+
+    .main-content {
+        padding-bottom: 65px;
+    }
+}
+
+/* Safe area support for devices with home indicators */
+@supports (padding: max(0px)) {
+    @media (max-width: 768px) {
+        .bottom-nav {
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+        }
+
+        .main-content {
+            padding-bottom: calc(70px + env(safe-area-inset-bottom));
+        }
+    }
+
+    @media (max-width: 480px) {
+        .bottom-nav {
+            padding-bottom: max(6px, env(safe-area-inset-bottom));
+        }
+
+        .main-content {
+            padding-bottom: calc(65px + env(safe-area-inset-bottom));
+        }
+    }
+}
+
+/* Bottom nav animations */
+@keyframes bottomNavSlideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.bottom-nav {
+    animation: bottomNavSlideUp 0.3s ease;
+}
+
+/* Hide bottom nav when cricket player is active */
+.cricket-player-overlay~.bottom-nav {
+    display: none;
+}
+
+/* Notification badge for bottom nav items */
+.bottom-nav-item .notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(20, 20, 20, 1);
+}
+
+/* Special styling for live TV indicator */
+.bottom-nav-item[data-nav="livetv"] .bottom-nav-icon {
+    position: relative;
+}
+
+.bottom-nav-item[data-nav="livetv"] .bottom-nav-icon::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 6px;
+    height: 6px;
+    background: #4CAF50;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* History badge */
+.bottom-nav-item[data-nav="history"] .notification-badge {
+    background: #FF9800;
+}
+
+/* Updates badge */
+.bottom-nav-item[data-nav="updates"] .notification-badge {
+    background: #2196F3;
+}
+
+/* Hi
+de header elements on Live TV page */
+body.livetv-active .search-icon-container,
+body.livetv-active .provider-select-compact,
+body.livetv-active #searchBar {
+    display: none !important;
+}
+
+body.livetv-active .header-right {
+    justify-content: flex-end;
+}
+
+/* Live TV Page Optimizations - Mobile First */
+.livetv-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 16px 12px;
+}
+
+.livetv-header h1 {
+    color: var(--text-color);
+    font-size: 24px;
+    margin-bottom: 6px;
+    font-weight: 700;
+}
+
+.livetv-subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.livetv-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.livetv-sidebar {
+    width: 100%;
+    order: 1;
+}
+
+.livetv-main {
+    width: 100%;
+    order: 2;
+}
+
+.category-list {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.category-list::-webkit-scrollbar {
+    display: none;
+}
+
+.category-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-height: 44px;
+}
+
+.category-item:hover {
+    background: var(--bg-hover);
+    transform: translateX(2px);
+}
+
+.category-item.active {
+    background: linear-gradient(135deg, var(--primary-color), #b8860b);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.category-icon {
+    font-size: 16px;
+    margin-right: 8px;
+    width: 20px;
+    text-align: center;
+}
+
+.category-name {
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.category-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.category-item.active .category-count {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.livetv-player-container {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.livetv-player-container video {
+    width: 100%;
+    height: auto;
+    max-height: 60vh;
+    border-radius: 6px;
+    background: #000;
+}
+
+.livetv-info {
+    margin-top: 12px;
+    text-align: center;
+}
+
+.livetv-info h3 {
+    color: var(--text-color);
+    font-size: 16px;
+    margin: 0 0 4px 0;
+    font-weight: 600;
+}
+
+.livetv-info p {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin: 0;
+}
+
+.channels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.channel-card {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.channel-card:hover {
+    background: var(--bg-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    border-color: var(--primary-color);
+}
+
+.channel-logo {
+    width: 100%;
+    height: 90px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.channel-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: var(--bg-dark);
+    padding: 8px;
+}
+
+.channel-info {
+    margin-bottom: 10px;
+}
+
+.channel-name {
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.channel-category {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.channel-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.play-btn {
+    flex: 1;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    min-height: 36px;
+}
+
+.play-btn:hover {
+    background: #f40612;
+    transform: translateY(-1px);
+}
+
+.play-icon {
+    font-size: 14px;
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    grid-column: 1 / -1;
+}
+
+.no-results h3 {
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: var(--text-color);
+}
+
+.no-results p {
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Live TV Controls */
+.livetv-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.search-container {
+    flex: 1;
+    min-width: 200px;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.search-container input:focus {
+    border-color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.1);
+}
+
+.livetv-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.livetv-actions button {
+    padding: 8px 14px;
+    background: var(--bg-card);
+    color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    min-height: 36px;
+}
+
+.livetv-actions button:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+/* Mobile Optimizations for Live TV */
+@media (max-width: 768px) {
+    .livetv-header {
+        padding: 12px 8px;
+        margin-bottom: 16px;
+    }
+
+    .livetv-header h1 {
+        font-size: 20px;
+    }
+
+    .livetv-subtitle {
+        font-size: 13px;
+    }
+
+    .livetv-layout {
+        gap: 12px;
+    }
+
+    .category-list {
+        padding: 8px;
+        gap: 6px;
+    }
+
+    .category-item {
+        padding: 8px 12px;
+        min-height: 40px;
+    }
+
+    .category-icon {
+        font-size: 14px;
+        margin-right: 6px;
+    }
+
+    .category-name {
+        font-size: 12px;
+    }
+
+    .category-count {
+        font-size: 10px;
+        padding: 1px 5px;
+    }
+
+    .livetv-player-container {
+        padding: 10px;
+        margin-bottom: 12px;
+    }
+
+    .livetv-player-container video {
+        max-height: 50vh;
+    }
+
+    .livetv-info h3 {
+        font-size: 15px;
+    }
+
+    .livetv-info p {
+        font-size: 12px;
+    }
+
+    .channels-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    .channel-card {
+        padding: 10px;
+    }
+
+    .channel-logo {
+        height: 80px;
+        margin-bottom: 8px;
+    }
+
+    .channel-name {
+        font-size: 13px;
+    }
+
+    .channel-category {
+        font-size: 10px;
+    }
+
+    .play-btn {
+        padding: 7px 10px;
+        font-size: 12px;
+        min-height: 34px;
+    }
+
+    .livetv-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .search-container {
+        min-width: auto;
+    }
+
+    .search-container input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .livetv-actions {
+        justify-content: center;
+    }
+
+    .livetv-actions button {
+        flex: 1;
+        min-width: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .livetv-header {
+        padding: 10px 6px;
+        margin-bottom: 12px;
+    }
+
+    .livetv-header h1 {
+        font-size: 18px;
+    }
+
+    .livetv-subtitle {
+        font-size: 12px;
+    }
+
+    .category-list {
+        padding: 6px;
+        gap: 5px;
+    }
+
+    .category-item {
+        padding: 7px 10px;
+        min-height: 38px;
+    }
+
+    .category-name {
+        font-size: 11px;
+    }
+
+    .livetv-player-container {
+        padding: 8px;
+    }
+
+    .livetv-player-container video {
+        max-height: 45vh;
+    }
+
+    .channels-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 8px;
+    }
+
+    .channel-card {
+        padding: 8px;
+    }
+
+    .channel-logo {
+        height: 70px;
+        margin-bottom: 6px;
+    }
+
+    .channel-name {
+        font-size: 12px;
+    }
+
+    .play-btn {
+        padding: 6px 8px;
+        font-size: 11px;
+        min-height: 32px;
+    }
+
+    .search-container input {
+        padding: 9px 12px;
+        font-size: 14px;
+    }
+}
+
+/* Desktop optimizations for Live TV */
+@media (min-width: 1024px) {
+    .livetv-layout {
+        flex-direction: row;
+        gap: 20px;
+    }
+
+    .livetv-sidebar {
+        width: 280px;
+        order: 1;
+        flex-shrink: 0;
+    }
+
+    .livetv-main {
+        flex: 1;
+        order: 2;
+    }
+
+    .category-list {
+        flex-direction: column;
+        overflow-x: visible;
+    }
+
+    .category-item {
+        white-space: normal;
+    }
+
+    .channels-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .channel-logo {
+        height: 110px;
+    }
+}
+
+/* Ensure bottom nav stays fixed on scroll */
+html {
+    scroll-padding-bottom: 85px;
+}
+
+body {
+    position: relative;
+}
+
+/* Prevent bottom nav from moving on scroll - CRITICAL FIX */
+@media (max-width: 768px) {
+    html {
+        scroll-padding-bottom: 85px;
+        overflow-x: hidden;
+    }
+
+    body {
+        padding-bottom: 0;
+        overflow-x: hidden;
+    }
+
+    /* Force bottom nav to stay at bottom - ABSOLUTE PRIORITY */
+    .bottom-nav {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        transform: translate3d(0, 0, 0) !important;
+        -webkit-transform: translate3d(0, 0, 0) !important;
+        z-index: 99999 !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Ensure content doesn't overlap bottom nav */
+    .view {
+        padding-bottom: 20px;
+    }
+
+    /* Prevent any parent from hiding bottom nav */
+    body>.bottom-nav,
+    #bottomNav {
+        position: fixed !important;
+        bottom: 0 !important;
+        display: block !important;
+    }
+}
+
+/* Hide footer on Live TV page */
+body.livetv-active .footer {
+    display: none !important;
+}
+
+/* Hide footer text on mobile to save space */
+@media (max-width: 768px) {
+    .footer {
+        padding: 15px 0 100px 0;
+    }
+
+    .footer .container p {
+        font-size: 12px;
+        line-height: 1.6;
+    }
+}
+
+@media (max-width: 480px) {
+    .footer {
+        padding: 12px 0 95px 0;
+    }
+
+    .footer .container p {
+        font-size: 11px;
+    }
+}
+
+/* Optimize scrolling performance */
+@media (max-width: 768px) {
+    * {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .main-content {
+        overflow-x: hidden;
+    }
+
+    /* Smooth scroll behavior */
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+/* Additional Live TV page optimizations */
+@media (max-width: 768px) {
+
+    /* Hide unnecessary elements on Live TV page */
+    body.livetv-active .search-icon-container,
+    body.livetv-active .provider-select-compact {
+        display: none !important;
+    }
+
+    body.livetv-active .header-container {
+        justify-content: space-between;
+    }
+
+    body.livetv-active .header-left {
+        flex: 1;
+    }
+
+    body.livetv-active .header-right {
+        flex-shrink: 0;
+    }
+
+    /* Optimize Live TV layout for mobile */
+    body.livetv-active .livetv-layout {
+        padding-bottom: 20px;
+    }
+
+    body.livetv-active .channels-grid {
+        padding-bottom: 20px;
+    }
+}
+
+/* Additional Live TV page fixes */
+@media (max-width: 768px) {
+    body.livetv-active .footer {
+        display: none !important;
+    }
+
+    body.livetv-active .main-content {
+        padding-bottom: 100px;
+    }
+}
+
+/* Clean mobile layout */
+@media (max-width: 768px) {
+    body,
+    main,
+    .main-content {
+        overflow-x: hidden;
     }
 }

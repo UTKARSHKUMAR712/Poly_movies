@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bottom Nav Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #141414;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding-bottom: 85px;
+        }
+        
+        .content {
+            padding: 20px;
+            min-height: 200vh;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, rgba(20, 20, 20, 0.98) 0%, rgba(20, 20, 20, 1) 100%);
+            backdrop-filter: blur(20px);
+            border-top: 2px solid rgba(229, 9, 20, 0.3);
+            padding: 12px 0;
+            z-index: 99999;
+            display: block;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .bottom-nav-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0 8px;
+        }
+        
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 6px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 52px;
+            min-height: 52px;
+            position: relative;
+            background: none;
+            border: none;
+            color: #b3b3b3;
+            text-decoration: none;
+        }
+        
+        .bottom-nav-item.active {
+            color: #e50914;
+            background: rgba(229, 9, 20, 0.15);
+        }
+        
+        .bottom-nav-icon {
+            font-size: 22px;
+            margin-bottom: 3px;
+        }
+        
+        .bottom-nav-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.1;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+        }
+        
+        p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Bottom Navigation Test</h1>
+        <p>Scroll down to test if the bottom navigation stays fixed...</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+        <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        
+        <h2 style="margin-top: 40px;">Keep Scrolling...</h2>
+        <p>The bottom navigation should stay fixed at the bottom of the screen.</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+        <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        
+        <h2 style="margin-top: 40px;">Almost There...</h2>
+        <p>The bottom navigation should still be visible and fixed.</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+        <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+    </div>
+    
+    <nav class="bottom-nav" id="bottomNav">
+        <div class="bottom-nav-container">
+            <button class="bottom-nav-item active">
+                <div class="bottom-nav-icon">🏠</div>
+                <div class="bottom-nav-label">Home</div>
+            </button>
+            <button class="bottom-nav-item">
+                <div class="bottom-nav-icon">🇮🇳</div>
+                <div class="bottom-nav-label">Bollywood</div>
+            </button>
+            <button class="bottom-nav-item">
+                <div class="bottom-nav-icon">📺</div>
+                <div class="bottom-nav-label">TV Shows</div>
+            </button>
+            <button class="bottom-nav-item">
+                <div class="bottom-nav-icon">🎬</div>
+                <div class="bottom-nav-label">Movies</div>
+            </button>
+            <button class="bottom-nav-item">
+                <div class="bottom-nav-icon">🔍</div>
+                <div class="bottom-nav-label">Explore</div>
+            </button>
+            <button class="bottom-nav-item">
+                <div class="bottom-nav-icon">📡</div>
+                <div class="bottom-nav-label">Live TV</div>
+            </button>
+            <button class="bottom-nav-item">
+                <div class="bottom-nav-icon">📰</div>
+                <div class="bottom-nav-label">Updates</div>
+            </button>
+            <button class="bottom-nav-item">
+                <div class="bottom-nav-icon">📚</div>
+                <div class="bottom-nav-label">History</div>
+            </button>
+        </div>
+    </nav>
+    
+    <script>
+        console.log('✅ Bottom nav test page loaded');
+        console.log('Bottom nav element:', document.getElementById('bottomNav'));
+        
+        // Test scroll
+        window.addEventListener('scroll', () => {
+            const bottomNav = document.getElementById('bottomNav');
+            const rect = bottomNav.getBoundingClientRect();
+            console.log('Bottom nav position:', {
+                bottom: rect.bottom,
+                top: rect.top,
+                position: window.getComputedStyle(bottomNav).position
+            });
+        });
+    </script>
+</body>
+</html>
