@@ -1,5 +1,4 @@
 [
-  
   {
     "display_name": "MultiStream",
     "value": "autoEmbed",
@@ -312,12 +311,12 @@
     "type": "india",
     "disabled": true
   },
-{
+  {
     "display_name": "VegaMovies",
     "value": "vega",
     "version": "1.9",
     "icon": "",
     "type": "global",
     "disabled": false
-  },
+  }
 ]
