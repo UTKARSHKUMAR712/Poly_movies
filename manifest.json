@@ -29,7 +29,7 @@
     "version": "1.1",
     "icon": "",
     "type": "global",
-    "disabled": false
+    "disabled": true
   },
   {
     "display_name": "World4uFree",
@@ -317,6 +317,6 @@
     "version": "1.9",
     "icon": "",
     "type": "global",
-    "disabled": false
+    "disabled": true
   }
 ]
