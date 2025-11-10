@@ -198,7 +198,12 @@ const state = {
 
     // Navigation history
     navigationHistory: [],
-    currentHistoryIndex: -1
+    currentHistoryIndex: -1,
+
+    // Episode playlist for series (Netflix-style next episode)
+    episodePlaylist: [], // Stores all episodes from current season/quality
+    currentEpisodeIndex: -1, // Current episode index in playlist
+    currentSeasonQuality: null // Current selected season/quality info
 };
 
 // Session-based cache configuration (no search caching)
@@ -971,7 +976,7 @@ async function fetchStream(provider, link, type = 'movie') {
     console.log('🎥 Stream response status:', response.status);
     if (!response.ok) throw new Error('Failed to fetch stream');
     const streams = await response.json();
-    
+
     // Filter out Cf Worker streams from frontend as well
     const filteredStreams = streams.filter(stream => {
         if (stream.server === 'Cf Worker') {
@@ -980,7 +985,7 @@ async function fetchStream(provider, link, type = 'movie') {
         }
         return true;
     });
-    
+
     console.log('✅ Streams received:', filteredStreams.length, 'options (filtered from', streams.length, ')');
     filteredStreams.forEach((s, i) => {
         console.log(`  Stream ${i}:`, {
@@ -1380,6 +1385,29 @@ async function renderEpisodes(linkItem, provider, type) {
                         quality: linkItem.quality
                     });
                 }
+
+                // Store episode playlist for next episode feature
+                state.episodePlaylist = episodes.map((ep, idx) => ({
+                    ...ep,
+                    episodeNumber: ep.episodeNumber || idx + 1,
+                    seasonNumber: 1,
+                    quality: linkItem.quality,
+                    hasDolbyAtmos: window.HistoryModule ? window.HistoryModule.detectDolbyAtmos({
+                        server: ep.server || linkItem.server,
+                        title: ep.title,
+                        quality: linkItem.quality
+                    }) : false
+                }));
+                state.currentEpisodeIndex = index;
+                state.currentSeasonQuality = {
+                    title: linkItem.title,
+                    quality: linkItem.quality,
+                    provider: provider,
+                    type: type
+                };
+
+                console.log('📺 Episode playlist stored:', state.episodePlaylist.length, 'episodes');
+                console.log('📍 Current episode index:', state.currentEpisodeIndex);
 
                 loadPlayer(provider, episode.link, episode.type || type, {
                     episodeNumber: episodeNumber,
@@ -3350,7 +3378,7 @@ async function loadHomePage(skipNavigation = false) {
     const cachedData = null; // CacheManager.home.get(provider); // Temporarily disabled
     if (cachedData) {
         console.log('⚡ Loading home from cache');
-        
+
         // Instead of just setting innerHTML, rebuild the sections with proper event listeners
         await rebuildHomeFromCache(catalogContainer, cachedData, provider);
 
@@ -3382,7 +3410,7 @@ async function loadHomePage(skipNavigation = false) {
             }
         }
 
-        
+
         // Separate Movies and TV Shows sections
         const moviesSections = [];
         const tvShowsSections = [];
@@ -3415,7 +3443,7 @@ async function loadHomePage(skipNavigation = false) {
         }
 
 
-  // Render Other Sections
+        // Render Other Sections
         for (const item of otherSections) {
             const section = await renderNetflixSection(provider, item);
             if (section) catalogContainer.appendChild(section);
@@ -3440,7 +3468,7 @@ async function loadHomePage(skipNavigation = false) {
             await window.TMDBContentModule.renderAllSections(catalogContainer);
         }
 
-      
+
 
         // Render Popular Stars section at the end
         if (window.PopularStarsModule) {
@@ -3770,6 +3798,252 @@ function updatePlayerHeader() {
             ${subtitle ? `<p class="player-subtitle">${subtitle}</p>` : ''}
         </div>
     `;
+
+    // Initialize next episode button if we have a playlist
+    initializeNextEpisodeButton();
+}
+
+// Netflix-style Next Episode Button - Integrated in Video Player
+function initializeNextEpisodeButton() {
+    // Remove existing button if any
+    const existingButton = document.querySelector('.next-episode-control');
+    if (existingButton) {
+        existingButton.remove();
+    }
+
+    // Check if we have a next episode
+    if (!state.episodePlaylist || state.episodePlaylist.length === 0) {
+        console.log('📺 No episode playlist available');
+        return;
+    }
+
+    const nextIndex = state.currentEpisodeIndex + 1;
+    if (nextIndex >= state.episodePlaylist.length) {
+        console.log('📺 No next episode available (last episode)');
+        return;
+    }
+
+    const nextEpisode = state.episodePlaylist[nextIndex];
+    console.log('📺 Next episode available:', nextEpisode.title);
+
+    // Get video player element
+    const videoPlayer = document.getElementById('videoPlayer');
+    if (!videoPlayer) return;
+
+    // Create wrapper for video player if it doesn't exist
+    let videoWrapper = videoPlayer.parentElement;
+    if (!videoWrapper.classList.contains('video-wrapper')) {
+        videoWrapper = document.createElement('div');
+        videoWrapper.className = 'video-wrapper';
+        videoPlayer.parentNode.insertBefore(videoWrapper, videoPlayer);
+        videoWrapper.appendChild(videoPlayer);
+    }
+
+    // Create next episode button as sibling to video (so it's in fullscreen)
+    const nextEpisodeControl = document.createElement('div');
+    nextEpisodeControl.className = 'next-episode-control';
+    nextEpisodeControl.innerHTML = `
+        <button class="next-episode-btn" id="nextEpisodeBtn">
+            <span class="next-episode-btn-icon">▶</span>
+            <span class="next-episode-btn-text">Next Episode</span>
+        </button>
+    `;
+
+    // Add to video wrapper (so it's part of fullscreen)
+    videoWrapper.appendChild(nextEpisodeControl);
+
+    // Add click handler
+    const nextBtn = document.getElementById('nextEpisodeBtn');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            playNextEpisode();
+        });
+    }
+
+    // Show button with video controls
+    setupNextEpisodeButtonVisibility(nextEpisodeControl, videoPlayer, videoWrapper);
+
+    // Add playlist indicator
+    addEpisodePlaylistIndicator();
+}
+
+// Setup next episode button visibility (show/hide with controls)
+function setupNextEpisodeButtonVisibility(buttonContainer, video, wrapper) {
+    if (!video) {
+        video = document.getElementById('videoPlayer');
+    }
+    if (!video) return;
+
+    // Show button when video is playing and user moves mouse
+    let hideTimeout;
+
+    const showButton = () => {
+        console.log('👁️ Showing next episode button');
+        buttonContainer.classList.add('show');
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.visibility = 'visible';
+        clearTimeout(hideTimeout);
+        hideTimeout = setTimeout(() => {
+            if (!video.paused) {
+                buttonContainer.classList.remove('show');
+            }
+        }, 3000);
+    };
+
+    const hideButton = () => {
+        clearTimeout(hideTimeout);
+        buttonContainer.classList.remove('show');
+    };
+
+    // Show on mouse move over wrapper
+    if (wrapper) {
+        wrapper.addEventListener('mousemove', showButton);
+    }
+    video.addEventListener('mousemove', showButton);
+
+    // Show when video is paused
+    video.addEventListener('pause', () => {
+        buttonContainer.classList.add('show');
+        clearTimeout(hideTimeout);
+    });
+
+    // Hide when video plays
+    video.addEventListener('play', () => {
+        hideTimeout = setTimeout(() => {
+            buttonContainer.classList.remove('show');
+        }, 3000);
+    });
+
+    // Show when entering/exiting fullscreen - all variants
+    const fullscreenEvents = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'];
+    
+    fullscreenEvents.forEach(event => {
+        document.addEventListener(event, () => {
+            const isFullscreen = document.fullscreenElement || 
+                                document.webkitFullscreenElement || 
+                                document.mozFullScreenElement || 
+                                document.msFullscreenElement;
+            
+            if (isFullscreen) {
+                console.log('🖥️ Entered fullscreen - forcing button visible');
+                buttonContainer.classList.add('show');
+                buttonContainer.style.display = 'flex';
+                buttonContainer.style.visibility = 'visible';
+                buttonContainer.style.opacity = '1';
+            } else {
+                console.log('🖥️ Exited fullscreen');
+            }
+            
+            clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => {
+                if (!video.paused && !isFullscreen) {
+                    buttonContainer.classList.remove('show');
+                }
+            }, 4000);
+        });
+    });
+
+    // Show initially for 3 seconds
+    setTimeout(() => {
+        buttonContainer.classList.add('show');
+        hideTimeout = setTimeout(() => {
+            if (!video.paused) {
+                buttonContainer.classList.remove('show');
+            }
+        }, 3000);
+    }, 500);
+}
+
+// Add episode playlist indicator
+function addEpisodePlaylistIndicator() {
+    // Remove existing indicator
+    const existingIndicator = document.querySelector('.episode-playlist-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+
+    if (!state.episodePlaylist || state.episodePlaylist.length === 0) return;
+
+    // Get video player and its wrapper
+    const videoPlayer = document.getElementById('videoPlayer');
+    if (!videoPlayer) return;
+
+    let videoWrapper = videoPlayer.parentElement;
+    if (!videoWrapper.classList.contains('video-wrapper')) {
+        videoWrapper = document.createElement('div');
+        videoWrapper.className = 'video-wrapper';
+        videoPlayer.parentNode.insertBefore(videoWrapper, videoPlayer);
+        videoWrapper.appendChild(videoPlayer);
+    }
+
+    const indicator = document.createElement('div');
+    indicator.className = 'episode-playlist-indicator';
+    indicator.innerHTML = `📺 ${state.currentEpisodeIndex + 1} / ${state.episodePlaylist.length}`;
+
+    // Add to video wrapper (so it's part of fullscreen)
+    videoWrapper.appendChild(indicator);
+
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        indicator.style.opacity = '0';
+        setTimeout(() => indicator.remove(), 300);
+    }, 5000);
+}
+
+// Play next episode
+async function playNextEpisode() {
+    if (!state.episodePlaylist || state.episodePlaylist.length === 0) {
+        showToast('No episode playlist available', 'error');
+        return;
+    }
+
+    const nextIndex = state.currentEpisodeIndex + 1;
+    if (nextIndex >= state.episodePlaylist.length) {
+        showToast('This is the last episode', 'info');
+        return;
+    }
+
+    const nextEpisode = state.episodePlaylist[nextIndex];
+    const seasonQuality = state.currentSeasonQuality;
+
+    if (!seasonQuality) {
+        showToast('Season/Quality info not available', 'error');
+        return;
+    }
+
+    console.log('⏭️ Playing next episode:', nextEpisode.title);
+
+    // Update current episode index
+    state.currentEpisodeIndex = nextIndex;
+
+    // Mark episode as watched
+    if (window.HistoryModule) {
+        const seriesId = state.currentMeta?.link || state.currentMeta?.meta?.title || 'unknown';
+        const episodeId = nextEpisode.link || nextEpisode.id || `${nextEpisode.title}-${nextEpisode.episodeNumber}`;
+        window.HistoryModule.markEpisodeWatched(seriesId, episodeId, {
+            title: nextEpisode.title,
+            episodeNumber: nextEpisode.episodeNumber,
+            seasonNumber: nextEpisode.seasonNumber,
+            quality: nextEpisode.quality
+        });
+    }
+
+    // Load next episode
+    await loadPlayer(
+        seasonQuality.provider,
+        nextEpisode.link,
+        nextEpisode.type || seasonQuality.type,
+        {
+            episodeNumber: nextEpisode.episodeNumber,
+            seasonNumber: nextEpisode.seasonNumber,
+            episodeTitle: nextEpisode.title,
+            quality: nextEpisode.quality,
+            hasDolbyAtmos: nextEpisode.hasDolbyAtmos
+        }
+    );
+
+    showToast(`Now playing: ${nextEpisode.title}`, 'success', 2000);
 }
 
 // Create player header if it doesn't exist
@@ -4563,14 +4837,14 @@ async function renderHeroBanner(provider, catalogData) {
             // Add event listeners to hero buttons
             const playBtn = heroBanner.querySelector('.hero-btn-play');
             const infoBtn = heroBanner.querySelector('.hero-btn-info');
-            
+
             if (playBtn) {
                 playBtn.addEventListener('click', () => {
                     console.log('🎬 Hero play button clicked:', { provider, link: featuredPost.link });
                     loadDetails(provider, featuredPost.link);
                 });
             }
-            
+
             if (infoBtn) {
                 infoBtn.addEventListener('click', () => {
                     console.log('🎬 Hero info button clicked:', { provider, link: featuredPost.link });
@@ -4707,14 +4981,14 @@ async function renderNetflixSection(provider, catalogItem) {
             <h3 class="netflix-section-title">${catalogItem.title}</h3>
             <button class="netflix-view-all">View All ›</button>
         `;
-        
+
         // Add event listener to view all button
         const viewAllBtn = header.querySelector('.netflix-view-all');
         viewAllBtn.addEventListener('click', () => {
             console.log('📋 View all clicked:', { provider, filter: catalogItem.filter, title: catalogItem.title });
             loadFullCatalog(provider, catalogItem.filter, catalogItem.title);
         });
-        
+
         section.appendChild(header);
 
         const scrollContainer = document.createElement('div');
@@ -4732,13 +5006,13 @@ async function renderNetflixSection(provider, catalogItem) {
                     <h4>${post.title}</h4>
                 </div>
             `;
-            
+
             // Add event listener instead of onclick attribute
             card.addEventListener('click', () => {
                 console.log('🎬 Netflix card clicked:', { provider, link: post.link, title: post.title });
                 loadDetails(provider, post.link);
             });
-            
+
             row.appendChild(card);
         });
 
@@ -4755,7 +5029,7 @@ async function renderNetflixSection(provider, catalogItem) {
 // Rebuild home page from cached data with proper event listeners
 async function rebuildHomeFromCache(catalogContainer, cachedData, provider) {
     console.log('🔄 Rebuilding home from cached data');
-    
+
     catalogContainer.innerHTML = '';
 
     // Render Hero Banner (if it was cached)
@@ -4765,7 +5039,7 @@ async function rebuildHomeFromCache(catalogContainer, cachedData, provider) {
         const heroBanner = tempDiv.querySelector('.hero-banner');
         if (heroBanner) {
             catalogContainer.appendChild(heroBanner);
-            
+
             // Re-attach hero button events
             const heroButtons = heroBanner.querySelectorAll('.hero-btn');
             heroButtons.forEach(button => {
@@ -4775,7 +5049,7 @@ async function rebuildHomeFromCache(catalogContainer, cachedData, provider) {
                     if (linkMatch) {
                         const cardProvider = linkMatch[1];
                         const cardLink = linkMatch[2];
-                        
+
                         button.removeAttribute('onclick');
                         button.addEventListener('click', () => {
                             console.log('🎬 Hero button clicked from cache:', { cardProvider, cardLink });
@@ -4806,14 +5080,14 @@ async function rebuildHomeFromCache(catalogContainer, cachedData, provider) {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = cachedData.html;
         const movieSections = tempDiv.querySelectorAll('.netflix-section');
-        
+
         movieSections.forEach(section => {
             const sectionTitle = section.querySelector('.netflix-section-title')?.textContent;
             const matchingCatalogItem = cachedData.moviesSections.find(item => item.title === sectionTitle);
-            
+
             if (matchingCatalogItem) {
                 const newSection = section.cloneNode(true);
-                
+
                 // Re-attach view all button
                 const viewAllBtn = newSection.querySelector('.netflix-view-all');
                 if (viewAllBtn) {
@@ -4823,7 +5097,7 @@ async function rebuildHomeFromCache(catalogContainer, cachedData, provider) {
                         loadFullCatalog(provider, matchingCatalogItem.filter, matchingCatalogItem.title);
                     });
                 }
-                
+
                 // Re-attach card click events (we'll need to get the post data from the cached HTML)
                 const cards = newSection.querySelectorAll('.netflix-card');
                 cards.forEach(card => {
@@ -4834,7 +5108,7 @@ async function rebuildHomeFromCache(catalogContainer, cachedData, provider) {
                         if (linkMatch) {
                             const cardProvider = linkMatch[1];
                             const cardLink = linkMatch[2];
-                            
+
                             card.removeAttribute('onclick');
                             card.addEventListener('click', () => {
                                 console.log('🎬 Netflix card clicked from cache:', { cardProvider, cardLink });
@@ -4843,7 +5117,7 @@ async function rebuildHomeFromCache(catalogContainer, cachedData, provider) {
                         }
                     }
                 });
-                
+
                 catalogContainer.appendChild(newSection);
             }
         });
@@ -4853,13 +5127,13 @@ async function rebuildHomeFromCache(catalogContainer, cachedData, provider) {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = cachedData.html;
     const allSections = tempDiv.querySelectorAll('.netflix-section, .catalog-section, .details-section');
-    
+
     allSections.forEach(section => {
         // Skip sections we've already handled
         const sectionTitle = section.querySelector('.netflix-section-title, .section-title, h2')?.textContent;
         if (sectionTitle && !sectionTitle.includes('Movies from')) {
             const newSection = section.cloneNode(true);
-            
+
             // Re-attach any event listeners in this section
             reattachSectionEventListeners(newSection, provider);
             catalogContainer.appendChild(newSection);
@@ -4881,7 +5155,7 @@ function reattachSectionEventListeners(section, provider) {
                 const btnProvider = match[1];
                 const filter = match[2];
                 const title = match[3];
-                
+
                 button.removeAttribute('onclick');
                 button.addEventListener('click', () => {
                     console.log('📋 View all button clicked from cache:', { btnProvider, filter, title });
@@ -4900,7 +5174,7 @@ function reattachSectionEventListeners(section, provider) {
             if (linkMatch) {
                 const cardProvider = linkMatch[1];
                 const cardLink = linkMatch[2];
-                
+
                 card.removeAttribute('onclick');
                 card.addEventListener('click', () => {
                     console.log('🎬 Card clicked from cache:', { cardProvider, cardLink });
@@ -4921,11 +5195,11 @@ function reattachHomeEventListeners(container, provider) {
         // Remove any existing event listeners by cloning the element
         const newCard = card.cloneNode(true);
         card.parentNode.replaceChild(newCard, card);
-        
+
         // Try to get data from various sources
         let cardLink = null;
         let cardProvider = provider; // Default to current provider
-        
+
         // Check for onclick attribute first
         const onclickAttr = newCard.getAttribute('onclick');
         if (onclickAttr) {
@@ -4936,7 +5210,7 @@ function reattachHomeEventListeners(container, provider) {
                 newCard.removeAttribute('onclick');
             }
         }
-        
+
         // If no onclick, try to find the link from the section context
         if (!cardLink) {
             const section = newCard.closest('.netflix-section');
@@ -4948,7 +5222,7 @@ function reattachHomeEventListeners(container, provider) {
                 }
             }
         }
-        
+
         if (cardLink) {
             newCard.addEventListener('click', () => {
                 console.log('🎬 Netflix card clicked from cache:', { cardProvider, cardLink });
@@ -4962,14 +5236,14 @@ function reattachHomeEventListeners(container, provider) {
     postCards.forEach(card => {
         const newCard = card.cloneNode(true);
         card.parentNode.replaceChild(newCard, card);
-        
+
         const onclickAttr = newCard.getAttribute('onclick');
         if (onclickAttr) {
             const linkMatch = onclickAttr.match(/loadDetails\('([^']+)',\s*'([^']+)'\)/);
             if (linkMatch) {
                 const cardProvider = linkMatch[1];
                 const cardLink = linkMatch[2];
-                
+
                 newCard.removeAttribute('onclick');
                 newCard.addEventListener('click', () => {
                     console.log('🎬 Post card clicked from cache:', { cardProvider, cardLink });
@@ -4984,14 +5258,14 @@ function reattachHomeEventListeners(container, provider) {
     heroButtons.forEach(button => {
         const newButton = button.cloneNode(true);
         button.parentNode.replaceChild(newButton, button);
-        
+
         const onclickAttr = newButton.getAttribute('onclick');
         if (onclickAttr) {
             const linkMatch = onclickAttr.match(/loadDetails\('([^']+)',\s*'([^']+)'\)/);
             if (linkMatch) {
                 const cardProvider = linkMatch[1];
                 const cardLink = linkMatch[2];
-                
+
                 newButton.removeAttribute('onclick');
                 newButton.addEventListener('click', () => {
                     console.log('🎬 Hero button clicked from cache:', { cardProvider, cardLink });
@@ -5006,7 +5280,7 @@ function reattachHomeEventListeners(container, provider) {
     viewAllButtons.forEach(button => {
         const newButton = button.cloneNode(true);
         button.parentNode.replaceChild(newButton, button);
-        
+
         const onclickAttr = newButton.getAttribute('onclick');
         if (onclickAttr) {
             const match = onclickAttr.match(/loadFullCatalog\('([^']+)',\s*'([^']+)',\s*'([^']+)'\)/);
@@ -5014,7 +5288,7 @@ function reattachHomeEventListeners(container, provider) {
                 const btnProvider = match[1];
                 const filter = match[2];
                 const title = match[3];
-                
+
                 newButton.removeAttribute('onclick');
                 newButton.addEventListener('click', () => {
                     console.log('📋 View all button clicked from cache:', { btnProvider, filter, title });
@@ -5667,7 +5941,7 @@ window.testCacheEventListeners = function () {
     if (container) {
         const cards = container.querySelectorAll('.netflix-card, .post-card');
         console.log(`Found ${cards.length} cards in cached content`);
-        
+
         cards.forEach((card, index) => {
             const hasEventListener = card.onclick || card.getAttribute('onclick');
             console.log(`Card ${index}: ${hasEventListener ? 'Has event handler' : 'No event handler'}`);
@@ -5677,12 +5951,12 @@ window.testCacheEventListeners = function () {
 
 window.testLoadMoreButtons = function () {
     console.log('🧪 Testing load more buttons...');
-    
+
     // Test Movies Module
     if (window.MoviesModule) {
         console.log('✅ MoviesModule is available');
         console.log('Movies state:', window.MoviesModule.state);
-        
+
         const moviesBtn = document.querySelector('#moviesPagination .load-more-btn');
         if (moviesBtn) {
             console.log('✅ Movies load more button found');
@@ -5694,12 +5968,12 @@ window.testLoadMoreButtons = function () {
     } else {
         console.log('❌ MoviesModule not available');
     }
-    
+
     // Test TV Shows Module
     if (window.TVShowsModule) {
         console.log('✅ TVShowsModule is available');
         console.log('TV Shows state:', window.TVShowsModule.state);
-        
+
         const tvBtn = document.querySelector('#tvShowsPagination .load-more-btn');
         if (tvBtn) {
             console.log('✅ TV Shows load more button found');
@@ -5743,7 +6017,7 @@ window.testHomeScreenCards = function () {
     if (container) {
         const cards = container.querySelectorAll('.netflix-card');
         console.log(`Found ${cards.length} Netflix cards`);
-        
+
         cards.forEach((card, index) => {
             if (index < 3) { // Test first 3 cards
                 console.log(`Card ${index}:`, {
@@ -5753,7 +6027,7 @@ window.testHomeScreenCards = function () {
                 });
             }
         });
-        
+
         // Try clicking the first card programmatically
         if (cards.length > 0) {
             console.log('🖱️ Simulating click on first card...');
