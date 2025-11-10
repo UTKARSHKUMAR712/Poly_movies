@@ -971,8 +971,18 @@ async function fetchStream(provider, link, type = 'movie') {
     console.log('🎥 Stream response status:', response.status);
     if (!response.ok) throw new Error('Failed to fetch stream');
     const streams = await response.json();
-    console.log('✅ Streams received:', streams.length, 'options');
-    streams.forEach((s, i) => {
+    
+    // Filter out Cf Worker streams from frontend as well
+    const filteredStreams = streams.filter(stream => {
+        if (stream.server === 'Cf Worker') {
+            console.log('🚫 Filtered out Cf Worker stream:', stream.link.substring(0, 80));
+            return false;
+        }
+        return true;
+    });
+    
+    console.log('✅ Streams received:', filteredStreams.length, 'options (filtered from', streams.length, ')');
+    filteredStreams.forEach((s, i) => {
         console.log(`  Stream ${i}:`, {
             server: s.server,
             type: s.type,
@@ -981,7 +991,7 @@ async function fetchStream(provider, link, type = 'movie') {
             linkPreview: s.link.substring(0, 80) + '...'
         });
     });
-    return streams;
+    return filteredStreams;
 }
 
 // UI Rendering Functions
